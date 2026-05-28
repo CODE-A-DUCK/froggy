@@ -1,39 +1,75 @@
-version: '3.8'
-
 services:
   redis:
     image: redis:7-alpine
     container_name: ultra_discord_redis
-    ports:
-      - "6380:6379"
-    command: redis-server --appendonly yes
+    # No public port binding — Redis is only reachable from within this Docker network.
+    # This prevents any external process from reading guild data or injecting tasks.
+    command: redis-server --appendonly yes --requirepass ${REDIS_PASSWORD:-please_change_me_in_env}
     volumes:
       - redis_data:/data
     restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 512m
+    healthcheck:
+      test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD:-please_change_me_in_env}", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
 
-  control-plane:
+  bot:
     build:
       context: .
-      dockerfile: Dockerfile.control-plane
-    container_name: ultra_discord_cp
+      dockerfile: Dockerfile.bot
+    container_name: ultra_discord_bot
     env_file: .env
     environment:
-      - REDIS_URL=redis://redis:6379
+      # Override REDIS_URL to include auth and use internal service name
+      - REDIS_URL=redis://:${REDIS_PASSWORD:-please_change_me_in_env}@redis:6379
     depends_on:
-      - redis
+      redis:
+        condition: service_healthy
     restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 512m
+          cpus: '1.0'
+    healthcheck:
+      test: ["CMD", "node", "-e",
+        "import('ioredis').then(({default:R})=>{const c=new R(process.env.REDIS_URL);return c.ping().finally(()=>c.disconnect())}).then(()=>process.exit(0)).catch(()=>process.exit(1))"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
 
-  data-plane:
+  player:
     build:
       context: .
-      dockerfile: Dockerfile.data-plane
-    container_name: ultra_discord_dp
+      dockerfile: Dockerfile.player
+    container_name: ultra_discord_player
     env_file: .env
     environment:
-      - REDIS_URL=redis://redis:6379
+      - REDIS_URL=redis://:${REDIS_PASSWORD:-please_change_me_in_env}@redis:6379
     depends_on:
-      - redis
+      redis:
+        condition: service_healthy
     restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          # Player spawns yt-dlp + ffmpeg subprocesses — needs more memory
+          memory: 1g
+          cpus: '2.0'
+    healthcheck:
+      test: ["CMD", "node", "-e",
+        "import('ioredis').then(({default:R})=>{const c=new R(process.env.REDIS_URL);return c.ping().finally(()=>c.disconnect())}).then(()=>process.exit(0)).catch(()=>process.exit(1))"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
 
 volumes:
   redis_data:
