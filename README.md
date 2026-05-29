@@ -1,65 +1,51 @@
-## 這是可能是一隻 Discord 機 氣 人
+## 這是可能是一隻 Discord 雞 雞 人
 
-這是一個基於 Node.js 的 Discord 機氣人，採用我们觉得很厲害的分離架構（多看看我们是怎么写屎山代码的吧！）。
+這是一個🐔（哎喲你幹嘛）於 Node.js 的 Discord 雞雞人，採用我觉得很厲害的屎山代碼（多看看我是怎么写屎山代码的吧！你媽了個逼！！！！！！）。
 
-### 這應該是開始
+### 這應該是開始？
 
 #### 1. 設定依嗯微
-複製 `.env.example` 並重新命名為 `.env`，然後填入必要的資訊：
+你個傻逼應該複製 `.env.example` 並重新命名為 `.env`，然後填入所謂的必要的資訊：
 ```bash
+# 我用高雅人士系統，應該是 mv .env.example .env
 cp .env.example .env
 ```
 所需的變數包含：
-- `DISCORD_TOKEN`: 你的機气人 Token。
-- `REDIS_URL`: Redis 連線字串 (預設為 `redis://127.0.0.1:6379`)。
-- `TEST_GUILD_ID`: (選填) 用於測試指令的伺服器 ID。
+- `TOKEN`: 你的雞雞人 Token。
 
-#### 2. 啟動 Redis
-音乐功能依賴 Redis 進行跨進程通訊。如果你本地沒有 Redis，可以使用 Docker 快速啟動：
-
+#### 2. 下載你媽的包包👜
 ```bash
-docker run -d --name <名字> -p 6379:6379 redis:alpine
-```
-請確保 `.env` 中的 `REDIS_URL` 與你的 Redis 端口一致。
-
-#### 3. 安裝依賴
-使用 Node.js 作為運行環境。
-
-```bash
-cd bot && npm install
-
-cd ../player && npm install
+# 在 root 目錄下執行
+npm install
 ```
 
-#### 4. 部署斜線指令
-在啟動你的鸡气人之前，你需要將指令註冊到 Discord：
-
+#### 3. 部署 Discord 最垃圾的斜線指令
+在啟動你的雞雞人之前，你他媽還需要將指令註冊到我親愛的 Discord：
 ```bash
-cd bot
-# 部署到特定的伺服器 (我們推薦你在開發時使用)
-node src/deploy/deploy.js --guild <YOUR_GUILD_ID>
-# 或
-# 部署到全域（可能會比較慢喲）
-node src/deploy/deploy.js --global
+# 在 root 目錄下執行
+npm run deploy
+# 怎麼清除該死的斜線指令呢？
+npm run clear
 ```
 
-#### 5. 啟動機氣人
+#### 4. 啟動雞雞人
 
-##### 你可以使用 Node 啟動
-
-```bash
-cd bot && node .
-cd player && node .
-```
-
-##### Docker
-`docker-compose.yml` 可以快速部署：
+##### 你可以使用 dev 模式啟動
 
 ```bash
-docker-compose up -d
+# 在 root 目錄下執行
+npm run dev
 ```
+##### 你也可以使用 start 啟動
 
-### 結構
-- `bot/`: 負責處理 Discord 互動、指令、UI 更新。
-- `player/`: 負責語音連線、音訊處理與播放。
-- `execute.js`: 用於測試或執行特定任務的腳本。
+```bash
+# 在 root 目錄下執行
+npm run start
+```
+----
+
+親愛的朋友，既然你要走了，那代表你真的要走了，因為如果你不走，你就不會走。在這臨別的時刻，我想鄭重地祝福你，為什麼要鄭重呢？因為不鄭重的祝福就不夠鄭重。希望你接下來的每一天，都能過得像一天，而且是一天一天地過，絕對不要兩天擠在一起過，那樣太趕了。
+
+你要記住，快樂很重要，因為快樂就是很快樂的感覺，如果不快樂，那就不叫快樂了。所以一定要讓自己快樂起來，只要快樂起來，你就會發現你正處於快樂之中。遇到困難的時候不要怕，因為困難就是不容易的事情，既然不容易，那做起來肯定不簡單，不簡單就慢慢做，慢工出細活，細活就是很細的活。
+
+記得照顧好自己，自己就是你自己，不是別人，別人不是你，所以你只能自己照顧自己。最後，祝你一切都好，什麼是都好呢？就是沒有什麼不好。只要沒有不好，那就是都好。好了，廢話不多說，因為再說下去就都是廢話了。
