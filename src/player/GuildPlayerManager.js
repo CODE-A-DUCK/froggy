@@ -1,0 +1,137 @@
+import { EventEmitter } from "node:events";
+import { InMemoryStore } from "./session/InMemoryStore.js";
+import { PlayerSession } from "./session/PlayerSession.js";
+import { TrackResolver } from "./resolver/TrackResolver.js";
+import { YoutubeTrackSource } from "./resolver/sources/YoutubeTrackSource.js";
+
+const SESSION_CLEANUP_DELAY_MS = 5 * 60 * 1_000;
+
+export class GuildPlayerManager extends EventEmitter {
+  constructor({ client }) {
+    super();
+    this.client = client;
+    this.sessions = new Map();
+    this.resolver = new TrackResolver([new YoutubeTrackSource()]);
+  }
+
+  getOrCreateSession(guildId) {
+    if (this.sessions.has(guildId)) return this.sessions.get(guildId);
+
+    const session = new PlayerSession({
+      guildId,
+      client: this.client,
+      store: new InMemoryStore(),
+      resolver: this.resolver,
+    });
+
+    this.#bindSessionEvents(session);
+    this.sessions.set(guildId, session);
+    console.info(
+      `[GuildPlayerManager] Created session for guild ${guildId}. Active: ${this.sessions.size}`,
+    );
+    return session;
+  }
+
+  getSession(guildId) {
+    return this.sessions.get(guildId) ?? null;
+  }
+
+  async getQueue(guildId) {
+    const session = this.sessions.get(guildId);
+    if (!session) return { current: null, queue: [], length: 0 };
+    const [current, queue, length] = await Promise.all([
+      session.store.getCurrentTrack(),
+      session.store.getQueue(25),
+      session.store.getQueueLength(),
+    ]);
+    return { current, queue, length };
+  }
+
+  async dispatch(task) {
+    const session = this.getOrCreateSession(task.guild_id);
+
+    switch (task.action) {
+      case "play":
+        return session.play({
+          query: task.track_url,
+          channelId: task.channel_id,
+          textChannelId: task.text_channel_id,
+          interactionToken: task.interaction_token,
+          controllerUserId: task.controller_user_id,
+        });
+
+      case "stop":
+        return session.stop({ textChannelId: task.text_channel_id });
+
+      case "skip":
+        return session.skip();
+
+      case "pause":
+        return session.pause();
+
+      case "resume":
+        return session.resume();
+
+      case "loop":
+        return session.toggleLoop();
+
+      case "resend_ui":
+        return session.resendController({
+          textChannelId: task.text_channel_id,
+        });
+
+      case "join":
+        return session.ensureConnected(task.channel_id);
+
+      case "leave":
+        return session.disconnectVoice();
+
+      default:
+        console.warn(`[GuildPlayerManager] Unknown action: ${task.action}`);
+    }
+  }
+
+  #scheduleSessionCleanup(guildId) {
+    setTimeout(() => {
+      const session = this.sessions.get(guildId);
+      if (!session) return;
+      if (!session.currentTrack) {
+        session.destroy();
+        this.sessions.delete(guildId);
+        console.info(
+          `[GuildPlayerManager] Destroyed idle session for guild ${guildId}. Active: ${this.sessions.size}`,
+        );
+      }
+    }, SESSION_CLEANUP_DELAY_MS);
+  }
+
+  #bindSessionEvents(session) {
+    const { guildId } = session;
+
+    session.on("trackStarted", (event) => {
+      this.emit("trackStarted", event);
+    });
+
+    session.on("sessionUpdated", (event) => {
+      this.emit("sessionUpdated", event);
+    });
+
+    session.on("trackQueued", (event) => {
+      this.emit("trackQueued", event);
+    });
+
+    session.on("queueFinished", (event) => {
+      this.emit("queueFinished", event);
+      this.#scheduleSessionCleanup(guildId);
+    });
+
+    session.on("trackStopped", (event) => {
+      this.emit("trackStopped", event);
+      this.#scheduleSessionCleanup(guildId);
+    });
+
+    session.on("trackError", (event) => {
+      this.emit("trackError", event);
+    });
+  }
+}
