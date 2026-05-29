@@ -67,26 +67,17 @@ export class PlayerSession extends EventEmitter {
    */
   async reconnect({ channelId, textChannelId } = {}) {
     return this.#runSerial(async () => {
-      if (!this.currentTrack) {
-        // Nothing is playing — nothing to reconnect to
-        return false;
-      }
+      if (!this.currentTrack) return false;
 
       try {
         await this.#ensureConnected(channelId);
       } catch (error) {
-        console.error(
-          `[PlayerSession] Reconnect failed for guild ${this.guildId}:`,
-          error.message,
-        );
+        console.error(`[PlayerSession] Reconnect failed for guild ${this.guildId}:`, error.message);
         return false;
       }
 
-      // Update textChannelId so the refreshed controller appears in the right channel
       if (textChannelId) this.textChannelId = textChannelId;
 
-      // Refresh the controller message so the user can see the current state
-      // and click Continue / Pause as appropriate
       const snapshot = await this.#buildPlaybackSnapshot({ isUpdate: false });
       if (snapshot) {
         this.emit('sessionUpdated', {
@@ -96,9 +87,29 @@ export class PlayerSession extends EventEmitter {
           interaction_token: '',
         });
       }
-
       return true;
     });
+  }
+
+  /**
+   * Destroy only the VoiceConnection without affecting the AudioPlayer or queue.
+   * Called before sending op:4 to switch voice channels, so the old adapter's
+   * event listeners are removed BEFORE new voice credentials arrive in the stream.
+   * This prevents the "Cannot perform IP discovery - socket closed" race condition.
+   */
+  async disconnectVoice() {
+    return this.#runSerial(() => this.#disconnectVoice());
+  }
+
+  #disconnectVoice() {
+    if (
+      this.connection &&
+      this.connection.state.status !== VoiceConnectionStatus.Destroyed
+    ) {
+      this.connection.destroy();
+      this.connection = null;
+      console.info(`[PlayerSession] Pre-emptively disconnected voice for guild ${this.guildId}`);
+    }
   }
 
   async play({

@@ -1,11 +1,16 @@
-FROM node:20-slim AS deps
+# ── Dependency Stage ─────────────────────────────────────────────────────────
+FROM node:20-alpine AS deps
 
 WORKDIR /app
 
 COPY bot/package*.json ./
 RUN npm ci --omit=dev
 
-FROM node:20-slim AS runtime
+# ── Runtime Stage ────────────────────────────────────────────────────────────
+FROM node:20-alpine AS runtime
+
+# yt-dlp: used by /search to fetch metadata (no audio streaming, no ffmpeg needed)
+RUN apk add --no-cache yt-dlp
 
 WORKDIR /app
 

@@ -11,22 +11,24 @@ export const playCommand = {
   category: ":notes: | 音乐",
   data: new SlashCommandBuilder()
     .setName("play")
-    .setDescription("讓我來爲你播放歌曲")
+    .setDescription("透過 YouTube 連結直接播放歌曲（搜尋歌曲請用 /search）")
     .addStringOption((option) =>
       option
         .setName("query")
-        .setDescription("歌曲 URL 或名稱")
+        .setDescription("YouTube URL")
         .setRequired(true),
     ),
   async execute(interaction) {
     const query = interaction.options.getString("query", true).trim();
 
-    // Input validation — prevent excessively long queries before any async work
-    if (query.length > 200) {
+    // /play only accepts URLs — keyword searches go through /search
+    if (!isYouTubeUrl(query)) {
       return interaction.reply({
         embeds: [
           new EmbedBuilder()
-            .setDescription(":x: | 查詢太長了，請限制在 200 個字符以內。")
+            .setDescription(
+              ":x: | `/play` 只接受 YouTube 連結。\n若要搜尋歌曲，請使用 `/search`。",
+            )
             .setColor(0xed4245),
         ],
         ephemeral: true,
@@ -150,3 +152,17 @@ export const playCommand = {
     }
   },
 };
+
+/**
+ * Returns true if the input is a valid http/https URL.
+ * /play accepts any URL (YouTube, YouTube Music, youtu.be, etc.).
+ * Keyword searches must use /search.
+ */
+function isYouTubeUrl(input) {
+  try {
+    const url = new URL(input);
+    return url.protocol === "http:" || url.protocol === "https:";
+  } catch {
+    return false;
+  }
+}

@@ -1,7 +1,7 @@
 services:
   redis:
     image: redis:7-alpine
-    container_name: ultra_discord_redis
+    container_name: discord_bot
     command: redis-server --appendonly yes --requirepass ${REDIS_PASSWORD:-please_change_me_in_env}
     volumes:
       - redis_data:/data
@@ -28,7 +28,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile.bot
-    container_name: ultra_discord_bot
+    container_name: bot
     env_file: .env
     environment:
       - REDIS_URL=redis://:${REDIS_PASSWORD:-please_change_me_in_env}@redis:6379
@@ -58,7 +58,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile.player
-    container_name: ultra_discord_player
+    container_name: player
     env_file: .env
     environment:
       - REDIS_URL=redis://:${REDIS_PASSWORD:-please_change_me_in_env}@redis:6379

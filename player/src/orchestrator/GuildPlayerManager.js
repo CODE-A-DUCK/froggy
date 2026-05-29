@@ -66,14 +66,15 @@ export class GuildPlayerManager {
         await session.resendController({ textChannelId: task.text_channel_id });
         return;
       case 'rejoin':
-        // Re-establish the voice connection after a /leave + /join cycle.
-        // The AudioPlayer and its audio resource are preserved — only the
-        // VoiceConnection was destroyed. After reconnecting, the player is
-        // subscribed again and the UI controller is refreshed.
         await session.reconnect({
           channelId: task.channel_id,
           textChannelId: task.text_channel_id,
         });
+        return;
+      case 'disconnect_vc':
+        // Pre-emptive disconnect: destroys the old VoiceConnection and its adapter's
+        // event listeners BEFORE new voice credentials arrive in the stream.
+        await session.disconnectVoice();
         return;
       default:
         console.warn(`[GuildPlayerManager] Unknown action: ${task.action}`);

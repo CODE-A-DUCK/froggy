@@ -21,6 +21,27 @@ export const joinCommand = {
     const { guild, userVoiceChannel } = validation;
 
     try {
+      const hasActiveSession = !!(await broker.getCurrentTrack(guild.id));
+
+      if (hasActiveSession) {
+        // ── Step 1: Disconnect old VoiceConnection FIRST ──────────────────────
+        // Publishing disconnect_vc before op:4 is critical.
+        //
+        // Without this, the race condition is:
+        //   op:4 sent → Discord fires VOICE_STATE + VOICE_SERVER into the stream
+        //   → old VoiceConnection's adapter receives them, starts IP discovery
+        //   → rejoin task arrives, destroys old connection mid-discovery
+        //   → "Cannot perform IP discovery - socket closed" error
+        //
+        // With this ordering:
+        //   disconnect_vc processed → old adapter listeners removed
+        //   → op:4 sent → voice events arrive but no adapter is listening
+        //   → events are cached in Redis by the bot
+        //   → rejoin processed → new connection's adapter replays from Redis cache ✓
+        await broker.publishCommand(guild.id, "disconnect_vc", {});
+      }
+
+      // ── Step 2: Tell Discord gateway to join the new voice channel ────────
       guild.shard.send({
         op: 4,
         d: {
@@ -31,8 +52,10 @@ export const joinCommand = {
         },
       });
 
-      const hasActiveSession = await broker.getCurrentTrack(guild.id);
       if (hasActiveSession) {
+        // ── Step 3: Tell player to reconnect with new voice credentials ───────
+        // By the time the player processes this, the voice events from op:4
+        // are already cached in Redis. replayCachedVoiceHandshake will pick them up.
         await broker.publishCommand(guild.id, "rejoin", {
           channel_id: userVoiceChannel.id,
           text_channel_id: interaction.channelId,
