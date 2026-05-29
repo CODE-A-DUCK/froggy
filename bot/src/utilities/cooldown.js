@@ -1,10 +1,3 @@
-/**
- * Redis-backed per-user cooldown system.
- *
- * Uses SET NX PX — atomic, no race conditions, no extra reads.
- * The key is set when a command is first allowed; subsequent calls before
- * the TTL expires return false (on cooldown).
- */
 import { broker } from "../broker.js";
 
 /**

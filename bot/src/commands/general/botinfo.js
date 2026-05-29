@@ -10,11 +10,13 @@ import { fileURLToPath } from "node:url";
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const packagePath = join(__dirname, "../../../package.json");
 const { version, description } = JSON.parse(readFileSync(packagePath, "utf8"));
+
 /**
  * Converts milliseconds into a readable time string.
  * @param {number} timestamp - The duration in milliseconds.
  * @returns {string} - The formatted time string.
  */
+
 function getReadableTime(timestamp) {
   const seconds = Math.floor((timestamp / 1000) % 60);
   const minutes = Math.floor((timestamp / (1000 * 60)) % 60);

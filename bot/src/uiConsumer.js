@@ -8,7 +8,6 @@ import {
 } from "discord.js";
 import { broker } from "./broker.js";
 import { formatDuration } from "./utilities/formatDuration.js";
-import { formatUploadDate } from "./utilities/formatUploadDate.js";
 
 export class UIConsumer {
   constructor(client) {
@@ -425,5 +424,4 @@ export class UIConsumer {
         })[0] ?? null
     );
   }
-
 }

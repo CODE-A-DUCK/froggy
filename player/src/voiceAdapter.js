@@ -12,8 +12,8 @@ export function createRedisVoiceAdapter(guildId, consumer) {
       }
     };
 
-    consumer.on('voice_state', onVoiceState);
-    consumer.on('voice_server', onVoiceServer);
+    consumer.on("voice_state", onVoiceState);
+    consumer.on("voice_server", onVoiceServer);
 
     queueMicrotask(() => {
       void replayCachedVoiceHandshake(guildId, consumer, methods);
@@ -22,13 +22,16 @@ export function createRedisVoiceAdapter(guildId, consumer) {
     const adapter = {
       sendPayload(payload) {
         if (payload.op === 4) {
-          console.debug(`[VoiceAdapter] Guild ${guildId} requested gateway op 4:`, payload.d);
+          console.debug(
+            `[VoiceAdapter] Guild ${guildId} requested gateway op 4:`,
+            payload.d,
+          );
         }
         return true;
       },
       destroy() {
-        consumer.off('voice_state', onVoiceState);
-        consumer.off('voice_server', onVoiceServer);
+        consumer.off("voice_state", onVoiceState);
+        consumer.off("voice_server", onVoiceServer);
       },
     };
 

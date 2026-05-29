@@ -28,13 +28,29 @@ export const leaveCommand = {
           self_deaf: false,
         },
       });
-
       await broker.clearControllerOwner(guild.id);
+      const controllerMsgId = await broker.getControllerMessageId(guild.id);
+      if (controllerMsgId) {
+        const currentTrack = await broker.getCurrentTrack(guild.id);
+        const channelId = currentTrack?.text_channel_id ?? interaction.channelId;
+
+        try {
+          const ch = await guild.channels.fetch(channelId).catch(() => null);
+          if (ch?.isTextBased()) {
+            const msg = await ch.messages.fetch(controllerMsgId).catch(() => null);
+            await msg?.delete().catch(() => null);
+          }
+        } catch {
+        } finally {
+          await broker.clearControllerMessageId(guild.id).catch(() => null);
+        }
+      }
+
       await interaction.editReply({
         embeds: [
           new EmbedBuilder()
             .setDescription(`:wave: | 我已離開語音頻道：\`${botVoiceChannel.name}\``)
-            .setColor(0x5865f2)
+            .setColor(0x5865f2),
         ],
       });
     } catch (error) {
@@ -43,7 +59,7 @@ export const leaveCommand = {
         embeds: [
           new EmbedBuilder()
             .setDescription(":x: | 執行時發生錯誤，請稍後再試。")
-            .setColor(0xed4245)
+            .setColor(0xed4245),
         ],
       });
     }

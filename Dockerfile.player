@@ -1,6 +1,4 @@
-# ── Build Stage ─────────────────────────────────────────────────────────────
-# Native addons (sodium-native, opusscript) need build tools only at compile time.
-FROM node:20-alpine AS builder
+ROM node:20-alpine AS builder
 
 RUN apk add --no-cache python3 build-base g++ make
 
@@ -9,7 +7,6 @@ WORKDIR /app
 COPY player/package*.json ./
 RUN npm ci
 
-# ── Runtime Stage ────────────────────────────────────────────────────────────
 FROM node:20-alpine AS runtime
 
 # Only runtime system deps — no build tools, dramatically smaller image

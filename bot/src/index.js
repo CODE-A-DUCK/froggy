@@ -22,22 +22,28 @@ const context = { client, config };
 registerEvents(client, context);
 presence(client);
 
-// Forward the bot's own voice state/server updates to the player via Redis Streams.
-// VOICE_STATE_UPDATE fires for every user — filter to bot only.
-// VOICE_SERVER_UPDATE only fires when the bot negotiates a voice connection, so
-// publishing all of them is correct and safe.
 client.on("raw", (packet) => {
   if (packet.t === "VOICE_STATE_UPDATE") {
     if (packet.d?.user_id === client.user?.id) {
-      broker.publishVoiceStateUpdate(packet.d).catch((err) =>
-        console.error("[Main] Failed to publish voice state update:", err.message),
-      );
+      broker
+        .publishVoiceStateUpdate(packet.d)
+        .catch((err) =>
+          console.error(
+            "[Main] Failed to publish voice state update:",
+            err.message,
+          ),
+        );
     }
   } else if (packet.t === "VOICE_SERVER_UPDATE") {
     if (packet.d?.guild_id) {
-      broker.publishVoiceServerUpdate(packet.d).catch((err) =>
-        console.error("[Main] Failed to publish voice server update:", err.message),
-      );
+      broker
+        .publishVoiceServerUpdate(packet.d)
+        .catch((err) =>
+          console.error(
+            "[Main] Failed to publish voice server update:",
+            err.message,
+          ),
+        );
     }
   }
 });
@@ -63,8 +69,6 @@ client.on("shardError", (error, id) => {
   console.error(`[Shard ${id}] Error:`, error.message || error);
 });
 
-// ── Graceful Shutdown ────────────────────────────────────────────────────────
-
 let isShuttingDown = false;
 let uiConsumer;
 
@@ -87,8 +91,6 @@ async function shutdown(signal) {
 
 process.on("SIGINT", () => void shutdown("SIGINT"));
 process.on("SIGTERM", () => void shutdown("SIGTERM"));
-
-// ── Boot ─────────────────────────────────────────────────────────────────────
 
 console.info("[Main] Connecting to Discord Gateway...");
 await client.login(config.discordToken);

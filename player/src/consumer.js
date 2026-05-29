@@ -1,38 +1,42 @@
-import Redis from 'ioredis';
-import { EventEmitter } from 'events';
+import Redis from "ioredis";
+import { EventEmitter } from "events";
+
+const REDIS_OPTIONS = {
+  maxRetriesPerRequest: 3,
+  enableReadyCheck: true,
+  retryStrategy: (times) => Math.min(times * 200, 5000),
+};
 
 export class StreamConsumer extends EventEmitter {
   constructor(redisUrl, groupName, consumerName) {
     super();
-    const redisOptions = {
-      maxRetriesPerRequest: 3,
-      enableReadyCheck: true,
-      retryStrategy: (times) => Math.min(times * 200, 5000),
-    };
-    this.client = new Redis(redisUrl, redisOptions);
-    this.cacheClient = new Redis(redisUrl, redisOptions);
-    this.STREAM_MAXLEN = 5000;
-    this.client.on('error', (err) => {
-      console.error('[Consumer] Redis Stream client error:', err);
-    });
-    this.cacheClient.on('error', (err) => {
-      console.error('[Consumer] Redis Cache client error:', err);
-    });
     this.groupName = groupName;
     this.consumerName = consumerName;
     this.isClosing = false;
-    this.lastVoiceStateByGuild = new Map();
-    this.lastVoiceServerByGuild = new Map();
+    this.STREAM_MAXLEN = 5000;
+
+    this.client = this.#createClient(redisUrl, "Stream");
+    this.cacheClient = this.#createClient(redisUrl, "Cache");
+
+    // Map<type, Map<guildId, data>>
+    this.voiceCache = {
+      voice_state: new Map(),
+      voice_server: new Map(),
+    };
   }
 
   async initGroup() {
     try {
-      await this.client.xgroup('CREATE', 'audio-events', this.groupName, '$', 'MKSTREAM');
+      await this.client.xgroup(
+        "CREATE",
+        "audio-events",
+        this.groupName,
+        "$",
+        "MKSTREAM",
+      );
       console.info(`Consumer group '${this.groupName}' initialized.`);
     } catch (err) {
-      if (!err.message.includes('BUSYGROUP')) {
-        throw err;
-      }
+      if (!err.message.includes("BUSYGROUP")) throw err;
       console.info(`Consumer group '${this.groupName}' already exists.`);
     }
   }
@@ -42,99 +46,30 @@ export class StreamConsumer extends EventEmitter {
     while (!this.isClosing) {
       try {
         const result = await this.client.xreadgroup(
-          'GROUP', this.groupName, this.consumerName,
-          'BLOCK', 5000,
-          'COUNT', 1,
-          'STREAMS', 'audio-events', '>'
+          "GROUP",
+          this.groupName,
+          this.consumerName,
+          "BLOCK",
+          5000,
+          "COUNT",
+          1,
+          "STREAMS",
+          "audio-events",
+          ">",
         );
-
         if (result) {
-          const [stream, messages] = result[0];
+          const [, messages] = result[0];
           for (const [messageId, fields] of messages) {
             await this.handleMessage(messageId, fields);
           }
         }
       } catch (err) {
         if (!this.isClosing) {
-          console.error('[Consumer] Redis Stream error:', err);
-          await new Promise(resolve => setTimeout(resolve, 2000));
+          console.error("[Consumer] Redis Stream error:", err);
+          await new Promise((r) => setTimeout(r, 2000));
         }
       }
     }
-  }
-
-  async handleMessage(messageId, fields) {
-    for (let i = 0; i < fields.length; i += 2) {
-      const type = fields[i];
-      const data = JSON.parse(fields[i + 1]);
-
-      if (type === 'task') {
-        this.emit('task', { messageId, ...data });
-      } else if (type === 'voice_state') {
-        if (data.guild_id) {
-          this.lastVoiceStateByGuild.set(data.guild_id, data);
-        }
-        this.emit('voice_state', { messageId, ...data });
-      } else if (type === 'voice_server') {
-        if (data.guild_id) {
-          this.lastVoiceServerByGuild.set(data.guild_id, data);
-        }
-        this.emit('voice_server', { messageId, ...data });
-      }
-    }
-  }
-
-  getVoiceStateKey(guildId) {
-    return `music:voice_state:${guildId}`;
-  }
-
-  getVoiceServerKey(guildId) {
-    return `music:voice_server:${guildId}`;
-  }
-
-  async getCachedVoiceState(guildId) {
-    if (this.lastVoiceStateByGuild.has(guildId)) {
-      return this.lastVoiceStateByGuild.get(guildId);
-    }
-
-    return this.#readCachedJson(this.getVoiceStateKey(guildId));
-  }
-
-  async getCachedVoiceServer(guildId) {
-    if (this.lastVoiceServerByGuild.has(guildId)) {
-      return this.lastVoiceServerByGuild.get(guildId);
-    }
-
-    return this.#readCachedJson(this.getVoiceServerKey(guildId));
-  }
-
-  async ackTask(messageId) {
-    await this.client.xack('audio-events', this.groupName, messageId);
-  }
-
-  async publishUiEvent(event) {
-    const payload = JSON.stringify(event);
-    await this.client.xadd('ui-events', 'MAXLEN', '~', this.STREAM_MAXLEN, '*', 'track_playing', payload);
-  }
-
-  async publishFinishedEvent(event) {
-    const payload = JSON.stringify(event);
-    await this.client.xadd('ui-events', 'MAXLEN', '~', this.STREAM_MAXLEN, '*', 'track_finished', payload);
-  }
-
-  async publishStoppedEvent(event) {
-    const payload = JSON.stringify(event);
-    await this.client.xadd('ui-events', 'MAXLEN', '~', this.STREAM_MAXLEN, '*', 'track_stopped', payload);
-  }
-
-  async publishAddedEvent(event) {
-    const payload = JSON.stringify(event);
-    await this.client.xadd('ui-events', 'MAXLEN', '~', this.STREAM_MAXLEN, '*', 'track_added', payload);
-  }
-
-  async publishErrorEvent(event) {
-    const payload = JSON.stringify(event);
-    await this.client.xadd('ui-events', 'MAXLEN', '~', this.STREAM_MAXLEN, '*', 'track_error', payload);
   }
 
   async close() {
@@ -143,16 +78,83 @@ export class StreamConsumer extends EventEmitter {
     await this.client.quit();
   }
 
+  async handleMessage(messageId, fields) {
+    for (let i = 0; i < fields.length; i += 2) {
+      const type = fields[i];
+      const data = JSON.parse(fields[i + 1]);
+
+      // voice_state / voice_server 先緩存再 emit
+      if (type === "voice_state" || type === "voice_server") {
+        if (data.guild_id) this.voiceCache[type].set(data.guild_id, data);
+      }
+
+      this.emit(type, { messageId, ...data });
+    }
+  }
+
+  async ackTask(messageId) {
+    await this.client.xack("audio-events", this.groupName, messageId);
+  }
+
+  publishUiEvent(event) {
+    return this.#publish("track_playing", event);
+  }
+  publishFinishedEvent(event) {
+    return this.#publish("track_finished", event);
+  }
+  publishStoppedEvent(event) {
+    return this.#publish("track_stopped", event);
+  }
+  publishAddedEvent(event) {
+    return this.#publish("track_added", event);
+  }
+  publishErrorEvent(event) {
+    return this.#publish("track_error", event);
+  }
+
+  getCachedVoiceState(guildId) {
+    return this.#getCachedVoice("voice_state", guildId);
+  }
+  getCachedVoiceServer(guildId) {
+    return this.#getCachedVoice("voice_server", guildId);
+  }
+
+  #createClient(redisUrl, label) {
+    const client = new Redis(redisUrl, REDIS_OPTIONS);
+    client.on("error", (err) =>
+      console.error(`[Consumer] Redis ${label} client error:`, err),
+    );
+    return client;
+  }
+
+  async #publish(eventType, event) {
+    await this.client.xadd(
+      "ui-events",
+      "MAXLEN",
+      "~",
+      this.STREAM_MAXLEN,
+      "*",
+      eventType,
+      JSON.stringify(event),
+    );
+  }
+
+  async #getCachedVoice(type, guildId) {
+    if (this.voiceCache[type].has(guildId))
+      return this.voiceCache[type].get(guildId);
+    return this.#readCachedJson(`music:${type}:${guildId}`);
+  }
+
   async #readCachedJson(key) {
     const raw = await this.cacheClient.get(key);
-    if (!raw) {
-      return null;
-    }
-
+    if (!raw) return null;
     try {
       return JSON.parse(raw);
-    } catch (error) {
-      console.warn(`[Consumer] Failed to parse cached voice payload for key ${key}:`, error);
+    } catch (err) {
+      console.warn(
+        `[Consumer] Failed to parse cached payload for key ${key}:`,
+        err,
+      );
       return null;
     }
   }

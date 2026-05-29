@@ -10,12 +10,7 @@ export const config = {
   discordToken: process.env.DISCORD_TOKEN,
   redisUrl: process.env.REDIS_URL || "redis://127.0.0.1:6379",
   testGuildId: process.env.TEST_GUILD_ID || undefined,
-  intents: [
-    GatewayIntentBits.Guilds,
-    GatewayIntentBits.GuildVoiceStates,
-    // GuildMessages removed: was only used for a cosmetic counter.
-    // Receiving every message at 5k servers adds unnecessary gateway load.
-  ],
+  intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildVoiceStates],
 };
 
 export function assertConfig() {

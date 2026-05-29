@@ -1,4 +1,5 @@
 import { SlashCommandBuilder, EmbedBuilder } from "discord.js";
+import { broker } from "../../broker.js";
 import { validateVoiceState } from "../../utilities/voiceGuard.js";
 
 export const joinCommand = {
@@ -29,6 +30,14 @@ export const joinCommand = {
           self_deaf: false,
         },
       });
+
+      const hasActiveSession = await broker.getCurrentTrack(guild.id);
+      if (hasActiveSession) {
+        await broker.publishCommand(guild.id, "rejoin", {
+          channel_id: userVoiceChannel.id,
+          text_channel_id: interaction.channelId,
+        });
+      }
 
       await interaction.editReply({
         embeds: [

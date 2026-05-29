@@ -1,34 +1,34 @@
-import { spawn } from 'child_process';
-import ffmpegPath from 'ffmpeg-static';
-import { StreamType } from '@discordjs/voice';
+import { spawn } from "child_process";
+import ffmpegPath from "ffmpeg-static";
+import { StreamType } from "@discordjs/voice";
 
 export class YoutubeAdapter {
   getCommonArgs() {
-    return ['--no-playlist', '--no-warnings'];
+    return ["--no-playlist", "--no-warnings"];
   }
 
   async getMetadata(query) {
-    const isUrl = query.startsWith('http');
+    const isUrl = query.startsWith("http");
     const args = [
       ...this.getCommonArgs(),
-      '--dump-json',
-      '--flat-playlist',
+      "--dump-json",
+      "--flat-playlist",
       isUrl ? query : `ytsearch1:${query}`,
     ];
-    
+
     try {
-      const stdout = await runProcess('yt-dlp', args);
+      const stdout = await runProcess("yt-dlp", args);
       const jsonLine = stdout
-        .split('\n')
+        .split("\n")
         .map((line) => line.trim())
-        .find((line) => line.startsWith('{'));
+        .find((line) => line.startsWith("{"));
 
       if (!jsonLine) {
-        throw new Error('Unknown track or unsupported URL.');
+        throw new Error("Unknown track or unsupported URL.");
       }
 
       const data = JSON.parse(jsonLine);
-      
+
       return {
         title: data.title,
         url: data.webpage_url || data.original_url || data.url,
@@ -47,11 +47,11 @@ export class YoutubeAdapter {
 
   async getStreamUrl(url) {
     try {
-      const stdout = await runProcess('yt-dlp', [
+      const stdout = await runProcess("yt-dlp", [
         ...this.getCommonArgs(),
-        '-g',
-        '-f',
-        'bestaudio/best',
+        "-g",
+        "-f",
+        "bestaudio/best",
         url,
       ]);
       return stdout.trim();
@@ -61,59 +61,62 @@ export class YoutubeAdapter {
   }
 
   #handleYtDlpError(err) {
-    const message = err.message || '';
-    if (message.includes('confirm your age') || message.includes('age-restricted')) {
-      throw new Error('This song is age-restricted and cannot be played.');
+    const message = err.message || "";
+    if (
+      message.includes("confirm your age") ||
+      message.includes("age-restricted")
+    ) {
+      throw new Error("This song is age-restricted and cannot be played.");
     }
-    
-    if (message.includes('Unknown track')) {
+
+    if (message.includes("Unknown track")) {
       throw err;
     }
 
-    console.error('[YoutubeAdapter] yt-dlp error:', err);
+    console.error("[YoutubeAdapter] yt-dlp error:", err);
     throw err;
   }
 
   createAudioStream(url) {
     if (!ffmpegPath) {
-      throw new Error('ffmpeg-static binary is not available.');
+      throw new Error("ffmpeg-static binary is not available.");
     }
 
     const ytDlp = spawn(
-      'yt-dlp',
+      "yt-dlp",
       [
         ...this.getCommonArgs(),
-        '--no-progress',
-        '-f',
-        'bestaudio/best',
-        '-o',
-        '-',
+        "--no-progress",
+        "-f",
+        "bestaudio/best",
+        "-o",
+        "-",
         url,
       ],
       {
-        stdio: ['ignore', 'pipe', 'pipe'],
+        stdio: ["ignore", "pipe", "pipe"],
       },
     );
 
     const ffmpeg = spawn(
       ffmpegPath,
       [
-        '-hide_banner',
-        '-loglevel',
-        'error',
-        '-i',
-        'pipe:0',
-        '-vn',
-        '-f',
-        's16le',
-        '-ar',
-        '48000',
-        '-ac',
-        '2',
-        'pipe:1',
+        "-hide_banner",
+        "-loglevel",
+        "error",
+        "-i",
+        "pipe:0",
+        "-vn",
+        "-f",
+        "s16le",
+        "-ar",
+        "48000",
+        "-ac",
+        "2",
+        "pipe:1",
       ],
       {
-        stdio: ['pipe', 'pipe', 'pipe'],
+        stdio: ["pipe", "pipe", "pipe"],
       },
     );
 
@@ -124,78 +127,74 @@ export class YoutubeAdapter {
     let cleanedUp = false;
     let producedAudio = false;
 
-    ffmpeg.stdout.on('data', () => {
+    ffmpeg.stdout.on("data", () => {
       producedAudio = true;
     });
 
-    ytDlp.stderr.on('data', (chunk) => {
+    ytDlp.stderr.on("data", (chunk) => {
       pushProcessLog(ytDlpErrors, chunk);
     });
 
-    ffmpeg.stderr.on('data', (chunk) => {
+    ffmpeg.stderr.on("data", (chunk) => {
       pushProcessLog(ffmpegErrors, chunk);
     });
 
-    ffmpeg.stdin.on('error', (error) => {
+    ffmpeg.stdin.on("error", (error) => {
       if (cleanedUp || isIgnorablePipeError(error)) {
         ytDlp.stdout.unpipe(ffmpeg.stdin);
         return;
       }
 
-      ffmpeg.stdout.destroy(
-        new Error(`ffmpeg stdin error: ${error.message}`),
-      );
+      ffmpeg.stdout.destroy(new Error(`ffmpeg stdin error: ${error.message}`));
     });
 
-    ytDlp.stdout.on('error', (error) => {
+    ytDlp.stdout.on("error", (error) => {
       if (cleanedUp || isIgnorablePipeError(error)) {
         return;
       }
 
-      ffmpeg.stdout.destroy(
-        new Error(`yt-dlp stdout error: ${error.message}`),
-      );
+      ffmpeg.stdout.destroy(new Error(`yt-dlp stdout error: ${error.message}`));
     });
 
-    ytDlp.on('error', (error) => {
+    ytDlp.on("error", (error) => {
       ffmpeg.stdout.destroy(
         new Error(`yt-dlp failed to start: ${error.message}`),
       );
     });
 
-    ffmpeg.on('error', (error) => {
+    ffmpeg.on("error", (error) => {
       ffmpeg.stdout.destroy(
         new Error(`ffmpeg failed to start: ${error.message}`),
       );
     });
 
-    ytDlp.on('close', (code, signal) => {
+    ytDlp.on("close", (code, signal) => {
       if (cleanedUp) {
         return;
       }
 
       if (code !== 0) {
         ffmpeg.stdout.destroy(
-          new Error(formatProcessFailure('yt-dlp', code, signal, ytDlpErrors)),
+          new Error(formatProcessFailure("yt-dlp", code, signal, ytDlpErrors)),
         );
       }
     });
 
-    ffmpeg.on('close', (code, signal) => {
+    ffmpeg.on("close", (code, signal) => {
       if (cleanedUp) {
         return;
       }
 
       if (code !== 0) {
         ffmpeg.stdout.destroy(
-          new Error(formatProcessFailure('ffmpeg', code, signal, ffmpegErrors)),
+          new Error(formatProcessFailure("ffmpeg", code, signal, ffmpegErrors)),
         );
         return;
       }
 
       if (!producedAudio) {
         ffmpeg.stdout.destroy(
-          new Error('ffmpeg exited without producing audio output.'),
+          new Error("ffmpeg exited without producing audio output."),
         );
       }
     });
@@ -208,12 +207,12 @@ export class YoutubeAdapter {
       cleanedUp = true;
       ytDlp.stdout.unpipe(ffmpeg.stdin);
       ffmpeg.stdin.destroy();
-      ytDlp.kill('SIGKILL');
-      ffmpeg.kill('SIGKILL');
+      ytDlp.kill("SIGKILL");
+      ffmpeg.kill("SIGKILL");
     };
 
-    ffmpeg.stdout.once('close', cleanup);
-    ffmpeg.stdout.once('error', cleanup);
+    ffmpeg.stdout.once("close", cleanup);
+    ffmpeg.stdout.once("error", cleanup);
 
     return {
       stream: ffmpeg.stdout,
@@ -236,45 +235,52 @@ function pushProcessLog(buffer, chunk) {
 }
 
 function formatProcessFailure(name, code, signal, lines) {
-  const fullMessage = lines.join(' ');
-  if (fullMessage.includes('confirm your age') || fullMessage.includes('age-restricted')) {
-    return 'This song is age-restricted and cannot be played.';
+  const fullMessage = lines.join(" ");
+  if (
+    fullMessage.includes("confirm your age") ||
+    fullMessage.includes("age-restricted")
+  ) {
+    return "This song is age-restricted and cannot be played.";
   }
 
-  const suffix = lines.length > 0 ? `: ${lines.join(' | ')}` : '';
+  const suffix = lines.length > 0 ? `: ${lines.join(" | ")}` : "";
   const exitReason =
-    code !== null ? `code ${code}` : signal ? `signal ${signal}` : 'unknown reason';
+    code !== null
+      ? `code ${code}`
+      : signal
+        ? `signal ${signal}`
+        : "unknown reason";
   return `${name} exited with ${exitReason}${suffix}`;
 }
 
 function isIgnorablePipeError(error) {
-  return error?.code === 'EPIPE' || error?.code === 'ERR_STREAM_DESTROYED';
+  return error?.code === "EPIPE" || error?.code === "ERR_STREAM_DESTROYED";
 }
 
 async function runProcess(command, args) {
   return new Promise((resolve, reject) => {
     const child = spawn(command, args, {
-      stdio: ['ignore', 'pipe', 'pipe'],
+      stdio: ["ignore", "pipe", "pipe"],
     });
 
     const stdoutChunks = [];
     const stderrLines = [];
 
-    child.stdout.on('data', (chunk) => {
+    child.stdout.on("data", (chunk) => {
       stdoutChunks.push(chunk);
     });
 
-    child.stderr.on('data', (chunk) => {
+    child.stderr.on("data", (chunk) => {
       pushProcessLog(stderrLines, chunk);
     });
 
-    child.on('error', (error) => {
+    child.on("error", (error) => {
       reject(new Error(`${command} failed to start: ${error.message}`));
     });
 
-    child.on('close', (code, signal) => {
+    child.on("close", (code, signal) => {
       if (code === 0) {
-        resolve(Buffer.concat(stdoutChunks).toString('utf8'));
+        resolve(Buffer.concat(stdoutChunks).toString("utf8"));
         return;
       }
 

@@ -1,6 +1,6 @@
 # Dependencies
 node_modules/
-# Note: package-lock.json files ARE committed to enable reproducible `npm ci` builds.
+package-lock.json
 
 # Environment
 .env

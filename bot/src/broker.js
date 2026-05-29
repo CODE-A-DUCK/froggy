@@ -19,8 +19,6 @@ class Broker {
     );
   }
 
-  // ── Key helpers ─────────────────────────────────────────────────────────────
-
   getControllerKey(guildId) {
     return `music:controller:${guildId}`;
   }
@@ -44,8 +42,6 @@ class Broker {
   getVoiceServerKey(guildId) {
     return `music:voice_server:${guildId}`;
   }
-
-  // ── Controller ownership ─────────────────────────────────────────────────────
 
   async getActiveControllerOwner(guildId) {
     return this.publisher.get(this.getControllerKey(guildId));
@@ -75,8 +71,6 @@ class Broker {
     await this.publisher.del(this.getControllerKey(guildId));
   }
 
-  // ── Controller message ───────────────────────────────────────────────────────
-
   async setControllerMessageId(guildId, messageId) {
     await this.publisher.set(
       this.getControllerMessageKey(guildId),
@@ -94,20 +88,18 @@ class Broker {
     await this.publisher.del(this.getControllerMessageKey(guildId));
   }
 
-  // ── Current track ────────────────────────────────────────────────────────────
-
   async getCurrentTrack(guildId) {
     const raw = await this.publisher.get(this.getCurrentTrackKey(guildId));
     if (!raw) return null;
     try {
       return JSON.parse(raw);
     } catch {
-      console.warn(`[Broker] Failed to parse current track for Guild ${guildId}`);
+      console.warn(
+        `[Broker] Failed to parse current track for Guild ${guildId}`,
+      );
       return null;
     }
   }
-
-  // ── Queue read (for queue command — no separate Redis connection needed) ──────
 
   async getQueue(guildId, limit = 10) {
     const [items, total] = await Promise.all([
@@ -129,9 +121,14 @@ class Broker {
     };
   }
 
-  // ── Stream publishing ────────────────────────────────────────────────────────
-
-  async publishAudioTask(guildId, channelId, trackUrl, interactionToken, textChannelId, controllerUserId) {
+  async publishAudioTask(
+    guildId,
+    channelId,
+    trackUrl,
+    interactionToken,
+    textChannelId,
+    controllerUserId,
+  ) {
     const task = {
       guild_id: guildId,
       channel_id: channelId,
@@ -142,8 +139,13 @@ class Broker {
       action: "play",
     };
     await this.publisher.xadd(
-      "audio-events", "MAXLEN", "~", STREAM_MAXLEN, "*",
-      "task", JSON.stringify(task),
+      "audio-events",
+      "MAXLEN",
+      "~",
+      STREAM_MAXLEN,
+      "*",
+      "task",
+      JSON.stringify(task),
     );
     console.info(`[Broker] Published audio task (play) for Guild ${guildId}`);
   }
@@ -151,8 +153,13 @@ class Broker {
   async publishCommand(guildId, action, data = {}) {
     const payload = { guild_id: guildId, action, ...data };
     await this.publisher.xadd(
-      "audio-events", "MAXLEN", "~", STREAM_MAXLEN, "*",
-      "task", JSON.stringify(payload),
+      "audio-events",
+      "MAXLEN",
+      "~",
+      STREAM_MAXLEN,
+      "*",
+      "task",
+      JSON.stringify(payload),
     );
     console.info(`[Broker] Published command (${action}) for Guild ${guildId}`);
   }
@@ -162,8 +169,21 @@ class Broker {
     const payload = JSON.stringify(data);
     await this.publisher
       .multi()
-      .set(this.getVoiceStateKey(data.guild_id), payload, "EX", this.voiceSnapshotTtlSeconds)
-      .xadd("audio-events", "MAXLEN", "~", STREAM_MAXLEN, "*", "voice_state", payload)
+      .set(
+        this.getVoiceStateKey(data.guild_id),
+        payload,
+        "EX",
+        this.voiceSnapshotTtlSeconds,
+      )
+      .xadd(
+        "audio-events",
+        "MAXLEN",
+        "~",
+        STREAM_MAXLEN,
+        "*",
+        "voice_state",
+        payload,
+      )
       .exec();
   }
 
@@ -172,12 +192,23 @@ class Broker {
     const payload = JSON.stringify(data);
     await this.publisher
       .multi()
-      .set(this.getVoiceServerKey(data.guild_id), payload, "EX", this.voiceSnapshotTtlSeconds)
-      .xadd("audio-events", "MAXLEN", "~", STREAM_MAXLEN, "*", "voice_server", payload)
+      .set(
+        this.getVoiceServerKey(data.guild_id),
+        payload,
+        "EX",
+        this.voiceSnapshotTtlSeconds,
+      )
+      .xadd(
+        "audio-events",
+        "MAXLEN",
+        "~",
+        STREAM_MAXLEN,
+        "*",
+        "voice_server",
+        payload,
+      )
       .exec();
   }
-
-  // ── Lifecycle ────────────────────────────────────────────────────────────────
 
   async close() {
     await this.publisher.quit();

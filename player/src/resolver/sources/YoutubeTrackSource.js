@@ -1,14 +1,14 @@
-import { v4 as uuidv4 } from 'uuid';
-import { YoutubeAdapter } from '../../adapters/YoutubeAdapter.js';
+import { v4 as uuidv4 } from "uuid";
+import { YoutubeAdapter } from "../../adapters/YoutubeAdapter.js";
 
 export class YoutubeTrackSource {
   constructor(adapter = new YoutubeAdapter()) {
     this.adapter = adapter;
-    this.key = 'youtube';
+    this.key = "youtube";
   }
 
   supports(query) {
-    return typeof query === 'string' && query.trim().length > 0;
+    return typeof query === "string" && query.trim().length > 0;
   }
 
   async resolve(query, context = {}) {
@@ -27,7 +27,7 @@ export class YoutubeTrackSource {
       upload_date: metadata.upload_date,
       description: metadata.description,
       text_channel_id: context.textChannelId ?? null,
-      interaction_token: context.interactionToken ?? '',
+      interaction_token: context.interactionToken ?? "",
       controller_user_id: context.controllerUserId ?? null,
       requested_at: new Date().toISOString(),
     };

@@ -3,7 +3,7 @@ import {
   QUEUE_TTL_SECONDS,
   LOOP_TTL_SECONDS,
   LoopMode,
-} from '../core/playbackConstants.js';
+} from "../core/playbackConstants.js";
 
 export class RedisPlaybackStore {
   constructor(redisClient, guildId) {
@@ -65,17 +65,12 @@ export class RedisPlaybackStore {
     );
   }
 
-  /**
-   * Reset the TTL of the current track without a read-modify-write cycle.
-   * Uses atomic EXPIRE so the key's data is never re-serialised.
-   */
   async touchCurrentTrack() {
     const touched = await this.redisClient.expire(
       this.currentKey,
       CURRENT_TRACK_TTL_SECONDS,
     );
     if (!touched) return null;
-    // Only read if the caller needs the value (most callers discard it)
     return this.getCurrentTrack();
   }
 
@@ -90,8 +85,12 @@ export class RedisPlaybackStore {
   }
 
   async setLoopMode(loopMode) {
-    // Persist loop state with a TTL so stale state doesn't accumulate
-    await this.redisClient.set(this.loopKey, `${loopMode}`, 'EX', LOOP_TTL_SECONDS);
+    await this.redisClient.set(
+      this.loopKey,
+      `${loopMode}`,
+      "EX",
+      LOOP_TTL_SECONDS,
+    );
     return loopMode;
   }
 
@@ -106,8 +105,8 @@ export class RedisPlaybackStore {
     if (!raw) return null;
     try {
       const parsed = JSON.parse(raw);
-      if (!parsed || typeof parsed !== 'object') return null;
-      return { ...parsed, source: parsed.source ?? 'youtube' };
+      if (!parsed || typeof parsed !== "object") return null;
+      return { ...parsed, source: parsed.source ?? "youtube" };
     } catch {
       console.warn(
         `[PlaybackStore] Failed to parse payload for guild ${this.guildId}`,

@@ -2,8 +2,6 @@ services:
   redis:
     image: redis:7-alpine
     container_name: ultra_discord_redis
-    # No public port binding — Redis is only reachable from within this Docker network.
-    # This prevents any external process from reading guild data or injecting tasks.
     command: redis-server --appendonly yes --requirepass ${REDIS_PASSWORD:-please_change_me_in_env}
     volumes:
       - redis_data:/data
@@ -13,7 +11,14 @@ services:
         limits:
           memory: 512m
     healthcheck:
-      test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD:-please_change_me_in_env}", "ping"]
+      test:
+        [
+          "CMD",
+          "redis-cli",
+          "-a",
+          "${REDIS_PASSWORD:-please_change_me_in_env}",
+          "ping",
+        ]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -26,7 +31,6 @@ services:
     container_name: ultra_discord_bot
     env_file: .env
     environment:
-      # Override REDIS_URL to include auth and use internal service name
       - REDIS_URL=redis://:${REDIS_PASSWORD:-please_change_me_in_env}@redis:6379
     depends_on:
       redis:
@@ -36,10 +40,15 @@ services:
       resources:
         limits:
           memory: 512m
-          cpus: '1.0'
+          cpus: "1.0"
     healthcheck:
-      test: ["CMD", "node", "-e",
-        "import('ioredis').then(({default:R})=>{const c=new R(process.env.REDIS_URL);return c.ping().finally(()=>c.disconnect())}).then(()=>process.exit(0)).catch(()=>process.exit(1))"]
+      test:
+        [
+          "CMD",
+          "node",
+          "-e",
+          "import('ioredis').then(({default:R})=>{const c=new R(process.env.REDIS_URL);return c.ping().finally(()=>c.disconnect())}).then(()=>process.exit(0)).catch(()=>process.exit(1))",
+        ]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -60,12 +69,16 @@ services:
     deploy:
       resources:
         limits:
-          # Player spawns yt-dlp + ffmpeg subprocesses — needs more memory
           memory: 1g
-          cpus: '2.0'
+          cpus: "2.0"
     healthcheck:
-      test: ["CMD", "node", "-e",
-        "import('ioredis').then(({default:R})=>{const c=new R(process.env.REDIS_URL);return c.ping().finally(()=>c.disconnect())}).then(()=>process.exit(0)).catch(()=>process.exit(1))"]
+      test:
+        [
+          "CMD",
+          "node",
+          "-e",
+          "import('ioredis').then(({default:R})=>{const c=new R(process.env.REDIS_URL);return c.ping().finally(()=>c.disconnect())}).then(()=>process.exit(0)).catch(()=>process.exit(1))",
+        ]
       interval: 30s
       timeout: 10s
       retries: 3

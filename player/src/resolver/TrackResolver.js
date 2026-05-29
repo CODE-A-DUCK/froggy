@@ -1,4 +1,4 @@
-import { ResolverError } from '../core/errors.js';
+import { ResolverError } from "../core/errors.js";
 
 export class TrackResolver {
   constructor(sources = []) {
@@ -8,8 +8,8 @@ export class TrackResolver {
   async resolve(query, context = {}) {
     const source = this.sources.find((candidate) => candidate.supports(query));
     if (!source) {
-      throw new ResolverError('No available source can resolve this query.', {
-        code: 'UNSUPPORTED_SOURCE',
+      throw new ResolverError("No available source can resolve this query.", {
+        code: "UNSUPPORTED_SOURCE",
       });
     }
 
@@ -19,7 +19,7 @@ export class TrackResolver {
       throw new ResolverError(
         `Failed to resolve playback metadata: ${error.message}`,
         {
-          code: 'RESOLVE_FAILED',
+          code: "RESOLVE_FAILED",
           cause: error,
         },
       );
@@ -27,10 +27,12 @@ export class TrackResolver {
   }
 
   async createStream(track) {
-    const source = this.sources.find((candidate) => candidate.key === track.source);
+    const source = this.sources.find(
+      (candidate) => candidate.key === track.source,
+    );
     if (!source) {
       throw new ResolverError(`Unknown track source: ${track.source}`, {
-        code: 'UNKNOWN_SOURCE',
+        code: "UNKNOWN_SOURCE",
       });
     }
 
@@ -40,7 +42,7 @@ export class TrackResolver {
       throw new ResolverError(
         `Failed to prepare playback stream: ${error.message}`,
         {
-          code: 'STREAM_CREATE_FAILED',
+          code: "STREAM_CREATE_FAILED",
           cause: error,
         },
       );

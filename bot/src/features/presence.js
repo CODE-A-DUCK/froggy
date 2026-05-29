@@ -1,6 +1,6 @@
 // 谢谢 AC0xRPFS001，这里是 AC 的代码
 
-import { ActivityType } from "discord.js";
+import { ActivityType, Events } from "discord.js";
 
 const presenceArray = [
   { type: ActivityType.Playing },
@@ -26,7 +26,7 @@ function randomUpper(text) {
 export default (client) => {
   const presence = infArray(presenceArray);
 
-  client.once("ready", () => {
+  client.once(Events.ClientReady, () => {
     const setPresence = () => {
       if (client.user) {
         client.user.setActivity(randomUpper("froggy"), presence.next().value);

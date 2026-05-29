@@ -1,4 +1,4 @@
-import { EventEmitter } from 'node:events';
+import { EventEmitter } from "node:events";
 import {
   AudioPlayerStatus,
   StreamType,
@@ -7,14 +7,14 @@ import {
   createAudioResource,
   entersState,
   joinVoiceChannel,
-} from '@discordjs/voice';
-import { LoopMode, SessionState } from '../core/playbackConstants.js';
-import { VoiceConnectionError } from '../core/errors.js';
-import { createRedisVoiceAdapter } from '../voiceAdapter.js';
+} from "@discordjs/voice";
+import { LoopMode, SessionState } from "../core/playbackConstants.js";
+import { VoiceConnectionError } from "../core/errors.js";
+import { createRedisVoiceAdapter } from "../voiceAdapter.js";
 
 const VOICE_READY_TIMEOUT_MS = 20_000;
 const PLAYER_READY_TIMEOUT_MS = 15_000;
-const IDLE_DISCONNECT_TIMEOUT_MS = 5 * 60 * 1_000; // 5 minutes
+const IDLE_DISCONNECT_TIMEOUT_MS = 5 * 60 * 1_000;
 const MAX_SERIAL_QUEUE_DEPTH = 50;
 
 export class PlayerSession extends EventEmitter {
@@ -41,6 +41,64 @@ export class PlayerSession extends EventEmitter {
 
   async ensureConnected(channelId) {
     return this.#runSerial(() => this.#ensureConnected(channelId));
+  }
+  async stop({ textChannelId } = {}) {
+    return this.#runSerial(() => this.#stop({ textChannelId }));
+  }
+  async pause() {
+    return this.#runSerial(() => this.#setPauseState(true));
+  }
+  async resume() {
+    return this.#runSerial(() => this.#setPauseState(false));
+  }
+  async toggleLoop() {
+    return this.#runSerial(() => this.#toggleLoop());
+  }
+  async resendController({ textChannelId } = {}) {
+    return this.#runSerial(() => this.#resendController({ textChannelId }));
+  }
+
+  /**
+   * Re-establish the voice connection after a /leave + /join cycle.
+   * The AudioPlayer and its audio resource survive the disconnect — only the
+   * VoiceConnection object was destroyed. After #ensureConnected() the player
+   * is subscribed to the new connection and audio flows again.
+   * We then send a sessionUpdated event so the controller panel reappears.
+   */
+  async reconnect({ channelId, textChannelId } = {}) {
+    return this.#runSerial(async () => {
+      if (!this.currentTrack) {
+        // Nothing is playing — nothing to reconnect to
+        return false;
+      }
+
+      try {
+        await this.#ensureConnected(channelId);
+      } catch (error) {
+        console.error(
+          `[PlayerSession] Reconnect failed for guild ${this.guildId}:`,
+          error.message,
+        );
+        return false;
+      }
+
+      // Update textChannelId so the refreshed controller appears in the right channel
+      if (textChannelId) this.textChannelId = textChannelId;
+
+      // Refresh the controller message so the user can see the current state
+      // and click Continue / Pause as appropriate
+      const snapshot = await this.#buildPlaybackSnapshot({ isUpdate: false });
+      if (snapshot) {
+        this.emit('sessionUpdated', {
+          ...snapshot,
+          force_new: true,
+          text_channel_id: this.textChannelId,
+          interaction_token: '',
+        });
+      }
+
+      return true;
+    });
   }
 
   async play({
@@ -77,56 +135,28 @@ export class PlayerSession extends EventEmitter {
     );
   }
 
-  async stop({ textChannelId } = {}) {
-    return this.#runSerial(() => this.#stop({ textChannelId }));
-  }
-
   async skip() {
     return this.#runSerial(async () => {
       if (this.player.state.status !== AudioPlayerStatus.Idle) {
         this.suppressNextIdleEvents += 1;
         this.player.stop(true);
       }
-
       return this.#startNextTrack({ forceAdvance: true });
     });
   }
 
-  async pause() {
-    return this.#runSerial(() => this.#pause());
-  }
-
-  async resume() {
-    return this.#runSerial(() => this.#resume());
-  }
-
-  async toggleLoop() {
-    return this.#runSerial(() => this.#toggleLoop());
-  }
-
-  async resendController({ textChannelId } = {}) {
-    return this.#runSerial(() => this.#resendController({ textChannelId }));
-  }
-
-  /**
-   * Fully tear down this session: stop audio, destroy voice connection, remove
-   * all event listeners. Called by GuildPlayerManager after the idle timeout.
-   */
   destroy() {
     this.#clearIdleTimer();
     this.#cleanupActiveStream();
-    if (
-      this.connection &&
-      this.connection.state.status !== VoiceConnectionStatus.Destroyed
-    ) {
-      this.connection.destroy();
+    if (this.connection?.state.status !== VoiceConnectionStatus.Destroyed) {
+      this.connection?.destroy();
     }
     this.connection = null;
     this.currentTrack = null;
     try {
       this.player.stop(true);
     } catch {
-      // player may already be idle
+      /* already idle */
     }
     this.removeAllListeners();
     console.info(`[PlayerSession] Destroyed session for guild ${this.guildId}`);
@@ -134,62 +164,57 @@ export class PlayerSession extends EventEmitter {
 
   #bindPlayerEvents() {
     this.player.on(AudioPlayerStatus.Buffering, () => {
-      if (this.state !== SessionState.STOPPING) {
+      if (this.state !== SessionState.STOPPING)
         this.#setState(SessionState.BUFFERING);
-      }
     });
 
-    this.player.on(AudioPlayerStatus.Playing, () => {
-      this.#setState(SessionState.PLAYING);
-    });
+    this.player.on(AudioPlayerStatus.Playing, () =>
+      this.#setState(SessionState.PLAYING),
+    );
 
     this.player.on(AudioPlayerStatus.Paused, () => {
-      if (this.currentTrack) {
-        this.#setState(SessionState.PAUSED);
-      }
+      if (this.currentTrack) this.#setState(SessionState.PAUSED);
     });
 
     this.player.on(AudioPlayerStatus.Idle, () => {
       this.#cleanupActiveStream();
-
       if (this.suppressNextIdleEvents > 0) {
         this.suppressNextIdleEvents -= 1;
         return;
       }
-
       void this.#runSerial(() => this.#startNextTrack({ forceAdvance: false }));
     });
 
-    this.player.on('error', (error) => {
-      console.error(`[PlayerSession] Audio player error for guild ${this.guildId}:`, error);
-
+    this.player.on("error", (error) => {
+      console.error(
+        `[PlayerSession] Audio player error for guild ${this.guildId}:`,
+        error,
+      );
       void this.#runSerial(async () => {
         this.#setState(SessionState.ERROR);
-        this.emit('trackError', {
+        this.emit("trackError", {
           guild_id: this.guildId,
           text_channel_id: this.textChannelId,
           error: error.message,
           title: this.currentTrack?.title,
         });
-
         await this.#startNextTrack({ forceAdvance: true });
       });
     });
   }
 
   async #ensureConnected(channelId) {
+    const conn = this.connection;
     if (
-      this.connection &&
-      this.connection.joinConfig.channelId === channelId &&
-      this.connection.state.status !== VoiceConnectionStatus.Destroyed
+      conn &&
+      conn.joinConfig.channelId === channelId &&
+      conn.state.status !== VoiceConnectionStatus.Destroyed
     ) {
-      return this.connection;
+      return conn;
     }
 
-    if (this.connection) {
-      this.connection.destroy();
-      this.connection = null;
-    }
+    conn?.destroy();
+    this.connection = null;
 
     const connection = joinVoiceChannel({
       guildId: this.guildId,
@@ -202,18 +227,19 @@ export class PlayerSession extends EventEmitter {
     this.#bindConnectionEvents(connection);
 
     try {
-      await entersState(connection, VoiceConnectionStatus.Ready, VOICE_READY_TIMEOUT_MS);
+      await entersState(
+        connection,
+        VoiceConnectionStatus.Ready,
+        VOICE_READY_TIMEOUT_MS,
+      );
       return connection;
     } catch (error) {
       connection.destroy();
-      if (this.connection === connection) {
-        this.connection = null;
-      }
-
+      if (this.connection === connection) this.connection = null;
       throw new VoiceConnectionError(
         `Voice connection did not become ready: ${error.message}`,
         {
-          code: 'VOICE_NOT_READY',
+          code: "VOICE_NOT_READY",
           cause: error,
         },
       );
@@ -229,18 +255,16 @@ export class PlayerSession extends EventEmitter {
         ]);
       } catch {
         connection.destroy();
-        if (this.connection === connection) {
-          this.connection = null;
-        }
+        if (this.connection === connection) this.connection = null;
       }
     });
 
-    connection.on('error', (error) => {
+    connection.on("error", (error) =>
       console.error(
         `[PlayerSession] Voice connection error for guild ${this.guildId}:`,
         error,
-      );
-    });
+      ),
+    );
   }
 
   async #queueTrack({
@@ -253,37 +277,33 @@ export class PlayerSession extends EventEmitter {
       this.player.state.status === AudioPlayerStatus.Idle && !this.currentTrack;
 
     try {
-      if (shouldAutoplay) {
-        this.#setState(SessionState.LOADING);
-      }
+      if (shouldAutoplay) this.#setState(SessionState.LOADING);
 
       const track = await this.resolver.resolve(query, {
         textChannelId,
         interactionToken,
         controllerUserId,
       });
-
       await this.store.enqueue(track);
       this.textChannelId = textChannelId ?? this.textChannelId;
 
       if (shouldAutoplay) {
         await this.#startNextTrack({ forceAdvance: true });
-        return track;
+      } else {
+        this.emit("trackQueued", {
+          guild_id: this.guildId,
+          text_channel_id: textChannelId,
+          title: track.title,
+          url: track.url,
+          thumbnail: track.thumbnail,
+          duration: track.duration,
+        });
       }
-
-      this.emit('trackQueued', {
-        guild_id: this.guildId,
-        text_channel_id: textChannelId,
-        title: track.title,
-        url: track.url,
-        thumbnail: track.thumbnail,
-        duration: track.duration,
-      });
 
       return track;
     } catch (error) {
       this.#setState(SessionState.ERROR);
-      this.emit('trackError', {
+      this.emit("trackError", {
         guild_id: this.guildId,
         text_channel_id: textChannelId ?? this.textChannelId,
         error: error.message,
@@ -299,17 +319,18 @@ export class PlayerSession extends EventEmitter {
     while (true) {
       this.#cleanupActiveStream();
 
-      const nextTrack = await this.#selectNextTrack({ forceAdvance: shouldForceAdvance });
+      const nextTrack = await this.#selectNextTrack({
+        forceAdvance: shouldForceAdvance,
+      });
 
       if (!nextTrack) {
         this.currentTrack = null;
         await this.store.clearCurrentTrack();
         this.#setState(SessionState.IDLE);
-
-        this.emit('queueFinished', {
+        this.emit("queueFinished", {
           guild_id: this.guildId,
           text_channel_id: this.textChannelId,
-          title: 'Queue Finished',
+          title: "Queue Finished",
         });
         return null;
       }
@@ -321,33 +342,34 @@ export class PlayerSession extends EventEmitter {
 
       try {
         const playbackInput = await this.resolver.createStream(nextTrack);
-        const stream = this.#getResourceStream(playbackInput);
-        const inputType = this.#getResourceInputType(playbackInput);
+        const { stream, inputType } = this.#extractResource(playbackInput);
 
-        if (playbackInput && typeof playbackInput.cleanup === 'function') {
+        if (typeof playbackInput?.cleanup === "function") {
           this.activeStreamCleanup = playbackInput.cleanup;
         }
 
-        const resource = createAudioResource(stream, {
-          inputType,
-          inlineVolume: true,
-        });
-
-        this.player.play(resource);
-        await entersState(this.player, AudioPlayerStatus.Playing, PLAYER_READY_TIMEOUT_MS);
-
+        this.player.play(
+          createAudioResource(stream, { inputType, inlineVolume: true }),
+        );
+        await entersState(
+          this.player,
+          AudioPlayerStatus.Playing,
+          PLAYER_READY_TIMEOUT_MS,
+        );
         await this.store.touchCurrentTrack();
 
-        this.emit('trackStarted', await this.#buildPlaybackSnapshot({
-          isUpdate: false,
-          track: nextTrack,
-        }));
-
+        this.emit(
+          "trackStarted",
+          await this.#buildPlaybackSnapshot({
+            isUpdate: false,
+            track: nextTrack,
+          }),
+        );
         return nextTrack;
       } catch (error) {
         this.#cleanupActiveStream();
         this.#setState(SessionState.ERROR);
-        this.emit('trackError', {
+        this.emit("trackError", {
           guild_id: this.guildId,
           text_channel_id: this.textChannelId,
           error: error.message,
@@ -366,9 +388,8 @@ export class PlayerSession extends EventEmitter {
       this.currentTrack &&
       (loopMode === LoopMode.REPLAY_ONCE || loopMode === LoopMode.TRACK)
     ) {
-      if (loopMode === LoopMode.REPLAY_ONCE) {
+      if (loopMode === LoopMode.REPLAY_ONCE)
         await this.store.setLoopMode(LoopMode.OFF);
-      }
       return this.currentTrack;
     }
 
@@ -390,40 +411,72 @@ export class PlayerSession extends EventEmitter {
     await this.store.clearCurrentTrack();
     this.#setState(SessionState.IDLE);
 
-    this.emit('trackStopped', {
+    this.emit("trackStopped", {
       guild_id: this.guildId,
       text_channel_id: this.textChannelId,
     });
   }
 
-  #getResourceStream(playbackInput) {
-    if (playbackInput && typeof playbackInput === 'object' && 'stream' in playbackInput) {
-      return playbackInput.stream;
-    }
+  async #setPauseState(paused) {
+    if (!this.currentTrack) return false;
 
-    return playbackInput;
+    paused ? this.player.pause() : this.player.unpause();
+    this.#setState(paused ? SessionState.PAUSED : SessionState.PLAYING);
+    await this.store.touchCurrentTrack();
+
+    const snapshot = await this.#buildPlaybackSnapshot({ isUpdate: true });
+    if (snapshot) this.emit("sessionUpdated", snapshot);
+
+    return true;
   }
 
-  #getResourceInputType(playbackInput) {
-    if (playbackInput && typeof playbackInput === 'object' && 'inputType' in playbackInput) {
-      return playbackInput.inputType;
-    }
+  async #toggleLoop() {
+    const loopMode = await this.store.cycleLoopMode();
+    if (!this.currentTrack) return loopMode;
 
-    if (typeof playbackInput === 'string') {
-      return undefined;
-    }
+    await this.store.touchCurrentTrack();
+    const snapshot = await this.#buildPlaybackSnapshot({
+      isUpdate: true,
+      loopState: loopMode,
+    });
+    if (snapshot) this.emit("sessionUpdated", snapshot);
 
-    return StreamType.Arbitrary;
+    return loopMode;
+  }
+
+  async #resendController({ textChannelId } = {}) {
+    if (!this.currentTrack) return false;
+
+    this.textChannelId = textChannelId ?? this.textChannelId;
+    await this.store.touchCurrentTrack();
+
+    const snapshot = await this.#buildPlaybackSnapshot({ isUpdate: false });
+    if (!snapshot) return false;
+
+    this.emit("sessionUpdated", {
+      ...snapshot,
+      interaction_token: "",
+      force_new: true,
+      text_channel_id: this.textChannelId,
+    });
+    return true;
+  }
+
+  #extractResource(input) {
+    if (input && typeof input === "object") {
+      return {
+        stream: "stream" in input ? input.stream : input,
+        inputType:
+          "inputType" in input ? input.inputType : StreamType.Arbitrary,
+      };
+    }
+    return { stream: input, inputType: undefined };
   }
 
   #cleanupActiveStream() {
-    if (!this.activeStreamCleanup) {
-      return;
-    }
-
+    if (!this.activeStreamCleanup) return;
     const cleanup = this.activeStreamCleanup;
     this.activeStreamCleanup = null;
-
     try {
       cleanup();
     } catch (error) {
@@ -434,87 +487,9 @@ export class PlayerSession extends EventEmitter {
     }
   }
 
-  async #pause() {
-    if (!this.currentTrack) {
-      return false;
-    }
-
-    this.player.pause();
-    this.#setState(SessionState.PAUSED);
-    await this.store.touchCurrentTrack();
-
-    const snapshot = await this.#buildPlaybackSnapshot({ isUpdate: true });
-    if (snapshot) {
-      this.emit('sessionUpdated', snapshot);
-    }
-
-    return true;
-  }
-
-  async #resume() {
-    if (!this.currentTrack) {
-      return false;
-    }
-
-    this.player.unpause();
-    this.#setState(SessionState.PLAYING);
-    await this.store.touchCurrentTrack();
-
-    const snapshot = await this.#buildPlaybackSnapshot({ isUpdate: true });
-    if (snapshot) {
-      this.emit('sessionUpdated', snapshot);
-    }
-
-    return true;
-  }
-
-  async #toggleLoop() {
-    const loopMode = await this.store.cycleLoopMode();
-    if (!this.currentTrack) {
-      return loopMode;
-    }
-
-    await this.store.touchCurrentTrack();
-    const snapshot = await this.#buildPlaybackSnapshot({
-      isUpdate: true,
-      loopState: loopMode,
-    });
-
-    if (snapshot) {
-      this.emit('sessionUpdated', snapshot);
-    }
-
-    return loopMode;
-  }
-
-  async #resendController({ textChannelId } = {}) {
-    if (!this.currentTrack) {
-      return false;
-    }
-
-    this.textChannelId = textChannelId ?? this.textChannelId;
-    await this.store.touchCurrentTrack();
-
-    const snapshot = await this.#buildPlaybackSnapshot({ isUpdate: false });
-    if (!snapshot) {
-      return false;
-    }
-
-    this.emit('sessionUpdated', {
-      ...snapshot,
-      interaction_token: '',
-      force_new: true,
-      text_channel_id: this.textChannelId,
-    });
-
-    return true;
-  }
-
   async #buildPlaybackSnapshot({ isUpdate, loopState, track } = {}) {
     const activeTrack = track ?? this.currentTrack;
-    if (!activeTrack) {
-      return null;
-    }
+    if (!activeTrack) return null;
 
     const resolvedLoopState = loopState ?? (await this.store.getLoopMode());
 
@@ -522,7 +497,7 @@ export class PlayerSession extends EventEmitter {
       ...activeTrack,
       guild_id: this.guildId,
       text_channel_id: activeTrack.text_channel_id ?? this.textChannelId,
-      interaction_token: isUpdate ? '' : activeTrack.interaction_token ?? '',
+      interaction_token: isUpdate ? "" : (activeTrack.interaction_token ?? ""),
       source_url: activeTrack.url,
       loop_state: resolvedLoopState,
       is_paused:
@@ -535,17 +510,12 @@ export class PlayerSession extends EventEmitter {
 
   #setState(nextState) {
     if (this.state === nextState) return;
-
     const previousState = this.state;
     this.state = nextState;
-
-    if (nextState === SessionState.IDLE) {
-      this.#startIdleTimer();
-    } else {
-      this.#clearIdleTimer();
-    }
-
-    this.emit('stateChanged', {
+    nextState === SessionState.IDLE
+      ? this.#startIdleTimer()
+      : this.#clearIdleTimer();
+    this.emit("stateChanged", {
       guild_id: this.guildId,
       previous_state: previousState,
       state: nextState,
@@ -555,10 +525,12 @@ export class PlayerSession extends EventEmitter {
   #startIdleTimer() {
     this.#clearIdleTimer();
     this.idleTimer = setTimeout(() => {
-      if (this.connection && this.connection.state.status !== VoiceConnectionStatus.Destroyed) {
+      if (this.connection?.state.status !== VoiceConnectionStatus.Destroyed) {
         this.connection.destroy();
         this.connection = null;
-        console.info(`[PlayerSession] Auto-disconnected idle voice connection for guild ${this.guildId}`);
+        console.info(
+          `[PlayerSession] Auto-disconnected idle voice connection for guild ${this.guildId}`,
+        );
       }
     }, IDLE_DISCONNECT_TIMEOUT_MS);
   }
@@ -572,16 +544,25 @@ export class PlayerSession extends EventEmitter {
 
   #runSerial(operation) {
     if (this.serialQueueDepth >= MAX_SERIAL_QUEUE_DEPTH) {
-      console.warn(`[PlayerSession] Serial queue full for guild ${this.guildId} (depth: ${this.serialQueueDepth})`);
-      return Promise.reject(new Error('Command queue is full, please slow down'));
+      console.warn(
+        `[PlayerSession] Serial queue full for guild ${this.guildId} (depth: ${this.serialQueueDepth})`,
+      );
+      return Promise.reject(
+        new Error("Command queue is full, please slow down"),
+      );
     }
 
     this.serialQueueDepth++;
-    const nextOperation = this.serialChain.then(
-      () => { this.serialQueueDepth--; return operation(); },
-      () => { this.serialQueueDepth--; return operation(); },
+    // 無論上一個操作成功還是失敗，都繼續執行下一個。
+    const run = () => {
+      this.serialQueueDepth--;
+      return operation();
+    };
+    const next = this.serialChain.then(run, run);
+    this.serialChain = next.then(
+      () => {},
+      () => {},
     );
-    this.serialChain = nextOperation.then(() => undefined, () => undefined);
-    return nextOperation;
+    return next;
   }
 }
