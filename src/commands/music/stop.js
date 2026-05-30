@@ -19,7 +19,12 @@ export const stopCommand = {
         embeds: [
           new EmbedBuilder()
             .setDescription(":notepad_spiral: | 列隊裏沒有任何歌曲。")
-            .setColor(0xa855f7),
+            .setColor(0xa855f7)
+            .setFooter({
+              text: interaction.user.tag,
+              iconURL: interaction.user.displayAvatarURL(),
+            })
+            .setTimestamp(),
         ],
       });
     }
@@ -35,7 +40,12 @@ export const stopCommand = {
         embeds: [
           new EmbedBuilder()
             .setDescription(":octagonal_sign: | 我已停止播放並清空隊列。")
-            .setColor(0xef4444),
+            .setColor(0xef4444)
+            .setFooter({
+              text: interaction.user.tag,
+              iconURL: interaction.user.displayAvatarURL(),
+            })
+            .setTimestamp(),
         ],
       });
     } catch (err) {
@@ -44,7 +54,12 @@ export const stopCommand = {
         embeds: [
           new EmbedBuilder()
             .setDescription(":x: | 執行時發生錯誤，請稍後再試。")
-            .setColor(0xef4444),
+            .setColor(0xef4444)
+            .setFooter({
+              text: interaction.user.tag,
+              iconURL: interaction.user.displayAvatarURL(),
+            })
+            .setTimestamp(),
         ],
       });
     }

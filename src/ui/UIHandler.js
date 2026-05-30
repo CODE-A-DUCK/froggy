@@ -52,8 +52,14 @@ export class UIHandler {
 
       this.controllerStore.setCurrentTrack(event.guild_id, event);
 
+      const requester = event.controller_user_id
+        ? await this.client.users
+            .fetch(event.controller_user_id)
+            .catch(() => null)
+        : null;
+
       const color = await this.#getThumbnailColor(event.thumbnail);
-      const embed = this.#buildNowPlayingEmbed(event, color);
+      const embed = this.#buildNowPlayingEmbed(event, color, requester);
       const rows = this.#buildControllerRows(event);
       const targetChannel = await this.#resolveTextChannel(
         guild,
@@ -146,6 +152,13 @@ export class UIHandler {
     try {
       const guild = this.client.guilds.cache.get(event.guild_id);
       if (!guild) return;
+
+      const requester = event.controller_user_id
+        ? await this.client.users
+            .fetch(event.controller_user_id)
+            .catch(() => null)
+        : null;
+
       const color = await this.#getThumbnailColor(event.thumbnail);
       const embed = new EmbedBuilder()
         .setAuthor({
@@ -163,6 +176,13 @@ export class UIHandler {
         .setColor(color)
         .setTimestamp();
 
+      if (requester) {
+        embed.setFooter({
+          text: requester.tag,
+          iconURL: requester.displayAvatarURL(),
+        });
+      }
+
       const ch = await this.#resolveTextChannel(guild, event.text_channel_id);
       if (ch) await ch.send({ embeds: [embed] }).catch(() => null);
     } catch (err) {
@@ -177,6 +197,13 @@ export class UIHandler {
     try {
       const guild = this.client.guilds.cache.get(event.guild_id);
       if (!guild) return;
+
+      const requester = event.controller_user_id
+        ? await this.client.users
+            .fetch(event.controller_user_id)
+            .catch(() => null)
+        : null;
+
       const embed = new EmbedBuilder()
         .setAuthor({
           name: "播放錯誤",
@@ -186,6 +213,13 @@ export class UIHandler {
         .setDescription(`:x: | 無法播放此歌曲：\n\`\`\`${event.error}\`\`\``)
         .setColor(0xef4444)
         .setTimestamp();
+
+      if (requester) {
+        embed.setFooter({
+          text: requester.tag,
+          iconURL: requester.displayAvatarURL(),
+        });
+      }
 
       const ch = await this.#resolveTextChannel(guild, event.text_channel_id);
       if (ch) await ch.send({ embeds: [embed] }).catch(() => null);
@@ -222,7 +256,7 @@ export class UIHandler {
 
   // Embed
 
-  #buildNowPlayingEmbed(event, color = 0xf59e0b) {
+  #buildNowPlayingEmbed(event, color = 0xf59e0b, requester = null) {
     const titleLink = event.source_url
       ? `[${event.title ?? "未知標題"}](${event.source_url})`
       : (event.title ?? "未知標題");
@@ -233,6 +267,14 @@ export class UIHandler {
         event.is_paused ? ":pause_button: | 目前暫停" : ":notes: | 正在播放",
       )
       .setDescription(`${titleLink}\n\n${this.#buildMetadataLine(event)}`);
+
+    if (requester) {
+      embed.setFooter({
+        text: requester.tag,
+        iconURL: requester.displayAvatarURL(),
+      });
+      embed.setTimestamp();
+    }
 
     if (event.thumbnail) embed.setThumbnail(event.thumbnail);
     return embed;

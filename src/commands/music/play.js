@@ -40,7 +40,12 @@ export const playCommand = {
             .setDescription(
               ":x: | `/play` 只接受 YouTube 連結。\n若要搜尋歌曲，請使用 `/search`。",
             )
-            .setColor(0xef4444),
+            .setColor(0xef4444)
+            .setFooter({
+              text: interaction.user.tag,
+              iconURL: interaction.user.displayAvatarURL(),
+            })
+            .setTimestamp(),
         ],
         flags: MessageFlags.Ephemeral,
       });
@@ -54,7 +59,12 @@ export const playCommand = {
             .setDescription(
               `:hourglass: | 請等待 ${(ms / 1000).toFixed(1)} 秒後再使用。`,
             )
-            .setColor(0xef4444),
+            .setColor(0xef4444)
+            .setFooter({
+              text: interaction.user.tag,
+              iconURL: interaction.user.displayAvatarURL(),
+            })
+            .setTimestamp(),
         ],
         flags: MessageFlags.Ephemeral,
       });
@@ -97,7 +107,12 @@ export const playCommand = {
         embeds: [
           new EmbedBuilder()
             .setDescription(":x: | 執行時發生錯誤，請稍後再試。")
-            .setColor(0xef4444),
+            .setColor(0xef4444)
+            .setFooter({
+              text: interaction.user.tag,
+              iconURL: interaction.user.displayAvatarURL(),
+            })
+            .setTimestamp(),
         ],
       });
     }

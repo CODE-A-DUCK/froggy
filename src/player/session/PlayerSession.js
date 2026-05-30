@@ -14,7 +14,7 @@ import { VoiceConnectionError } from "../core/errors.js";
 
 const VOICE_READY_TIMEOUT_MS = 20_000;
 const PLAYER_READY_TIMEOUT_MS = 15_000;
-const IDLE_DISCONNECT_TIMEOUT_MS = 5 * 60 * 1_000;
+const EMPTY_VC_TIMEOUT_MS = 3 * 60 * 1_000;
 const MAX_SERIAL_QUEUE_DEPTH = 50;
 
 export class PlayerSession extends EventEmitter {
@@ -34,7 +34,7 @@ export class PlayerSession extends EventEmitter {
     this.serialQueueDepth = 0;
     this.suppressNextIdleEvents = 0;
     this.activeStreamCleanup = null;
-    this.idleTimer = null;
+    this.emptyTimer = null;
 
     this.#bindPlayerEvents();
   }
@@ -87,6 +87,7 @@ export class PlayerSession extends EventEmitter {
 
   async disconnectVoice() {
     return this.#runSerial(async () => {
+      this.#clearEmptyTimer();
       const conn = this.connection ?? getVoiceConnection(this.guildId);
       if (conn && conn.state.status !== VoiceConnectionStatus.Destroyed) {
         conn.destroy();
@@ -112,7 +113,7 @@ export class PlayerSession extends EventEmitter {
   }
 
   destroy() {
-    this.#clearIdleTimer();
+    this.#clearEmptyTimer();
     this.#cleanupActiveStream();
     if (this.connection?.state.status !== VoiceConnectionStatus.Destroyed) {
       this.connection?.destroy();
@@ -153,6 +154,8 @@ export class PlayerSession extends EventEmitter {
     this.connection = connection;
     connection.subscribe(this.player);
     this.#bindConnectionEvents(connection);
+
+    await this.updateVoicePresence();
 
     try {
       await entersState(
@@ -273,6 +276,7 @@ export class PlayerSession extends EventEmitter {
           url: track.url,
           thumbnail: track.thumbnail,
           duration: track.duration,
+          controller_user_id: track.controller_user_id,
         });
       }
       return track;
@@ -283,6 +287,7 @@ export class PlayerSession extends EventEmitter {
         text_channel_id: textChannelId ?? this.textChannelId,
         error: error.message,
         title: query,
+        controller_user_id: controllerUserId,
       });
       throw error;
     }
@@ -346,6 +351,7 @@ export class PlayerSession extends EventEmitter {
           text_channel_id: this.textChannelId,
           error: error.message,
           title: nextTrack.title,
+          controller_user_id: nextTrack.controller_user_id,
         });
         shouldForceAdvance = true;
       }
@@ -465,38 +471,57 @@ export class PlayerSession extends EventEmitter {
     };
   }
 
+  async updateVoicePresence() {
+    const guild = this.client.guilds.cache.get(this.guildId);
+    if (!guild) return;
+
+    const me =
+      guild.members.me ||
+      (await guild.members.fetch(this.client.user.id).catch(() => null));
+    const channel = me?.voice.channel;
+
+    if (!channel) {
+      this.#clearEmptyTimer();
+      return;
+    }
+
+    // 計算頻道內除了機器人以外的人數
+    const humanMembers = channel.members.filter((m) => !m.user.bot);
+
+    if (humanMembers.size === 0) {
+      this.#startEmptyTimer();
+    } else {
+      this.#clearEmptyTimer();
+    }
+  }
+
+  #startEmptyTimer() {
+    if (this.emptyTimer) return;
+    this.emptyTimer = setTimeout(async () => {
+      console.info(
+        `[PlayerSession] VC empty for ${EMPTY_VC_TIMEOUT_MS}ms, disconnecting guild ${this.guildId}`,
+      );
+      await this.disconnectVoice();
+    }, EMPTY_VC_TIMEOUT_MS);
+  }
+
+  #clearEmptyTimer() {
+    if (this.emptyTimer) {
+      clearTimeout(this.emptyTimer);
+      this.emptyTimer = null;
+    }
+  }
+
   #setState(nextState) {
     if (this.state === nextState) return;
     const previousState = this.state;
     this.state = nextState;
-    nextState === SessionState.IDLE
-      ? this.#startIdleTimer()
-      : this.#clearIdleTimer();
+
     this.emit("stateChanged", {
       guild_id: this.guildId,
       previous_state: previousState,
       state: nextState,
     });
-  }
-
-  #startIdleTimer() {
-    this.#clearIdleTimer();
-    this.idleTimer = setTimeout(() => {
-      if (this.connection?.state.status !== VoiceConnectionStatus.Destroyed) {
-        this.connection.destroy();
-        this.connection = null;
-        console.info(
-          `[PlayerSession] Auto-disconnected idle voice for guild ${this.guildId}`,
-        );
-      }
-    }, IDLE_DISCONNECT_TIMEOUT_MS);
-  }
-
-  #clearIdleTimer() {
-    if (this.idleTimer) {
-      clearTimeout(this.idleTimer);
-      this.idleTimer = null;
-    }
   }
 
   #runSerial(operation) {

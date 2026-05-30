@@ -18,7 +18,12 @@ export const skipCommand = {
         embeds: [
           new EmbedBuilder()
             .setDescription(":notepad_spiral: | 列隊裏沒有任何歌曲。")
-            .setColor(0xa855f7),
+            .setColor(0xa855f7)
+            .setFooter({
+              text: interaction.user.tag,
+              iconURL: interaction.user.displayAvatarURL(),
+            })
+            .setTimestamp(),
         ],
       });
     }
@@ -32,7 +37,12 @@ export const skipCommand = {
         embeds: [
           new EmbedBuilder()
             .setDescription(":fast_forward: | 已跳過當前歌曲。")
-            .setColor(0x22c55e),
+            .setColor(0x22c55e)
+            .setFooter({
+              text: interaction.user.tag,
+              iconURL: interaction.user.displayAvatarURL(),
+            })
+            .setTimestamp(),
         ],
       });
     } catch (err) {
@@ -41,7 +51,12 @@ export const skipCommand = {
         embeds: [
           new EmbedBuilder()
             .setDescription(":x: | 執行時發生錯誤，請稍後再試。")
-            .setColor(0xef4444),
+            .setColor(0xef4444)
+            .setFooter({
+              text: interaction.user.tag,
+              iconURL: interaction.user.displayAvatarURL(),
+            })
+            .setTimestamp(),
         ],
       });
     }

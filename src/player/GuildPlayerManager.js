@@ -92,10 +92,22 @@ export class GuildPlayerManager extends EventEmitter {
   }
 
   #scheduleSessionCleanup(guildId) {
-    setTimeout(() => {
+    setTimeout(async () => {
       const session = this.sessions.get(guildId);
       if (!session) return;
       if (!session.currentTrack) {
+        // 檢查機器人是否還在語音頻道中
+        const guild = this.client.guilds.cache.get(guildId);
+        const me =
+          guild?.members.me ||
+          (await guild?.members.fetch(this.client.user.id).catch(() => null));
+        if (me?.voice.channel) {
+          console.info(
+            `[GuildPlayerManager] Session for guild ${guildId} is idle but bot is in VC. Skipping cleanup.`,
+          );
+          return;
+        }
+
         session.destroy();
         this.sessions.delete(guildId);
         console.info(

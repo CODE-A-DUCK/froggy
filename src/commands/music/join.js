@@ -29,7 +29,12 @@ export const joinCommand = {
             .setDescription(
               `:white_check_mark: | 我已加入語音頻道：\`${userVoiceChannel.name}\``,
             )
-            .setColor(0x22c55e),
+            .setColor(0x22c55e)
+            .setFooter({
+              text: interaction.user.tag,
+              iconURL: interaction.user.displayAvatarURL(),
+            })
+            .setTimestamp(),
         ],
       });
     } catch (err) {
@@ -38,7 +43,12 @@ export const joinCommand = {
         embeds: [
           new EmbedBuilder()
             .setDescription(":x: | 執行時發生錯誤，請稍後再試。")
-            .setColor(0xef4444),
+            .setColor(0xef4444)
+            .setFooter({
+              text: interaction.user.tag,
+              iconURL: interaction.user.displayAvatarURL(),
+            })
+            .setTimestamp(),
         ],
       });
     }

@@ -18,7 +18,12 @@ export const queueCommand = {
           embeds: [
             new EmbedBuilder()
               .setDescription(":notepad_spiral: | 隊列是空的。")
-              .setColor(0xa855f7),
+              .setColor(0xa855f7)
+              .setFooter({
+                text: interaction.user.tag,
+                iconURL: interaction.user.displayAvatarURL(),
+              })
+              .setTimestamp(),
           ],
         });
       }
@@ -47,7 +52,11 @@ export const queueCommand = {
             .setTitle(":notepad_spiral: | 播放隊列")
             .setDescription(lines.join("\n"))
             .setColor(0xa855f7)
-            .setFooter({ text: `共 ${length} 首歌曲在隊列中` }),
+            .setFooter({
+              text: interaction.user.tag,
+              iconURL: interaction.user.displayAvatarURL(),
+            })
+            .setTimestamp(),
         ],
       });
     } catch (err) {
@@ -56,7 +65,12 @@ export const queueCommand = {
         embeds: [
           new EmbedBuilder()
             .setDescription(":x: | 執行時發生錯誤，請稍後再試。")
-            .setColor(0xef4444),
+            .setColor(0xef4444)
+            .setFooter({
+              text: interaction.user.tag,
+              iconURL: interaction.user.displayAvatarURL(),
+            })
+            .setTimestamp(),
         ],
       });
     }

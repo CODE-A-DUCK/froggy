@@ -40,7 +40,12 @@ export const searchCommand = {
             .setDescription(
               `:hourglass: | 請等待 ${(ms / 1000).toFixed(1)} 秒後再搜尋。`,
             )
-            .setColor(0xef4444),
+            .setColor(0xef4444)
+            .setFooter({
+              text: interaction.user.tag,
+              iconURL: interaction.user.displayAvatarURL(),
+            })
+            .setTimestamp(),
         ],
         flags: MessageFlags.Ephemeral,
       });
@@ -57,7 +62,12 @@ export const searchCommand = {
         embeds: [
           new EmbedBuilder()
             .setDescription(":x: | 搜尋失敗，請稍後再試。")
-            .setColor(0xef4444),
+            .setColor(0xef4444)
+            .setFooter({
+              text: interaction.user.tag,
+              iconURL: interaction.user.displayAvatarURL(),
+            })
+            .setTimestamp(),
         ],
       });
     }
@@ -67,7 +77,12 @@ export const searchCommand = {
         embeds: [
           new EmbedBuilder()
             .setDescription(":x: | 找不到結果，請換個關鍵字試試。")
-            .setColor(0xef4444),
+            .setColor(0xef4444)
+            .setFooter({
+              text: interaction.user.tag,
+              iconURL: interaction.user.displayAvatarURL(),
+            })
+            .setTimestamp(),
         ],
       });
     }
@@ -98,7 +113,10 @@ export const searchCommand = {
           .setTitle(":mag: | 搜尋結果")
           .setDescription(listText)
           .setColor(0xa855f7)
-          .setFooter({ text: `關鍵字：${query} · 請在 60 秒內選擇` })
+          .setFooter({
+            text: interaction.user.tag,
+            iconURL: interaction.user.displayAvatarURL(),
+          })
           .setTimestamp(),
       ],
       components: [
@@ -153,7 +171,12 @@ async function handleSearchSelect(interaction, context) {
       embeds: [
         new EmbedBuilder()
           .setDescription(":x: | 你必須在語音頻道中才能播放音樂。")
-          .setColor(0xef4444),
+          .setColor(0xef4444)
+          .setFooter({
+            text: interaction.user.tag,
+            iconURL: interaction.user.displayAvatarURL(),
+          })
+          .setTimestamp(),
       ],
       flags: MessageFlags.Ephemeral,
     });
@@ -171,7 +194,12 @@ async function handleSearchSelect(interaction, context) {
           .setDescription(
             `:x: | 你必須跟我在同一個頻道 <#${botVoiceChannel.id}> 才能播放音樂！`,
           )
-          .setColor(0xef4444),
+          .setColor(0xef4444)
+          .setFooter({
+            text: interaction.user.tag,
+            iconURL: interaction.user.displayAvatarURL(),
+          })
+          .setTimestamp(),
       ],
       flags: MessageFlags.Ephemeral,
     });
@@ -201,7 +229,12 @@ async function handleSearchSelect(interaction, context) {
       embeds: [
         new EmbedBuilder()
           .setDescription(":outbox_tray: | 收到！正在為你加入歌曲...")
-          .setColor(0xa855f7),
+          .setColor(0xa855f7)
+          .setFooter({
+            text: interaction.user.tag,
+            iconURL: interaction.user.displayAvatarURL(),
+          })
+          .setTimestamp(),
       ],
       components: [],
     });
@@ -212,7 +245,12 @@ async function handleSearchSelect(interaction, context) {
       embeds: [
         new EmbedBuilder()
           .setDescription(":x: | 處理請求時發生錯誤，請稍後再試。")
-          .setColor(0xef4444),
+          .setColor(0xef4444)
+          .setFooter({
+            text: interaction.user.tag,
+            iconURL: interaction.user.displayAvatarURL(),
+          })
+          .setTimestamp(),
       ],
       flags: MessageFlags.Ephemeral,
     });

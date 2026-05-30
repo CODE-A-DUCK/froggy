@@ -1,7 +1,8 @@
 import { interactionCreateEvent } from "./interactionCreate.js";
 import { readyEvent } from "./ready.js";
+import { voiceStateUpdateEvent } from "./voiceStateUpdate.js";
 
-const clientEvents = [readyEvent, interactionCreateEvent];
+const clientEvents = [readyEvent, interactionCreateEvent, voiceStateUpdateEvent];
 
 export function registerEvents(client, context) {
   for (const event of clientEvents) {
