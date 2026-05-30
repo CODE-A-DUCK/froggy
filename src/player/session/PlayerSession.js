@@ -7,6 +7,7 @@ import {
   createAudioResource,
   entersState,
   joinVoiceChannel,
+  getVoiceConnection,
 } from "@discordjs/voice";
 import { LoopMode, SessionState } from "../core/playbackConstants.js";
 import { VoiceConnectionError } from "../core/errors.js";
@@ -85,10 +86,27 @@ export class PlayerSession extends EventEmitter {
   }
 
   async disconnectVoice() {
-    return this.#runSerial(() => {
-      if (this.connection?.state.status !== VoiceConnectionStatus.Destroyed) {
-        this.connection?.destroy();
-        this.connection = null;
+    return this.#runSerial(async () => {
+      const conn = this.connection ?? getVoiceConnection(this.guildId);
+      if (conn && conn.state.status !== VoiceConnectionStatus.Destroyed) {
+        conn.destroy();
+      }
+      this.connection = null;
+
+      // 強制移除語音狀態（應對重啟後失去 Library 狀態的情況）
+      try {
+        const guild = this.client.guilds.cache.get(this.guildId);
+        const me =
+          guild?.members.me ??
+          (await guild?.members.fetch(this.client.user.id).catch(() => null));
+        if (me?.voice.channel) {
+          await me.voice.setChannel(null).catch(() => null);
+        }
+      } catch (err) {
+        console.warn(
+          `[PlayerSession] Failed to force-disconnect voice for guild ${this.guildId}:`,
+          err.message,
+        );
       }
     });
   }
