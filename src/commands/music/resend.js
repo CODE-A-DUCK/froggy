@@ -18,7 +18,7 @@ export const resendCommand = {
         embeds: [
           new EmbedBuilder()
             .setDescription(":notepad_spiral: | 列隊裏沒有任何歌曲。")
-            .setColor(0x5865f2),
+            .setColor(0xa855f7),
         ],
       });
     }

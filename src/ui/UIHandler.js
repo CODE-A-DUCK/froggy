@@ -126,11 +126,11 @@ export class UIHandler {
       const embed = stopped
         ? new EmbedBuilder()
             .setDescription(":octagonal_sign: | 已停止播放並清空隊列。")
-            .setColor(0xed4245)
+            .setColor(0xef4444)
             .setTimestamp()
         : new EmbedBuilder()
             .setDescription(":white_check_mark: | 隊列內的歌曲均已播放完畢！")
-            .setColor(0x274dea)
+            .setColor(0x22c55e)
             .setTimestamp();
 
       if (ch) await ch.send({ embeds: [embed] }).catch(() => null);
@@ -184,7 +184,7 @@ export class UIHandler {
         })
         .setTitle(event.title ?? "未知歌曲")
         .setDescription(`:x: | 無法播放此歌曲：\n\`\`\`${event.error}\`\`\``)
-        .setColor(0xed4245)
+        .setColor(0xef4444)
         .setTimestamp();
 
       const ch = await this.#resolveTextChannel(guild, event.text_channel_id);
@@ -222,7 +222,7 @@ export class UIHandler {
 
   // Embed
 
-  #buildNowPlayingEmbed(event, color = 0xd98d30) {
+  #buildNowPlayingEmbed(event, color = 0xf59e0b) {
     const titleLink = event.source_url
       ? `[${event.title ?? "未知標題"}](${event.source_url})`
       : (event.title ?? "未知標題");
@@ -256,7 +256,7 @@ export class UIHandler {
       new ButtonBuilder()
         .setCustomId("MusicButtonControlDetails")
         .setLabel("歌曲詳情")
-        .setStyle(ButtonStyle.Secondary),
+        .setStyle(ButtonStyle.Success),
     );
     const row2 = new ActionRowBuilder().addComponents(
       new ButtonBuilder()
@@ -313,14 +313,14 @@ export class UIHandler {
   }
 
   async #getThumbnailColor(url) {
-    if (!url) return 0xd98d30;
+    if (!url) return 0xf59e0b;
     try {
       const palette = await Vibrant.from(url).getPalette();
       return palette.Vibrant
         ? parseInt(palette.Vibrant.hex.slice(1), 16)
-        : 0xd98d30;
+        : 0xf59e0b;
     } catch {
-      return 0xd98d30;
+      return 0xf59e0b;
     }
   }
 }

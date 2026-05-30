@@ -18,7 +18,7 @@ export const queueCommand = {
           embeds: [
             new EmbedBuilder()
               .setDescription(":notepad_spiral: | 隊列是空的。")
-              .setColor(0x5865f2),
+              .setColor(0xa855f7),
           ],
         });
       }
@@ -46,7 +46,7 @@ export const queueCommand = {
           new EmbedBuilder()
             .setTitle(":notepad_spiral: | 播放隊列")
             .setDescription(lines.join("\n"))
-            .setColor(0x5865f2)
+            .setColor(0xa855f7)
             .setFooter({ text: `共 ${length} 首歌曲在隊列中` }),
         ],
       });
@@ -56,7 +56,7 @@ export const queueCommand = {
         embeds: [
           new EmbedBuilder()
             .setDescription(":x: | 執行時發生錯誤，請稍後再試。")
-            .setColor(0xed4245),
+            .setColor(0xef4444),
         ],
       });
     }

@@ -5,6 +5,7 @@ import {
   StringSelectMenuBuilder,
   StringSelectMenuOptionBuilder,
   MessageFlags,
+  ComponentType,
 } from "discord.js";
 import { controllerStore } from "../../store/ControllerStore.js";
 import { CONTROLLER_DENIED_MESSAGE } from "../../utilities/voiceGuard.js";
@@ -28,7 +29,7 @@ export const searchCommand = {
       o.setName("query").setDescription("歌曲名稱或關鍵字").setRequired(true),
     ),
 
-  async execute(interaction) {
+  async execute(interaction, context) {
     const query = interaction.options.getString("query", true).trim();
 
     if (!checkCooldown(interaction.user.id, "search", SEARCH_COOLDOWN_MS)) {
@@ -39,7 +40,7 @@ export const searchCommand = {
             .setDescription(
               `:hourglass: | 請等待 ${(ms / 1000).toFixed(1)} 秒後再搜尋。`,
             )
-            .setColor(0xed4245),
+            .setColor(0xef4444),
         ],
         flags: MessageFlags.Ephemeral,
       });
@@ -56,7 +57,7 @@ export const searchCommand = {
         embeds: [
           new EmbedBuilder()
             .setDescription(":x: | 搜尋失敗，請稍後再試。")
-            .setColor(0xed4245),
+            .setColor(0xef4444),
         ],
       });
     }
@@ -66,7 +67,7 @@ export const searchCommand = {
         embeds: [
           new EmbedBuilder()
             .setDescription(":x: | 找不到結果，請換個關鍵字試試。")
-            .setColor(0xed4245),
+            .setColor(0xef4444),
         ],
       });
     }
@@ -91,12 +92,12 @@ export const searchCommand = {
       )
       .join("\n");
 
-    await interaction.editReply({
+    const response = await interaction.editReply({
       embeds: [
         new EmbedBuilder()
           .setTitle(":mag: | 搜尋結果")
           .setDescription(listText)
-          .setColor(0x5865f2)
+          .setColor(0xa855f7)
           .setFooter({ text: `關鍵字：${query} · 請在 60 秒內選擇` })
           .setTimestamp(),
       ],
@@ -109,98 +110,111 @@ export const searchCommand = {
         ),
       ],
     });
-  },
 
-  async handleSelectMenu(interaction, context) {
-    const url = interaction.values[0];
-    await interaction.deferUpdate();
+    const collector = response.createMessageComponentCollector({
+      componentType: ComponentType.StringSelect,
+      filter: (i) =>
+        i.user.id === interaction.user.id && i.customId === "search:select",
+      time: 60000,
+      max: 1,
+    });
 
-    const { guildId, channelId } = interaction;
-    const guild = interaction.guild;
-    const member = await guild.members
-      .fetch(interaction.user.id)
-      .catch(() => null);
-    const userVoiceChannel = member?.voice?.channel;
+    collector.on("collect", async (i) => {
+      await handleSearchSelect(i, context);
+    });
 
-    if (!userVoiceChannel) {
-      return interaction.followUp({
-        embeds: [
-          new EmbedBuilder()
-            .setDescription(":x: | 你必須在語音頻道中才能播放音樂。")
-            .setColor(0xed4245),
-        ],
-        flags: MessageFlags.Ephemeral,
-      });
-    }
-
-    const botMember = await guild.members
-      .fetch(interaction.client.user.id)
-      .catch(() => null);
-    const botVoiceChannel = botMember?.voice?.channel;
-
-    if (botVoiceChannel && botVoiceChannel.id !== userVoiceChannel.id) {
-      return interaction.followUp({
-        embeds: [
-          new EmbedBuilder()
-            .setDescription(
-              `:x: | 你必須跟我在同一個頻道 <#${botVoiceChannel.id}> 才能播放音樂！`,
-            )
-            .setColor(0xed4245),
-        ],
-        flags: MessageFlags.Ephemeral,
-      });
-    }
-
-    const { controllerStore: cs } = context;
-    let ownerId = cs.getOwner(guildId);
-    if (!botVoiceChannel && ownerId) {
-      cs.clearOwner(guildId);
-      ownerId = null;
-    }
-
-    if (ownerId && ownerId !== interaction.user.id) {
-      return interaction.followUp({
-        embeds: [
-          new EmbedBuilder()
-            .setDescription(CONTROLLER_DENIED_MESSAGE)
-            .setColor(0xed4245),
-        ],
-        flags: MessageFlags.Ephemeral,
-      });
-    }
-
-    const controllerUserId = ownerId ?? interaction.user.id;
-    if (!ownerId) cs.setOwner(guildId, interaction.user.id);
-
-    try {
-      await context.guildPlayerManager.dispatch({
-        guild_id: guildId,
-        action: "play",
-        channel_id: userVoiceChannel.id,
-        track_url: url,
-        interaction_token: "",
-        text_channel_id: channelId,
-        controller_user_id: controllerUserId,
-      });
-      await interaction.editReply({
-        embeds: [
-          new EmbedBuilder()
-            .setDescription(":outbox_tray: | 收到！正在為你加入歌曲...")
-            .setColor(0x5865f2),
-        ],
-        components: [],
-      });
-    } catch (err) {
-      cs.clearOwner(guildId);
-      console.error("[Command] Search select error:", err);
-      await interaction.followUp({
-        embeds: [
-          new EmbedBuilder()
-            .setDescription(":x: | 處理請求時發生錯誤，請稍後再試。")
-            .setColor(0xed4245),
-        ],
-        flags: MessageFlags.Ephemeral,
-      });
-    }
+    collector.on("end", async (collected) => {
+      if (collected.size === 0) {
+        await interaction
+          .editReply({
+            content: "閒置太久了，我先走了",
+            embeds: [],
+            components: [],
+          })
+          .catch(() => null);
+      }
+    });
   },
 };
+
+async function handleSearchSelect(interaction, context) {
+  const url = interaction.values[0];
+  await interaction.deferUpdate();
+
+  const { guildId, channelId } = interaction;
+  const guild = interaction.guild;
+  const member = await guild.members
+    .fetch(interaction.user.id)
+    .catch(() => null);
+  const userVoiceChannel = member?.voice?.channel;
+
+  if (!userVoiceChannel) {
+    return interaction.followUp({
+      embeds: [
+        new EmbedBuilder()
+          .setDescription(":x: | 你必須在語音頻道中才能播放音樂。")
+          .setColor(0xef4444),
+      ],
+      flags: MessageFlags.Ephemeral,
+    });
+  }
+
+  const botMember = await guild.members
+    .fetch(interaction.client.user.id)
+    .catch(() => null);
+  const botVoiceChannel = botMember?.voice?.channel;
+
+  if (botVoiceChannel && botVoiceChannel.id !== userVoiceChannel.id) {
+    return interaction.followUp({
+      embeds: [
+        new EmbedBuilder()
+          .setDescription(
+            `:x: | 你必須跟我在同一個頻道 <#${botVoiceChannel.id}> 才能播放音樂！`,
+          )
+          .setColor(0xef4444),
+      ],
+      flags: MessageFlags.Ephemeral,
+    });
+  }
+
+  const { controllerStore: cs } = context;
+  let ownerId = cs.getOwner(guildId);
+  if (!botVoiceChannel && ownerId) {
+    cs.clearOwner(guildId);
+    ownerId = null;
+  }
+
+  const controllerUserId = ownerId ?? interaction.user.id;
+  if (!ownerId) cs.setOwner(guildId, interaction.user.id);
+
+  try {
+    await context.guildPlayerManager.dispatch({
+      guild_id: guildId,
+      action: "play",
+      channel_id: userVoiceChannel.id,
+      track_url: url,
+      interaction_token: "",
+      text_channel_id: channelId,
+      controller_user_id: controllerUserId,
+    });
+    await interaction.editReply({
+      embeds: [
+        new EmbedBuilder()
+          .setDescription(":outbox_tray: | 收到！正在為你加入歌曲...")
+          .setColor(0xa855f7),
+      ],
+      components: [],
+    });
+  } catch (err) {
+    cs.clearOwner(guildId);
+    console.error("[Command] Search select error:", err);
+    await interaction.followUp({
+      embeds: [
+        new EmbedBuilder()
+          .setDescription(":x: | 處理請求時發生錯誤，請稍後再試。")
+          .setColor(0xef4444),
+      ],
+      flags: MessageFlags.Ephemeral,
+    });
+  }
+}

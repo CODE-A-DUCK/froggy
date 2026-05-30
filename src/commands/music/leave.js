@@ -39,7 +39,7 @@ export const leaveCommand = {
             .setDescription(
               `:wave: | 我已離開語音頻道：\`${botVoiceChannel.name}\``,
             )
-            .setColor(0x5865f2),
+            .setColor(0x22c55e),
         ],
       });
     } catch (err) {
@@ -48,7 +48,7 @@ export const leaveCommand = {
         embeds: [
           new EmbedBuilder()
             .setDescription(":x: | 執行時發生錯誤，請稍後再試。")
-            .setColor(0xed4245),
+            .setColor(0xef4444),
         ],
       });
     }

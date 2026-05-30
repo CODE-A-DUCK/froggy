@@ -7,7 +7,7 @@ export async function validateVoiceState(interaction, options = {}) {
   const {
     requireBotInVC = true,
     requireSameVC = true,
-    requireController = true,
+    requireController = false,
   } = options;
 
   const guild = interaction.guild;

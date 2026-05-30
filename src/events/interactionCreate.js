@@ -28,7 +28,7 @@ const replyError = (interaction, description) =>
   interaction
     .followUp({
       embeds: [
-        new EmbedBuilder().setDescription(description).setColor(0xed4245),
+        new EmbedBuilder().setDescription(description).setColor(0xef4444),
       ],
       flags: MessageFlags.Ephemeral,
     })
@@ -96,7 +96,7 @@ function buildDetailsEmbed(event) {
     .setDescription(
       `**[${event.title ?? "未知標題"}](${event.source_url ?? event.url})**`,
     )
-    .setColor(0xd98d30)
+    .setColor(0xf59e0b)
     .setThumbnail(event.thumbnail ?? null)
     .addFields(
       {

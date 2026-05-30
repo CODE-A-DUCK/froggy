@@ -19,7 +19,7 @@ export const stopCommand = {
         embeds: [
           new EmbedBuilder()
             .setDescription(":notepad_spiral: | 列隊裏沒有任何歌曲。")
-            .setColor(0x5865f2),
+            .setColor(0xa855f7),
         ],
       });
     }
@@ -35,7 +35,7 @@ export const stopCommand = {
         embeds: [
           new EmbedBuilder()
             .setDescription(":octagonal_sign: | 我已停止播放並清空隊列。")
-            .setColor(0xed4245),
+            .setColor(0xef4444),
         ],
       });
     } catch (err) {
@@ -44,7 +44,7 @@ export const stopCommand = {
         embeds: [
           new EmbedBuilder()
             .setDescription(":x: | 執行時發生錯誤，請稍後再試。")
-            .setColor(0xed4245),
+            .setColor(0xef4444),
         ],
       });
     }

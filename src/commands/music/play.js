@@ -40,7 +40,7 @@ export const playCommand = {
             .setDescription(
               ":x: | `/play` 只接受 YouTube 連結。\n若要搜尋歌曲，請使用 `/search`。",
             )
-            .setColor(0xed4245),
+            .setColor(0xef4444),
         ],
         flags: MessageFlags.Ephemeral,
       });
@@ -54,7 +54,7 @@ export const playCommand = {
             .setDescription(
               `:hourglass: | 請等待 ${(ms / 1000).toFixed(1)} 秒後再使用。`,
             )
-            .setColor(0xed4245),
+            .setColor(0xef4444),
         ],
         flags: MessageFlags.Ephemeral,
       });
@@ -77,16 +77,6 @@ export const playCommand = {
       ownerId = null;
     }
 
-    if (ownerId && ownerId !== interaction.user.id) {
-      return interaction.editReply({
-        embeds: [
-          new EmbedBuilder()
-            .setDescription(CONTROLLER_DENIED_MESSAGE)
-            .setColor(0xed4245),
-        ],
-      });
-    }
-
     const controllerUserId = ownerId ?? interaction.user.id;
     if (!ownerId) cs.setOwner(guild.id, interaction.user.id);
 
@@ -107,7 +97,7 @@ export const playCommand = {
         embeds: [
           new EmbedBuilder()
             .setDescription(":x: | 執行時發生錯誤，請稍後再試。")
-            .setColor(0xed4245),
+            .setColor(0xef4444),
         ],
       });
     }
