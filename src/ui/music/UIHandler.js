@@ -1,6 +1,27 @@
-import { Vibrant } from "node-vibrant/node";
 import { MessageFlags } from "discord.js";
 import { ContainerFactory } from "./ContainerFactory.js";
+
+function formatUserFacingError(errorMsg) {
+  if (!errorMsg) return "發生未知錯誤";
+  if (errorMsg.includes("FFMPEG_STALLED") || errorMsg.includes("音樂串流卡住"))
+    return "串流處理逾時或無法取得音訊資料，正在嘗試重新啟動...";
+  if (
+    errorMsg.includes("confirm your age") ||
+    errorMsg.includes("age-restricted")
+  )
+    return "此歌曲有年齡限制，無法播放";
+  if (errorMsg.includes("Sign in to confirm your age"))
+    return "此歌曲有年齡限制，無法播放";
+  if (
+    errorMsg.includes("Video unavailable") ||
+    errorMsg.includes("Private video")
+  )
+    return "影片無法使用或已被設為私人";
+  if (errorMsg.includes("copyright claim")) return "影片因版權問題無法使用";
+  if (errorMsg.includes("ffmpeg exited with code"))
+    return "音訊處理程序發生錯誤";
+  return "獲取音訊時發生錯誤，或該連結不支援播放";
+}
 
 export class UIHandler {
   constructor({ client, controllerStore }) {
@@ -88,7 +109,8 @@ export class UIHandler {
               body: JSON.stringify({
                 content: null,
                 embeds: [],
-                components: [container],
+                components: [container.toJSON()],
+                flags: MessageFlags.IsComponentsV2,
               }),
             },
           );
@@ -134,14 +156,37 @@ export class UIHandler {
       this.controllerStore.clearCurrentTrack(event.guild_id);
 
       const container = ContainerFactory.buildSimpleMessage(
-        "音樂中心",
+        "<:LingLong:1510515456321261699> 音樂中心",
         stopped
-          ? ":octagonal_sign: | 已停止播放並清空隊列。"
-          : ":white_check_mark: | 隊列內的歌曲均已播放完畢！",
+          ? "<:fileshredline:1510533869080805457> | 已停止播放並清空隊列！"
+          : "<:checkdoubleline:1510533861052907621> | 隊列內的歌曲均已播放完畢！",
         requester,
       );
 
-      if (ch)
+      let acknowledged = false;
+
+      // 透過 interaction token 編輯
+      if (event.interaction_token) {
+        const appId = this.client.application?.id ?? this.client.user.id;
+        try {
+          const res = await fetch(
+            `https://discord.com/api/v10/webhooks/${appId}/${event.interaction_token}/messages/@original`,
+            {
+              method: "PATCH",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                content: null,
+                embeds: [],
+                components: [container.toJSON()],
+                flags: MessageFlags.IsComponentsV2,
+              }),
+            },
+          );
+          if (res.ok) acknowledged = true;
+        } catch {}
+      }
+
+      if (!acknowledged && ch)
         await ch
           .send({
             components: [container],
@@ -154,6 +199,8 @@ export class UIHandler {
   }
 
   async #handleTrackAdded(event) {
+    if (event.silent) return;
+
     console.info(
       `[UIHandler] track_added  Guild ${event.guild_id}: ${event.title}`,
     );
@@ -168,8 +215,8 @@ export class UIHandler {
         : null;
 
       const container = ContainerFactory.buildSimpleMessage(
-        "已加入隊列",
-        `**${event.title}**\n${event.url}`,
+        "<:playlistaddline:1510533888630329455> | 已加入隊列",
+        `**[${event.title}](${event.url})**`,
         requester,
       );
 
@@ -200,9 +247,10 @@ export class UIHandler {
             .catch(() => null)
         : null;
 
+      const safeError = formatUserFacingError(event.error);
       const container = ContainerFactory.buildSimpleMessage(
         "播放錯誤",
-        `:x: | 無法播放此歌曲：\n\`\`\`${event.error}\`\`\``,
+        `<:errorwarningline:1510533865805058188> | 無法播放此歌曲：\n\`\`\`${safeError}\`\`\``,
         requester,
       );
 
@@ -279,17 +327,5 @@ export class UIHandler {
           return ai !== -1 ? -1 : bi !== -1 ? 1 : 0;
         })[0] ?? null
     );
-  }
-
-  async #getThumbnailColor(url) {
-    if (!url) return 0xf59e0b;
-    try {
-      const palette = await Vibrant.from(url).getPalette();
-      return palette.Vibrant
-        ? parseInt(palette.Vibrant.hex.slice(1), 16)
-        : 0xf59e0b;
-    } catch {
-      return 0xf59e0b;
-    }
   }
 }

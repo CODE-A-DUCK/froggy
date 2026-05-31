@@ -1,11 +1,11 @@
 import { GatewayIntentBits } from "discord.js";
 import { Client, Collection } from "discord.js";
 import { config } from "./config.js";
-import { GuildPlayerManager } from "./player/GuildPlayerManager.js";
-import { UIHandler } from "./ui/music/UIHandler.js";
-import { controllerStore } from "./store/ControllerStore.js";
+import { GuildPlayerManager } from "../player/GuildPlayerManager.js";
+import { UIHandler } from "../ui/music/UIHandler.js";
+import { controllerStore } from "../store/ControllerStore.js";
 import { registerEvents } from "./events/index.js";
-import { commands } from "./commands/index.js";
+import { commands } from "../commands/index.js";
 import presence from "./features/presence.js";
 
 const client = new Client({
@@ -47,8 +47,10 @@ function shutdown(signal) {
 process.on("SIGINT", () => shutdown("SIGINT"));
 process.on("SIGTERM", () => shutdown("SIGTERM"));
 process.on("uncaughtException", (err) => {
-  console.error("[Main] Uncaught exception:", err);
-  shutdown("uncaughtException");
+  console.error("[Main] Uncaught exception (continuing):", err);
+});
+process.on("unhandledRejection", (reason) => {
+  console.error("[Main] Unhandled rejection:", reason);
 });
 
 console.info("[Main] Connecting to Discord Gateway...");

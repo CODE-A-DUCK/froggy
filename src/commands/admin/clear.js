@@ -17,7 +17,7 @@ async function getAppId(token) {
 
 try {
   const applicationId = await getAppId(TOKEN);
-  console.info(`[Deploy] Clearing global commands for app ${applicationId}...`);
+  console.info(`[Deploy] Clearing all commands (global & guild) for app ${applicationId}...`);
   await clearCommands({ token: TOKEN, applicationId });
   console.info("[Deploy] Done!");
   process.exit(0);

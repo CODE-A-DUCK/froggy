@@ -1,7 +1,8 @@
-import { spawn } from "child_process";
+import { spawn } from "node:child_process";
 import ffmpegPath from "ffmpeg-static";
 import { StreamType } from "@discordjs/voice";
-import { validatePlayUrl } from "../security/sanitizeQuery.js";
+import { validatePlayUrl, validateSearchQuery } from "../../security/sanitizeQuery.js";
+import { spawnProcess } from "./spawnProcess.js";
 
 export class YoutubeAdapter {
   getCommonArgs() {
@@ -9,22 +10,34 @@ export class YoutubeAdapter {
   }
 
   async getMetadata(query) {
-    const isUrl = query.startsWith("http");
+    const isUrl = (() => {
+      try {
+        const u = new URL(query);
+        return u.protocol === "http:" || u.protocol === "https:";
+      } catch {
+        return false;
+      }
+    })();
 
     if (isUrl) {
       const check = validatePlayUrl(query);
       if (!check.ok) throw new Error(`Rejected URL: ${check.reason}`);
+    } else {
+      const check = validateSearchQuery(query);
+      if (!check.ok) throw new Error(`Rejected Search Query: ${check.reason}`);
     }
 
     const args = [
       ...this.getCommonArgs(),
       "--dump-json",
       "--flat-playlist",
+      "--playlist-items",
+      "1",
       isUrl ? query : `ytsearch1:${query}`,
     ];
 
     try {
-      const stdout = await runProcess("yt-dlp", args);
+      const stdout = await spawnProcess("yt-dlp", args);
       const jsonLine = stdout
         .split("\n")
         .map((line) => line.trim())
@@ -53,8 +66,10 @@ export class YoutubeAdapter {
   }
 
   async getStreamUrl(url) {
+    const check = validatePlayUrl(url);
+    if (!check.ok) throw new Error(`Rejected URL: ${check.reason}`);
     try {
-      const stdout = await runProcess("yt-dlp", [
+      const stdout = await spawnProcess("yt-dlp", [
         ...this.getCommonArgs(),
         "-g",
         "-f",
@@ -138,10 +153,23 @@ export class YoutubeAdapter {
     const ffmpegErrors = [];
     let cleanedUp = false;
     let producedAudio = false;
+    
+    let stallTimeout = null;
+    const resetStallTimeout = () => {
+      if (stallTimeout) clearTimeout(stallTimeout);
+      stallTimeout = setTimeout(() => {
+        if (!cleanedUp) {
+          ffmpeg.stdout.destroy(new Error("FFMPEG_STALLED: ffmpeg stopped producing audio data"));
+        }
+      }, 15000);
+    };
 
     ffmpeg.stdout.on("data", () => {
       producedAudio = true;
+      resetStallTimeout();
     });
+    
+    resetStallTimeout();
 
     ytDlp.stderr.on("data", (chunk) => {
       pushProcessLog(ytDlpErrors, chunk);
@@ -217,6 +245,7 @@ export class YoutubeAdapter {
       }
 
       cleanedUp = true;
+      if (stallTimeout) clearTimeout(stallTimeout);
       ytDlp.stdout.unpipe(ffmpeg.stdin);
       ffmpeg.stdin.destroy();
       ytDlp.kill("SIGKILL");
@@ -234,72 +263,6 @@ export class YoutubeAdapter {
   }
 }
 
-function pushProcessLog(buffer, chunk) {
-  const text = chunk.toString().trim();
-  if (!text) {
-    return;
-  }
-
-  buffer.push(text);
-  if (buffer.length > 10) {
-    buffer.shift();
-  }
-}
-
-function formatProcessFailure(name, code, signal, lines) {
-  const fullMessage = lines.join(" ");
-  if (
-    fullMessage.includes("confirm your age") ||
-    fullMessage.includes("age-restricted")
-  ) {
-    return "This song is age-restricted and cannot be played.";
-  }
-
-  const suffix = lines.length > 0 ? `: ${lines.join(" | ")}` : "";
-  const exitReason =
-    code !== null
-      ? `code ${code}`
-      : signal
-        ? `signal ${signal}`
-        : "unknown reason";
-  return `${name} exited with ${exitReason}${suffix}`;
-}
-
 function isIgnorablePipeError(error) {
   return error?.code === "EPIPE" || error?.code === "ERR_STREAM_DESTROYED";
-}
-
-async function runProcess(command, args) {
-  return new Promise((resolve, reject) => {
-    const child = spawn(command, args, {
-      stdio: ["ignore", "pipe", "pipe"],
-      shell: false,
-    });
-
-    const stdoutChunks = [];
-    const stderrLines = [];
-
-    child.stdout.on("data", (chunk) => {
-      stdoutChunks.push(chunk);
-    });
-
-    child.stderr.on("data", (chunk) => {
-      pushProcessLog(stderrLines, chunk);
-    });
-
-    child.on("error", (error) => {
-      reject(new Error(`${command} failed to start: ${error.message}`));
-    });
-
-    child.on("close", (code, signal) => {
-      if (code === 0) {
-        resolve(Buffer.concat(stdoutChunks).toString("utf8"));
-        return;
-      }
-
-      reject(
-        new Error(formatProcessFailure(command, code, signal, stderrLines)),
-      );
-    });
-  });
 }

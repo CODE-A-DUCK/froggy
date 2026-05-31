@@ -1,12 +1,13 @@
-import { SlashCommandBuilder, EmbedBuilder } from "discord.js";
-import { validateVoiceState } from "../../utilities/voiceGuard.js";
+import { SlashCommandBuilder, MessageFlags } from "discord.js";
+import { validateVoiceState } from "../../utils/voiceGuard.js";
+import { ContainerFactory } from "../../ui/music/ContainerFactory.js";
 
 export const joinCommand = {
   name: "join",
-  category: ":notes: | 音乐",
+  category: ":notes: | 音樂",
   data: new SlashCommandBuilder()
     .setName("join")
-    .setDescription("讓 Froggy 加入你的語音頻道"),
+    .setDescription("讓我加入你的語音頻道"),
   async execute(interaction, context) {
     const validation = await validateVoiceState(interaction, {
       requireBotInVC: false,
@@ -24,40 +25,26 @@ export const joinCommand = {
         text_channel_id: interaction.channelId,
       });
       await interaction.editReply({
-        embeds: [
-          new EmbedBuilder()
-            .setAuthor({
-              name: "音樂中心",
-              iconURL: interaction.client.user.displayAvatarURL(),
-            })
-            .setDescription(
-              `:white_check_mark: | 我已加入語音頻道：\`${userVoiceChannel.name}\``,
-            )
-            .setColor(0x22c55e)
-            .setFooter({
-              text: interaction.user.tag,
-              iconURL: interaction.user.displayAvatarURL(),
-            })
-            .setTimestamp(),
+        components: [
+          ContainerFactory.buildReply(
+            "success",
+            `<:headphoneline:1510533870645153792> | 我已加入語音頻道：\`${userVoiceChannel.name}\``,
+            interaction.user,
+          ),
         ],
+        flags: [MessageFlags.IsComponentsV2],
       });
     } catch (err) {
       console.error("[Command] Join error:", err);
       await interaction.editReply({
-        embeds: [
-          new EmbedBuilder()
-            .setAuthor({
-              name: "音樂中心",
-              iconURL: interaction.client.user.displayAvatarURL(),
-            })
-            .setDescription(":x: | 執行時發生錯誤，請稍後再試。")
-            .setColor(0xef4444)
-            .setFooter({
-              text: interaction.user.tag,
-              iconURL: interaction.user.displayAvatarURL(),
-            })
-            .setTimestamp(),
+        components: [
+          ContainerFactory.buildReply(
+            "error",
+            "<:errorwarningline:1510533865805058188> | 執行時發生錯誤，請稍後再試。",
+            interaction.user,
+          ),
         ],
+        flags: [MessageFlags.IsComponentsV2],
       });
     }
   },

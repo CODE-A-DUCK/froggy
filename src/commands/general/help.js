@@ -45,7 +45,7 @@ export const helpCommand = {
       const commands = Array.from(interaction.client.commands.values());
       const embed = new EmbedBuilder()
         .setTitle(":notebook_with_decorative_cover: | 指令列表")
-        .setColor(0xd98d30)
+        .setColor(0xc55300)
         .setThumbnail(interaction.client.user.displayAvatarURL({ size: 256 }))
         .setFooter({
           text: "輸入 /help [指令名稱] 取得詳細資訊，或從下方選單選取",
@@ -93,7 +93,7 @@ export const helpCommand = {
   async showCommandDetails(interaction, commandName) {
     const command = interaction.client.commands.get(commandName);
     if (!command) {
-      const errorContent = `:x: | 我找不到名為 \`${commandName}\` 的指令。`;
+      const errorContent = `<:errorwarningline:1510533865805058188> | 我找不到名為 \`${commandName}\` 的指令。`;
       if (interaction.deferred || interaction.replied) {
         return interaction.editReply({
           content: errorContent,
@@ -107,7 +107,7 @@ export const helpCommand = {
     const embed = new EmbedBuilder()
       .setTitle(`:pencil: | 指令說明：/${command.name}`)
       .setDescription(command.data.description || "此指令無描述。")
-      .setColor(0x9ec27f);
+      .setColor(0x008575);
 
     if (command.data.options && command.data.options.length > 0) {
       const optionsText = command.data.options

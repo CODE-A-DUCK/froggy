@@ -10,6 +10,7 @@ export function checkCooldown(userId, commandName, cooldownMs) {
   const expires = store.get(key) ?? 0;
   if (expires > now) return false;
   store.set(key, now + cooldownMs);
+  setTimeout(() => store.delete(key), cooldownMs + 1000);
   return true;
 }
 

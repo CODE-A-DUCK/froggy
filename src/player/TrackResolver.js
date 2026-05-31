@@ -1,4 +1,4 @@
-import { ResolverError } from "../core/errors.js";
+import { ResolverError } from "./core/errors.js";
 
 export class TrackResolver {
   constructor(sources = []) {

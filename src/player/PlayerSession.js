@@ -9,8 +9,8 @@ import {
   joinVoiceChannel,
   getVoiceConnection,
 } from "@discordjs/voice";
-import { LoopMode, SessionState } from "../core/playbackConstants.js";
-import { VoiceConnectionError } from "../core/errors.js";
+import { LoopMode, SessionState } from "./core/playbackConstants.js";
+import { VoiceConnectionError } from "./core/errors.js";
 
 const VOICE_READY_TIMEOUT_MS = 20_000;
 const PLAYER_READY_TIMEOUT_MS = 15_000;
@@ -32,7 +32,7 @@ export class PlayerSession extends EventEmitter {
     this.state = SessionState.IDLE;
     this.serialChain = Promise.resolve();
     this.serialQueueDepth = 0;
-    this.suppressNextIdleEvents = 0;
+    this.suppressIdleUntil = 0;
     this.activeStreamCleanup = null;
     this.emptyTimer = null;
 
@@ -45,6 +45,7 @@ export class PlayerSession extends EventEmitter {
     textChannelId,
     interactionToken,
     controllerUserId,
+    silent,
   }) {
     return this.#runSerial(async () => {
       await this.#ensureConnected(channelId);
@@ -53,12 +54,13 @@ export class PlayerSession extends EventEmitter {
         textChannelId,
         interactionToken,
         controllerUserId,
+        silent,
       });
     });
   }
 
-  async stop({ textChannelId } = {}) {
-    return this.#runSerial(() => this.#stop({ textChannelId }));
+  async stop({ textChannelId, controllerUserId, interactionToken } = {}) {
+    return this.#runSerial(() => this.#stop({ textChannelId, controllerUserId, interactionToken }));
   }
 
   async pause() {
@@ -75,6 +77,10 @@ export class PlayerSession extends EventEmitter {
 
   async toggleLoop() {
     return this.#runSerial(() => this.#toggleLoop());
+  }
+
+  async removeTracks(indices) {
+    return this.#runSerial(() => this.store.removeTracks(indices));
   }
 
   async resendController({ textChannelId } = {}) {
@@ -215,8 +221,7 @@ export class PlayerSession extends EventEmitter {
     });
 
     this.player.on(AudioPlayerStatus.Idle, () => {
-      if (this.suppressNextIdleEvents > 0) {
-        this.suppressNextIdleEvents--;
+      if (Date.now() < this.suppressIdleUntil) {
         return;
       }
       if (this.state !== SessionState.IDLE) {
@@ -234,15 +239,23 @@ export class PlayerSession extends EventEmitter {
         `[PlayerSession] Audio player error for guild ${this.guildId}:`,
         error.message,
       );
-      this.#cleanupActiveStream();
       this.#setState(SessionState.ERROR);
+
+      const isStall = error.message.startsWith("FFMPEG_STALLED");
+
       this.emit("trackError", {
         guild_id: this.guildId,
         text_channel_id: this.textChannelId,
-        error: error.message,
+        error: isStall ? "音樂串流卡住，正在嘗試重新啟動..." : error.message,
         title: this.currentTrack?.title,
+        controller_user_id: this.currentTrack?.controller_user_id,
       });
-      this.#startNextTrack({ forceAdvance: true }).catch(() => null);
+
+      if (isStall) {
+        this.#startNextTrack({ forceAdvance: false, retryCurrent: true }).catch(() => null);
+      } else {
+        this.#startNextTrack({ forceAdvance: true }).catch(() => null);
+      }
     });
   }
 
@@ -251,6 +264,7 @@ export class PlayerSession extends EventEmitter {
     textChannelId,
     interactionToken,
     controllerUserId,
+    silent,
   }) {
     const shouldAutoplay =
       this.player.state.status === AudioPlayerStatus.Idle && !this.currentTrack;
@@ -277,6 +291,7 @@ export class PlayerSession extends EventEmitter {
           thumbnail: track.thumbnail,
           duration: track.duration,
           controller_user_id: track.controller_user_id,
+          silent,
         });
       }
       return track;
@@ -293,14 +308,17 @@ export class PlayerSession extends EventEmitter {
     }
   }
 
-  async #startNextTrack({ forceAdvance = false }) {
+  async #startNextTrack({ forceAdvance = false, retryCurrent = false }) {
     let shouldForceAdvance = forceAdvance;
+    let shouldRetryCurrent = retryCurrent;
 
     while (true) {
       this.#cleanupActiveStream();
       const nextTrack = await this.#selectNextTrack({
         forceAdvance: shouldForceAdvance,
+        retryCurrent: shouldRetryCurrent,
       });
+      shouldRetryCurrent = false; // Only retry once per loop iteration if set
 
       if (!nextTrack) {
         const lastRequesterId = this.currentTrack?.controller_user_id;
@@ -360,7 +378,10 @@ export class PlayerSession extends EventEmitter {
     }
   }
 
-  async #selectNextTrack({ forceAdvance }) {
+  async #selectNextTrack({ forceAdvance, retryCurrent }) {
+    if (retryCurrent && this.currentTrack) {
+      return this.currentTrack;
+    }
     const loopMode = await this.store.getLoopMode();
     if (
       !forceAdvance &&
@@ -374,13 +395,13 @@ export class PlayerSession extends EventEmitter {
     return this.store.dequeue();
   }
 
-  async #stop({ textChannelId, controllerUserId } = {}) {
+  async #stop({ textChannelId, controllerUserId, interactionToken } = {}) {
     this.#setState(SessionState.STOPPING);
     this.textChannelId = textChannelId ?? this.textChannelId;
     this.#cleanupActiveStream();
 
     if (this.player.state.status !== AudioPlayerStatus.Idle) {
-      this.suppressNextIdleEvents += 1;
+      this.suppressIdleUntil = Date.now() + 1000;
       this.player.stop(true);
     }
 
@@ -392,6 +413,7 @@ export class PlayerSession extends EventEmitter {
       guild_id: this.guildId,
       text_channel_id: this.textChannelId,
       controller_user_id: controllerUserId,
+      interaction_token: interactionToken,
     });
   }
 

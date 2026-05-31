@@ -1,5 +1,5 @@
 import { v4 as uuidv4 } from "uuid";
-import { YoutubeAdapter } from "../../adapters/YoutubeAdapter.js";
+import { YoutubeAdapter } from "./YoutubeAdapter.js";
 
 export class YoutubeTrackSource {
   constructor(adapter = new YoutubeAdapter()) {

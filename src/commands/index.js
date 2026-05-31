@@ -45,8 +45,21 @@ export async function registerCommands({ token, applicationId }) {
 
 export async function clearCommands({ token, applicationId }) {
   const rest = new REST({ version: "10" }).setToken(token);
+  
+  // Clear global commands
   await rest.put(Routes.applicationCommands(applicationId), { body: [] });
   console.info(`[Deploy] Cleared all global commands.`);
+
+  // Clear guild commands for all guilds the bot is in
+  try {
+    const guilds = await rest.get(Routes.userGuilds());
+    for (const guild of guilds) {
+      await rest.put(Routes.applicationGuildCommands(applicationId, guild.id), { body: [] });
+      console.info(`[Deploy] Cleared commands for guild: ${guild.name} (${guild.id})`);
+    }
+  } catch (err) {
+    console.warn("[Deploy] Failed to fetch or clear guild commands:", err.message);
+  }
 }
 
 export async function handleInteraction(interaction, context) {

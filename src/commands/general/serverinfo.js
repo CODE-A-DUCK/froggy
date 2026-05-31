@@ -15,7 +15,8 @@ export const serverinfo = {
 
       if (!guild) {
         return interaction.editReply({
-          content: ":x: | 這個指令只能在伺服器中使用",
+          content:
+            "<:errorwarningline:1510533865805058188> | 這個指令只能在伺服器中使用",
         });
       }
 
@@ -24,7 +25,7 @@ export const serverinfo = {
       const embed = new EmbedBuilder()
         .setTitle(`:bar_chart: | ${guild.name} 伺服器資訊`)
         .setDescription(guild.description || "這個伺服器沒有設定描述")
-        .setColor(0xd98d30)
+        .setColor(0xc55300)
         .setThumbnail(
           guild.iconURL({ dynamic: true }) ||
             interaction.client.user.displayAvatarURL({ dynamic: true }),
@@ -68,7 +69,8 @@ export const serverinfo = {
     } catch (error) {
       console.error("[Command:serverinfo] Error:", error);
       await interaction.editReply({
-        content: ":x: | 查詢伺服器資訊時發生錯誤。",
+        content:
+          "<:errorwarningline:1510533865805058188> | 查詢伺服器資訊時發生錯誤。",
       });
     }
   },

@@ -22,14 +22,18 @@ export async function validateVoiceState(interaction, options = {}) {
   };
 
   if (!guild) {
-    await reply(":x: | 這個指令只能在伺服器中使用。");
+    await reply(
+      "<:errorwarningline:1510533865805058188> | 這個指令只能在伺服器中使用。",
+    );
     return null;
   }
 
   const member = await guild.members.fetch(interaction.user.id);
   const userVoiceChannel = member.voice.channel;
   if (!userVoiceChannel) {
-    await reply(":x: | 你必須在語音頻道中才能使用這個指令。");
+    await reply(
+      "<:errorwarningline:1510533865805058188> | 你必須在語音頻道中才能使用這個指令。",
+    );
     return null;
   }
 
@@ -37,7 +41,9 @@ export async function validateVoiceState(interaction, options = {}) {
   const botVoiceChannel = botMember.voice.channel;
 
   if (requireBotInVC && !botVoiceChannel) {
-    await reply(":x: | 我目前不在語音頻道中。");
+    await reply(
+      "<:errorwarningline:1510533865805058188> | 我目前不在語音頻道中。",
+    );
     return null;
   }
 
@@ -47,7 +53,7 @@ export async function validateVoiceState(interaction, options = {}) {
     userVoiceChannel.id !== botVoiceChannel.id
   ) {
     await reply(
-      `:x: | 你必須跟我在同一個頻道 <#${botVoiceChannel.id}> 才能使用音樂指令！`,
+      `<:errorwarningline:1510533865805058188> | 你必須跟我在同一個頻道 <#${botVoiceChannel.id}> 才能使用音樂指令！`,
     );
     return null;
   }

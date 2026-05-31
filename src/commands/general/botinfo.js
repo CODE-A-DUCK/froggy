@@ -40,7 +40,7 @@ export const botinfoCommand = {
       })
       .setThumbnail(client.user.displayAvatarURL({ size: 256 }))
       .setDescription(description ?? "")
-      .setColor(0xd98d30)
+      .setColor(0xc55300)
       .addFields(
         {
           name: "伺服器暱稱",

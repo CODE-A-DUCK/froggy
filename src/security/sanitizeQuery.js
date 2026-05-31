@@ -1,9 +1,8 @@
-// *************** 我好像是傻逼 2026/05/30 ***************
 
 const MAX_URL_LENGTH = 2048;
 const MAX_QUERY_LENGTH = 200;
 const BLOCKED_HOST =
-  /^(localhost|127\.|10\.|192\.168\.|172\.(1[6-9]|2\d|3[01])\.|::1|0\.0\.0\.0|169\.254\.)/i;
+  /^(localhost|127\.|10\.|192\.168\.|172\.(1[6-9]|2\d|3[01])\.|::1|::ffff:|0\.0\.0\.0|169\.254\.|fd[0-9a-f]{2}:)/i;
 
 /**
  * 在將 URL 傳遞給 yt-dlp（/play 指令使用）之前對其進行驗證。
@@ -31,10 +30,10 @@ export function validatePlayUrl(input) {
     return { ok: false, reason: "Only http/https URLs are permitted" };
 
   const rawHost = url.hostname.replace(/^\[|\]$/g, "");
-  if (BLOCKED_HOST.test(rawHost))
+  if (BLOCKED_HOST.test(rawHost) || /^\d+$/.test(rawHost))
     return {
       ok: false,
-      reason: "Access to internal addresses is not permitted",
+      reason: "Access to internal or decimal addresses is not permitted",
     };
   if (url.hostname.startsWith("-") || url.pathname.startsWith("/-"))
     return { ok: false, reason: "Suspicious URL structure rejected" };

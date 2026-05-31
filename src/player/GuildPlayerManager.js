@@ -1,8 +1,8 @@
 import { EventEmitter } from "node:events";
-import { InMemoryStore } from "./session/InMemoryStore.js";
-import { PlayerSession } from "./session/PlayerSession.js";
-import { TrackResolver } from "./resolver/TrackResolver.js";
-import { YoutubeTrackSource } from "./resolver/sources/YoutubeTrackSource.js";
+import { QueueStore } from "./QueueStore.js";
+import { PlayerSession } from "./PlayerSession.js";
+import { TrackResolver } from "./TrackResolver.js";
+import { YoutubeTrackSource } from "./adapters/YoutubeTrackSource.js";
 
 const SESSION_CLEANUP_DELAY_MS = 5 * 60 * 1_000;
 
@@ -11,6 +11,7 @@ export class GuildPlayerManager extends EventEmitter {
     super();
     this.client = client;
     this.sessions = new Map();
+    this.cleanupTimers = new Map();
     this.resolver = new TrackResolver([new YoutubeTrackSource()]);
   }
 
@@ -20,7 +21,7 @@ export class GuildPlayerManager extends EventEmitter {
     const session = new PlayerSession({
       guildId,
       client: this.client,
-      store: new InMemoryStore(),
+      store: new QueueStore(),
       resolver: this.resolver,
     });
 
@@ -58,12 +59,14 @@ export class GuildPlayerManager extends EventEmitter {
           textChannelId: task.text_channel_id,
           interactionToken: task.interaction_token,
           controllerUserId: task.controller_user_id,
+          silent: task.silent,
         });
 
       case "stop":
         return session.stop({ 
           textChannelId: task.text_channel_id,
           controllerUserId: task.controller_user_id,
+          interactionToken: task.interaction_token,
         });
 
       case "skip":
@@ -77,6 +80,9 @@ export class GuildPlayerManager extends EventEmitter {
 
       case "loop":
         return session.toggleLoop();
+
+      case "remove":
+        return session.removeTracks(task.indices);
 
       case "resend_ui":
         return session.resendController({
@@ -95,7 +101,8 @@ export class GuildPlayerManager extends EventEmitter {
   }
 
   #scheduleSessionCleanup(guildId) {
-    setTimeout(async () => {
+    clearTimeout(this.cleanupTimers.get(guildId));
+    const timer = setTimeout(async () => {
       const session = this.sessions.get(guildId);
       if (!session) return;
       if (!session.currentTrack) {
@@ -117,7 +124,9 @@ export class GuildPlayerManager extends EventEmitter {
           `[GuildPlayerManager] Destroyed idle session for guild ${guildId}. Active: ${this.sessions.size}`,
         );
       }
+      this.cleanupTimers.delete(guildId);
     }, SESSION_CLEANUP_DELAY_MS);
+    this.cleanupTimers.set(guildId, timer);
   }
 
   #bindSessionEvents(session) {
