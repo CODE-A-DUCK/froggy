@@ -1,10 +1,7 @@
 import { SlashCommandBuilder, MessageFlags } from "discord.js";
 import { ytSearch } from "../../utils/ytSearch.js";
 import { validatePlayUrl } from "../../security/sanitizeQuery.js";
-import {
-  checkCooldown,
-  getCooldownRemaining,
-} from "../../utils/cooldown.js";
+import { checkCooldown } from "../../utils/cooldown.js";
 import { ContainerFactory } from "../../ui/music/ContainerFactory.js";
 
 const SEARCH_COOLDOWN_MS = 5000;

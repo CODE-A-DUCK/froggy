@@ -266,3 +266,32 @@ export class YoutubeAdapter {
 function isIgnorablePipeError(error) {
   return error?.code === "EPIPE" || error?.code === "ERR_STREAM_DESTROYED";
 }
+
+function pushProcessLog(logs, chunk) {
+  const text = chunk.toString().trim();
+  if (text) {
+    logs.push(text);
+    if (logs.length > 10) {
+      logs.shift();
+    }
+  }
+}
+
+function formatProcessFailure(name, code, signal, logs) {
+  const fullMessage = logs.join(" ");
+  if (
+    fullMessage.includes("confirm your age") ||
+    fullMessage.includes("age-restricted")
+  ) {
+    return "This song is age-restricted and cannot be played.";
+  }
+
+  const suffix = logs.length > 0 ? `: ${logs.join(" | ")}` : "";
+  const exitReason =
+    code !== null
+      ? `code ${code}`
+      : signal
+        ? `signal ${signal}`
+        : "unknown reason";
+  return `${name} exited with ${exitReason}${suffix}`;
+}

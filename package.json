@@ -4,8 +4,8 @@
   "description": "一個可能會有很多功能的 Discord 機器人。",
   "type": "module",
   "scripts": {
-    "start": "node src/index.js",
-    "dev": "node --watch src/index.js",
+    "start": "node src/bot/index.js",
+    "dev": "node --watch src/bot/index.js",
     "deploy": "node src/commands/deploy.js",
     "clear": "node src/commands/clear.js"
   },
