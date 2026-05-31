@@ -17,6 +17,10 @@ export const resendCommand = {
       return interaction.editReply({
         embeds: [
           new EmbedBuilder()
+            .setAuthor({
+              name: "音樂中心",
+              iconURL: interaction.client.user.displayAvatarURL(),
+            })
             .setDescription(":notepad_spiral: | 列隊裏沒有任何歌曲。")
             .setColor(0xa855f7)
             .setFooter({

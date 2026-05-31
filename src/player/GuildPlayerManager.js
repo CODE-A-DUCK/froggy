@@ -61,7 +61,10 @@ export class GuildPlayerManager extends EventEmitter {
         });
 
       case "stop":
-        return session.stop({ textChannelId: task.text_channel_id });
+        return session.stop({ 
+          textChannelId: task.text_channel_id,
+          controllerUserId: task.controller_user_id,
+        });
 
       case "skip":
         return session.skip();

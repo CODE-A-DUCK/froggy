@@ -1,9 +1,5 @@
 import { SlashCommandBuilder, EmbedBuilder, MessageFlags } from "discord.js";
-import { controllerStore } from "../../store/ControllerStore.js";
-import {
-  validateVoiceState,
-  CONTROLLER_DENIED_MESSAGE,
-} from "../../utilities/voiceGuard.js";
+import { validateVoiceState } from "../../utilities/voiceGuard.js";
 import {
   checkCooldown,
   getRemainingCooldown,
@@ -37,6 +33,10 @@ export const playCommand = {
       return interaction.reply({
         embeds: [
           new EmbedBuilder()
+            .setAuthor({
+              name: "音樂中心",
+              iconURL: interaction.client.user.displayAvatarURL(),
+            })
             .setDescription(
               ":x: | `/play` 只接受 YouTube 連結。\n若要搜尋歌曲，請使用 `/search`。",
             )
@@ -56,6 +56,10 @@ export const playCommand = {
       return interaction.reply({
         embeds: [
           new EmbedBuilder()
+            .setAuthor({
+              name: "音樂中心",
+              iconURL: interaction.client.user.displayAvatarURL(),
+            })
             .setDescription(
               `:hourglass: | 請等待 ${(ms / 1000).toFixed(1)} 秒後再使用。`,
             )
@@ -106,6 +110,10 @@ export const playCommand = {
       await interaction.editReply({
         embeds: [
           new EmbedBuilder()
+            .setAuthor({
+              name: "音樂中心",
+              iconURL: interaction.client.user.displayAvatarURL(),
+            })
             .setDescription(":x: | 執行時發生錯誤，請稍後再試。")
             .setColor(0xef4444)
             .setFooter({

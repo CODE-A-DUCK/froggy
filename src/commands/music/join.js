@@ -26,6 +26,10 @@ export const joinCommand = {
       await interaction.editReply({
         embeds: [
           new EmbedBuilder()
+            .setAuthor({
+              name: "音樂中心",
+              iconURL: interaction.client.user.displayAvatarURL(),
+            })
             .setDescription(
               `:white_check_mark: | 我已加入語音頻道：\`${userVoiceChannel.name}\``,
             )
@@ -42,6 +46,10 @@ export const joinCommand = {
       await interaction.editReply({
         embeds: [
           new EmbedBuilder()
+            .setAuthor({
+              name: "音樂中心",
+              iconURL: interaction.client.user.displayAvatarURL(),
+            })
             .setDescription(":x: | 執行時發生錯誤，請稍後再試。")
             .setColor(0xef4444)
             .setFooter({

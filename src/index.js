@@ -2,7 +2,7 @@ import { GatewayIntentBits } from "discord.js";
 import { Client, Collection } from "discord.js";
 import { config } from "./config.js";
 import { GuildPlayerManager } from "./player/GuildPlayerManager.js";
-import { UIHandler } from "./ui/UIHandler.js";
+import { UIHandler } from "./ui/music/UIHandler.js";
 import { controllerStore } from "./store/ControllerStore.js";
 import { registerEvents } from "./events/index.js";
 import { commands } from "./commands/index.js";

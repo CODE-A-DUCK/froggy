@@ -17,6 +17,10 @@ export const queueCommand = {
         return interaction.editReply({
           embeds: [
             new EmbedBuilder()
+              .setAuthor({
+                name: "音樂中心",
+                iconURL: interaction.client.user.displayAvatarURL(),
+              })
               .setDescription(":notepad_spiral: | 隊列是空的。")
               .setColor(0xa855f7)
               .setFooter({
@@ -31,7 +35,7 @@ export const queueCommand = {
       const lines = [];
       if (current) {
         lines.push(
-          `**▶ 正在播放：** [${current.title}](${current.url}) \`${current.duration ? formatDuration(current.duration) : "LIVE"}\``,
+          `<:playcircleline:1510222252011163738> **| 正在播放：** [${current.title}](${current.url}) \`${current.duration ? formatDuration(current.duration) : "LIVE"}\``,
         );
       }
       if (queue.length > 0) {
@@ -49,6 +53,10 @@ export const queueCommand = {
       await interaction.editReply({
         embeds: [
           new EmbedBuilder()
+            .setAuthor({
+              name: "音樂中心",
+              iconURL: interaction.client.user.displayAvatarURL(),
+            })
             .setTitle(":notepad_spiral: | 播放隊列")
             .setDescription(lines.join("\n"))
             .setColor(0xa855f7)
@@ -64,6 +72,10 @@ export const queueCommand = {
       await interaction.editReply({
         embeds: [
           new EmbedBuilder()
+            .setAuthor({
+              name: "音樂中心",
+              iconURL: interaction.client.user.displayAvatarURL(),
+            })
             .setDescription(":x: | 執行時發生錯誤，請稍後再試。")
             .setColor(0xef4444)
             .setFooter({

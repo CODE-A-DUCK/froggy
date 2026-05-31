@@ -105,6 +105,7 @@ export class YoutubeAdapter {
       ],
       {
         stdio: ["ignore", "pipe", "pipe"],
+        shell: false,
       },
     );
 
@@ -127,6 +128,7 @@ export class YoutubeAdapter {
       ],
       {
         stdio: ["pipe", "pipe", "pipe"],
+        shell: false,
       },
     );
 
@@ -271,6 +273,7 @@ async function runProcess(command, args) {
   return new Promise((resolve, reject) => {
     const child = spawn(command, args, {
       stdio: ["ignore", "pipe", "pipe"],
+      shell: false,
     });
 
     const stdoutChunks = [];

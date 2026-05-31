@@ -1,4 +1,4 @@
-// ***************我也不知道怎麼避免 RCE 了，還希望大家多多 pr，求你們了。***************
+// *************** 我好像是傻逼 2026/05/30 ***************
 
 const MAX_URL_LENGTH = 2048;
 const MAX_QUERY_LENGTH = 200;
@@ -30,7 +30,8 @@ export function validatePlayUrl(input) {
   if (url.protocol !== "http:" && url.protocol !== "https:")
     return { ok: false, reason: "Only http/https URLs are permitted" };
 
-  if (BLOCKED_HOST.test(url.hostname))
+  const rawHost = url.hostname.replace(/^\[|\]$/g, "");
+  if (BLOCKED_HOST.test(rawHost))
     return {
       ok: false,
       reason: "Access to internal addresses is not permitted",

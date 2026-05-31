@@ -18,6 +18,10 @@ export const stopCommand = {
       return interaction.editReply({
         embeds: [
           new EmbedBuilder()
+            .setAuthor({
+              name: "音樂中心",
+              iconURL: interaction.client.user.displayAvatarURL(),
+            })
             .setDescription(":notepad_spiral: | 列隊裏沒有任何歌曲。")
             .setColor(0xa855f7)
             .setFooter({
@@ -34,11 +38,16 @@ export const stopCommand = {
         guild_id: guild.id,
         action: "stop",
         text_channel_id: interaction.channelId,
+        controller_user_id: interaction.user.id,
       });
       context.controllerStore.clearOwner(guild.id);
       await interaction.editReply({
         embeds: [
           new EmbedBuilder()
+            .setAuthor({
+              name: "音樂中心",
+              iconURL: interaction.client.user.displayAvatarURL(),
+            })
             .setDescription(":octagonal_sign: | 我已停止播放並清空隊列。")
             .setColor(0xef4444)
             .setFooter({
@@ -53,6 +62,10 @@ export const stopCommand = {
       await interaction.editReply({
         embeds: [
           new EmbedBuilder()
+            .setAuthor({
+              name: "音樂中心",
+              iconURL: interaction.client.user.displayAvatarURL(),
+            })
             .setDescription(":x: | 執行時發生錯誤，請稍後再試。")
             .setColor(0xef4444)
             .setFooter({

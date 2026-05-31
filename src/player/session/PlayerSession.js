@@ -303,12 +303,14 @@ export class PlayerSession extends EventEmitter {
       });
 
       if (!nextTrack) {
+        const lastRequesterId = this.currentTrack?.controller_user_id;
         this.currentTrack = null;
         await this.store.clearCurrentTrack();
         this.#setState(SessionState.IDLE);
         this.emit("queueFinished", {
           guild_id: this.guildId,
           text_channel_id: this.textChannelId,
+          controller_user_id: lastRequesterId,
         });
         return null;
       }
@@ -372,7 +374,7 @@ export class PlayerSession extends EventEmitter {
     return this.store.dequeue();
   }
 
-  async #stop({ textChannelId } = {}) {
+  async #stop({ textChannelId, controllerUserId } = {}) {
     this.#setState(SessionState.STOPPING);
     this.textChannelId = textChannelId ?? this.textChannelId;
     this.#cleanupActiveStream();
@@ -389,6 +391,7 @@ export class PlayerSession extends EventEmitter {
     this.emit("trackStopped", {
       guild_id: this.guildId,
       text_channel_id: this.textChannelId,
+      controller_user_id: controllerUserId,
     });
   }
 

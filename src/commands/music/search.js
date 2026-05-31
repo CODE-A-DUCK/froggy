@@ -7,8 +7,6 @@ import {
   MessageFlags,
   ComponentType,
 } from "discord.js";
-import { controllerStore } from "../../store/ControllerStore.js";
-import { CONTROLLER_DENIED_MESSAGE } from "../../utilities/voiceGuard.js";
 import { formatDuration } from "../../utilities/formatDuration.js";
 import { ytSearch } from "../../utilities/ytSearch.js";
 import {
@@ -37,6 +35,10 @@ export const searchCommand = {
       return interaction.reply({
         embeds: [
           new EmbedBuilder()
+            .setAuthor({
+              name: "音樂中心",
+              iconURL: interaction.client.user.displayAvatarURL(),
+            })
             .setDescription(
               `:hourglass: | 請等待 ${(ms / 1000).toFixed(1)} 秒後再搜尋。`,
             )
@@ -61,6 +63,10 @@ export const searchCommand = {
       return interaction.editReply({
         embeds: [
           new EmbedBuilder()
+            .setAuthor({
+              name: "音樂中心",
+              iconURL: interaction.client.user.displayAvatarURL(),
+            })
             .setDescription(":x: | 搜尋失敗，請稍後再試。")
             .setColor(0xef4444)
             .setFooter({
@@ -76,6 +82,10 @@ export const searchCommand = {
       return interaction.editReply({
         embeds: [
           new EmbedBuilder()
+            .setAuthor({
+              name: "音樂中心",
+              iconURL: interaction.client.user.displayAvatarURL(),
+            })
             .setDescription(":x: | 找不到結果，請換個關鍵字試試。")
             .setColor(0xef4444)
             .setFooter({
@@ -110,6 +120,10 @@ export const searchCommand = {
     const response = await interaction.editReply({
       embeds: [
         new EmbedBuilder()
+          .setAuthor({
+            name: "音樂中心",
+            iconURL: interaction.client.user.displayAvatarURL(),
+          })
           .setTitle(":mag: | 搜尋結果")
           .setDescription(listText)
           .setColor(0xa855f7)
@@ -170,6 +184,10 @@ async function handleSearchSelect(interaction, context) {
     return interaction.followUp({
       embeds: [
         new EmbedBuilder()
+          .setAuthor({
+            name: "音樂中心",
+            iconURL: interaction.client.user.displayAvatarURL(),
+          })
           .setDescription(":x: | 你必須在語音頻道中才能播放音樂。")
           .setColor(0xef4444)
           .setFooter({
@@ -191,6 +209,10 @@ async function handleSearchSelect(interaction, context) {
     return interaction.followUp({
       embeds: [
         new EmbedBuilder()
+          .setAuthor({
+            name: "音樂中心",
+            iconURL: interaction.client.user.displayAvatarURL(),
+          })
           .setDescription(
             `:x: | 你必須跟我在同一個頻道 <#${botVoiceChannel.id}> 才能播放音樂！`,
           )
@@ -228,6 +250,10 @@ async function handleSearchSelect(interaction, context) {
     await interaction.editReply({
       embeds: [
         new EmbedBuilder()
+          .setAuthor({
+            name: "音樂中心",
+            iconURL: interaction.client.user.displayAvatarURL(),
+          })
           .setDescription(":outbox_tray: | 收到！正在為你加入歌曲...")
           .setColor(0xa855f7)
           .setFooter({
@@ -244,6 +270,10 @@ async function handleSearchSelect(interaction, context) {
     await interaction.followUp({
       embeds: [
         new EmbedBuilder()
+          .setAuthor({
+            name: "音樂中心",
+            iconURL: interaction.client.user.displayAvatarURL(),
+          })
           .setDescription(":x: | 處理請求時發生錯誤，請稍後再試。")
           .setColor(0xef4444)
           .setFooter({

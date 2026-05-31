@@ -36,6 +36,10 @@ export const leaveCommand = {
       await interaction.editReply({
         embeds: [
           new EmbedBuilder()
+            .setAuthor({
+              name: "音樂中心",
+              iconURL: interaction.client.user.displayAvatarURL(),
+            })
             .setDescription(
               `:wave: | 我已離開語音頻道：\`${botVoiceChannel.name}\``,
             )

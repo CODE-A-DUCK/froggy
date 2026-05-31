@@ -38,7 +38,10 @@ export async function ytSearch(query, count = 5) {
 
 function runYtDlp(args) {
   return new Promise((resolve, reject) => {
-    const child = spawn("yt-dlp", args, { stdio: ["ignore", "pipe", "pipe"] });
+    const child = spawn("yt-dlp", args, {
+      stdio: ["ignore", "pipe", "pipe"],
+      shell: false,
+    });
     const chunks = [];
     const errLines = [];
     child.stdout.on("data", (chunk) => chunks.push(chunk));
