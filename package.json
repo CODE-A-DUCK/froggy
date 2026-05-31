@@ -6,8 +6,8 @@
   "scripts": {
     "start": "node src/bot/index.js",
     "dev": "node --watch src/bot/index.js",
-    "deploy": "node src/commands/deploy.js",
-    "clear": "node src/commands/clear.js"
+    "deploy": "node src/commands/admin/deploy.js",
+    "clear": "node src/commands/admin/clear.js"
   },
   "dependencies": {
     "@discordjs/voice": "^0.19.2",

@@ -1,5 +1,5 @@
 import "dotenv/config";
-import { registerCommands } from "./index.js";
+import { registerCommands } from "../index.js";
 
 const TOKEN = process.env.TOKEN;
 if (!TOKEN) { console.error("TOKEN is not set."); process.exit(1); }

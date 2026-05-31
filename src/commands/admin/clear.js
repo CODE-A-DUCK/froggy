@@ -1,5 +1,5 @@
 import "dotenv/config";
-import { clearCommands } from "./index.js";
+import { clearCommands } from "../index.js";
 
 const TOKEN = process.env.TOKEN;
 if (!TOKEN) {
