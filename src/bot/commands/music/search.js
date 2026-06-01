@@ -137,7 +137,6 @@ export async function handleMusicSearchModal(interaction, context) {
     ownerId = null;
   }
 
-  const controllerUserId = ownerId ?? interaction.user.id;
   if (!ownerId) cs.setOwner(guildId, interaction.user.id);
 
   try {
@@ -153,7 +152,7 @@ export async function handleMusicSearchModal(interaction, context) {
         track_url: url,
         interaction_token: "",
         text_channel_id: channelId,
-        controller_user_id: controllerUserId,
+        controller_user_id: interaction.user.id,
         silent: true,
       });
       if (track) addedTracks.push(track);

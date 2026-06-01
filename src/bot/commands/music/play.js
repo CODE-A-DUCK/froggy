@@ -78,7 +78,6 @@ export const playCommand = {
       ownerId = null;
     }
 
-    const controllerUserId = ownerId ?? interaction.user.id;
     if (!ownerId) cs.setOwner(guild.id, interaction.user.id);
 
     try {
@@ -89,7 +88,7 @@ export const playCommand = {
         track_url: query,
         interaction_token: interaction.token,
         text_channel_id: interaction.channelId,
-        controller_user_id: controllerUserId,
+        controller_user_id: interaction.user.id,
       });
     } catch (err) {
       console.error("[Command] Play error:", err);

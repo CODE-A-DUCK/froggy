@@ -16,7 +16,7 @@ function* infArray(arr) {
   }
 }
 
-// Original: rAnDoM cAsE
+// rAnDoM cAsE
 function randomUpper(text) {
   return text
     .split("")
