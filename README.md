@@ -45,7 +45,8 @@ cp .env.example .env
 ```
 > **必要變數 (`.env`)：**
 > *   `TOKEN`: 您的 Discord 機器人 Token（可從 [Discord Developer Portal](https://discord.com/developers/applications) 取得）。
-> *   `STEAM_API_KEY`: 若要使用 `/steamprofile` 指令，此為必要選項。
+> *   `STEAM_API_KEY`: 若要使用 `/steam` 指令，此為選項。
+> *   `YOUTUBE_API_KEY`: 若要使用 `/youtube` 指令，此爲選項。
 
 <b>4. 部署斜線指令：</b>
 在啟動機器人之前，您必須先向 Discord 註冊它的斜線指令。
