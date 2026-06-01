@@ -1,6 +1,6 @@
-import { interactionCreateEvent } from "./interactionCreate.js";
+import { interactionCreateEvent } from "./interaction-create.js";
 import { readyEvent } from "./ready.js";
-import { voiceStateUpdateEvent } from "./voiceStateUpdate.js";
+import { voiceStateUpdateEvent } from "./voice-state-update.js";
 
 const clientEvents = [readyEvent, interactionCreateEvent, voiceStateUpdateEvent];
 
