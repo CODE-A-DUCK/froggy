@@ -14,15 +14,11 @@ export function setupGoResponse(client) {
 
     if (message.mentions.users.has(client.user.id)) {
       const randomReply = replies[Math.floor(Math.random() * replies.length)];
-
       try {
         await message.reply(randomReply);
-        console.log(`[GoResponse] 已回應 mention from ${message.author.tag}`);
-      } catch (error) {
-        console.error("[GoResponse] 回覆失敗:", error);
+      } catch (err) {
+        console.error(err);
       }
     }
   });
-
-  console.log("[GoResponse] Message-based goResponse loaded");
 }
