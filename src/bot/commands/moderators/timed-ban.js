@@ -4,11 +4,12 @@ import {
   PermissionFlagsBits,
 } from "discord.js";
 
+import { EMOJIS } from "../../../shared/emojis.js";
 import { scheduleUnban } from "../../utils/timed-ban-manager.js";
 
 export const timedbanCommand = {
   name: "timedban",
-  category: "<:adminline:1510555676378796093> | 版主",
+  category: `${EMOJIS.adminline} | 版主`,
 
   data: new SlashCommandBuilder()
     .setName("timedban")
@@ -42,7 +43,7 @@ export const timedbanCommand = {
       if (!member.permissions.has(PermissionFlagsBits.BanMembers)) {
         return interaction.editReply({
           content:
-            "<:errorwarningline:1510529314515320944> | 你沒有封鎖成員的權限",
+            `${EMOJIS.errorwarningline} | 你沒有封鎖成員的權限`,
         });
       }
 
@@ -50,7 +51,7 @@ export const timedbanCommand = {
       if (!botMember.permissions.has(PermissionFlagsBits.BanMembers)) {
         return interaction.editReply({
           content:
-            "<:errorwarningline:1510529314515320944> | 我沒有封鎖成員的權限",
+            `${EMOJIS.errorwarningline} | 我沒有封鎖成員的權限`,
         });
       }
 
@@ -69,7 +70,7 @@ export const timedbanCommand = {
         ) {
           return interaction.editReply({
             content:
-              "<:errorwarningline:1510529314515320944> | 目標成員的權限於你相同或高於你，無法執行封鎖程序",
+              `${EMOJIS.errorwarningline} | 目標成員的權限於你相同或高於你，無法執行封鎖程序`,
           });
         }
       }
@@ -107,7 +108,7 @@ export const timedbanCommand = {
     } catch (error) {
       console.error("[Command:timedban] Error:", error);
       await interaction.editReply({
-        content: "<:errorwarningline:1510529314515320944> | 程序執行時發生錯誤",
+        content: `${EMOJIS.errorwarningline} | 程序執行時發生錯誤`,
       });
     }
   },

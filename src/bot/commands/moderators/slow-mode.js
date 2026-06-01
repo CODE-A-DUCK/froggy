@@ -5,9 +5,12 @@ import {
   ChannelType,
 } from "discord.js";
 
+import { EMOJIS } from "../../../shared/emojis.js";
+
+
 export const slowmodeCommand = {
   name: "slowmode",
-  category: "<:adminline:1510555676378796093> | 版主",
+  category: `${EMOJIS.adminline} | 版主`,
   data: new SlashCommandBuilder()
     .setName("slowmode")
     .setDescription("於文字頻道設定或移除慢速模式")
@@ -38,7 +41,7 @@ export const slowmodeCommand = {
       if (!member.permissions.has(PermissionFlagsBits.ManageChannels)) {
         return interaction.editReply({
           content:
-            "<:errorwarningline:1510529314515320944> | 你沒有管理頻道的權限",
+            `${EMOJIS.errorwarningline} | 你沒有管理頻道的權限`,
         });
       }
 
@@ -46,7 +49,7 @@ export const slowmodeCommand = {
       if (!botMember.permissions.has(PermissionFlagsBits.ManageChannels)) {
         return interaction.editReply({
           content:
-            "<:errorwarningline:1510529314515320944> | 我沒有管理頻道的權限",
+            `${EMOJIS.errorwarningline} | 我沒有管理頻道的權限`,
         });
       }
 
@@ -57,7 +60,7 @@ export const slowmodeCommand = {
       if (targetChannel.type !== ChannelType.GuildText) {
         return interaction.editReply({
           content:
-            "<:errorwarningline:1510529314515320944> | 只能在文字頻道設定慢速模式",
+            `${EMOJIS.errorwarningline} | 只能在文字頻道設定慢速模式`,
         });
       }
 
@@ -82,7 +85,7 @@ export const slowmodeCommand = {
       console.error("[Command:slowmode] Error:", error);
       await interaction.editReply({
         content:
-          "<:errorwarningline:1510529314515320944> | 設定慢速模式時發生錯誤。",
+          `${EMOJIS.errorwarningline} | 設定慢速模式時發生錯誤。`,
       });
     }
   },

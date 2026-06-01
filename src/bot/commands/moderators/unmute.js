@@ -4,9 +4,12 @@ import {
   PermissionFlagsBits,
 } from "discord.js";
 
+import { EMOJIS } from "../../../shared/emojis.js";
+
+
 export const unmuteCommand = {
   name: "unmute",
-  category: "<:adminline:1510555676378796093> | 版主",
+  category: `${EMOJIS.adminline} | 版主`,
 
   data: new SlashCommandBuilder()
     .setName("unmute")
@@ -26,7 +29,7 @@ export const unmuteCommand = {
       if (!member.permissions.has(PermissionFlagsBits.ModerateMembers)) {
         return interaction.editReply({
           content:
-            "<:errorwarningline:1510529314515320944> | 你沒有管理成員的權限",
+            `${EMOJIS.errorwarningline} | 你沒有管理成員的權限`,
         });
       }
 
@@ -34,7 +37,7 @@ export const unmuteCommand = {
       if (!botMember.permissions.has(PermissionFlagsBits.ModerateMembers)) {
         return interaction.editReply({
           content:
-            "<:errorwarningline:1510529314515320944> | 我沒有管理成員的權限",
+            `${EMOJIS.errorwarningline} | 我沒有管理成員的權限`,
         });
       }
 
@@ -44,14 +47,14 @@ export const unmuteCommand = {
         .catch(() => null);
       if (!targetMember) {
         return interaction.editReply({
-          content: "<:errorwarningline:1510529314515320944> | 找不到該成員",
+          content: `${EMOJIS.errorwarningline} | 找不到該成員`,
         });
       }
 
       if (!targetMember.isCommunicationDisabled()) {
         return interaction.editReply({
           content:
-            "<:errorwarningline:1510529314515320944> | 該成員目前並沒有被禁言",
+            `${EMOJIS.errorwarningline} | 該成員目前並沒有被禁言`,
         });
       }
 
@@ -61,7 +64,7 @@ export const unmuteCommand = {
       ) {
         return interaction.editReply({
           content:
-            "<:errorwarningline:1510529314515320944> | 該成員的權限高於或等於你，無法解除其禁言",
+            `${EMOJIS.errorwarningline} | 該成員的權限高於或等於你，無法解除其禁言`,
         });
       }
 
@@ -81,7 +84,7 @@ export const unmuteCommand = {
     } catch (error) {
       console.error("[Command:unmute] Error:", error);
       await interaction.editReply({
-        content: "<:errorwarningline:1510529314515320944> | 解除禁言時發生錯誤",
+        content: `${EMOJIS.errorwarningline} | 解除禁言時發生錯誤`,
       });
     }
   },

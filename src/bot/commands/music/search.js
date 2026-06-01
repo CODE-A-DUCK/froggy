@@ -6,6 +6,7 @@ import {
   getRemainingCooldown,
 } from "../../../player/utils/cooldown.js";
 import { ytSearch } from "../../../player/utils/yt-search.js";
+import { EMOJIS } from "../../../shared/emojis.js";
 import { validatePlayUrl } from "../../security/sanitize-query.js";
 
 const SEARCH_COOLDOWN_MS = 5000;
@@ -30,7 +31,7 @@ export const searchCommand = {
         components: [
           ContainerFactory.buildReply(
             "warning",
-            `<:hourglassline:1510533872285253662> | 請等待 ${(ms / 1000).toFixed(1)} 秒後再搜尋。`,
+            `${EMOJIS.hourglassline} | 請等待 ${(ms / 1000).toFixed(1)} 秒後再搜尋。`,
             interaction.user,
           ).toJSON(),
         ],
@@ -48,7 +49,7 @@ export const searchCommand = {
         components: [
           ContainerFactory.buildReply(
             "error",
-            "<:errorwarningline:1510533865805058188> | 搜尋失敗，請稍後再試。",
+            `${EMOJIS.errorwarningline} | 搜尋失敗，請稍後再試。`,
             interaction.user,
           ).toJSON(),
         ],
@@ -61,7 +62,7 @@ export const searchCommand = {
         components: [
           ContainerFactory.buildReply(
             "error",
-            "<:errorwarningline:1510533865805058188> | 找不到結果，請換個關鍵字試試。",
+            `${EMOJIS.errorwarningline} | 找不到結果，請換個關鍵字試試。`,
             interaction.user,
           ).toJSON(),
         ],
@@ -83,7 +84,7 @@ export async function handleMusicSearchModal(interaction, context) {
       components: [
         ContainerFactory.buildReply(
           "error",
-          "<:errorwarningline:1510533865805058188> | 你沒有選擇任何歌曲。",
+          `${EMOJIS.errorwarningline} | 你沒有選擇任何歌曲。`,
           interaction.user,
         ).toJSON(),
       ],
@@ -105,7 +106,7 @@ export async function handleMusicSearchModal(interaction, context) {
       components: [
         ContainerFactory.buildReply(
           "error",
-          "<:errorwarningline:1510533865805058188> | 你必須在語音頻道中才能播放音樂。",
+          `${EMOJIS.errorwarningline} | 你必須在語音頻道中才能播放音樂。`,
           interaction.user,
         ).toJSON(),
       ],
@@ -123,7 +124,7 @@ export async function handleMusicSearchModal(interaction, context) {
       components: [
         ContainerFactory.buildReply(
           "error",
-          `<:errorwarningline:1510533865805058188> | 你必須跟我在同一個頻道 <#${botVoiceChannel.id}> 才能播放音樂！`,
+          `${EMOJIS.errorwarningline} | 你必須跟我在同一個頻道 <#${botVoiceChannel.id}> 才能播放音樂！`,
           interaction.user,
         ).toJSON(),
       ],
@@ -167,7 +168,7 @@ export async function handleMusicSearchModal(interaction, context) {
       components: [
         ContainerFactory.buildReply(
           "success",
-          `<:playlistaddline:1510533888630329455> | 已為你加入 ${addedTracks.length} 首歌曲：\n${trackListText}`,
+          `${EMOJIS.playlistaddline} | 已為你加入 ${addedTracks.length} 首歌曲：\n${trackListText}`,
           interaction.user,
         ).toJSON(),
       ],
@@ -180,7 +181,7 @@ export async function handleMusicSearchModal(interaction, context) {
       components: [
         ContainerFactory.buildReply(
           "error",
-          "<:errorwarningline:1510533865805058188> | 處理請求時發生錯誤，請稍後再試。",
+          `${EMOJIS.errorwarningline} | 處理請求時發生錯誤，請稍後再試。`,
           interaction.user,
         ).toJSON(),
       ],

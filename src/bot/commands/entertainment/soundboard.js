@@ -16,6 +16,7 @@ import {
 } from "discord.js";
 
 import { validateVoiceState } from "../../../player/utils/voice-guard.js";
+import { EMOJIS } from "../../../shared/emojis.js";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const soundsDir = join(__dirname, "../../../../assets/soundboard");
@@ -61,7 +62,7 @@ const soundList = [
 
 export const soundboardCommand = {
   name: "soundboard",
-  category: "<:game2line:1510524992155025478> | 娛樂",
+  category: `${EMOJIS.game2line} | 娛樂`,
 
   data: new SlashCommandBuilder()
     .setName("soundboard")
@@ -70,7 +71,7 @@ export const soundboardCommand = {
   async execute(interaction, context) {
     if (context.controllerStore.getOwner(interaction.guild.id)) {
       return interaction.reply({
-        content: "<:errorwarningline:1510529314515320944> | 音樂播放中，無法使用音效面板",
+        content: `${EMOJIS.errorwarningline} | 音樂播放中，無法使用音效面板`,
         ephemeral: true,
       });
     }
@@ -87,7 +88,7 @@ export const soundboardCommand = {
     const { userVoiceChannel } = validation;
     if (!userVoiceChannel) {
       return interaction.editReply(
-        "<:errorwarningline:1510529314515320944> | 你必須先加入一個語音頻道",
+        `${EMOJIS.errorwarningline} | 你必須先加入一個語音頻道`,
       );
     }
 
@@ -144,7 +145,7 @@ export const soundboardCommand = {
   async handleSelectMenu(interaction, context) {
     if (context.controllerStore.getOwner(interaction.guild.id)) {
       return interaction.reply({
-        content: "<:errorwarningline:1510529314515320944> | 音樂播放中，無法使用音效面板",
+        content: `${EMOJIS.errorwarningline} | 音樂播放中，無法使用音效面板`,
         ephemeral: true,
       });
     }
@@ -203,7 +204,7 @@ export const soundboardCommand = {
     } catch (error) {
       console.error("[Soundboard] Error:", error);
       await interaction.followUp({
-        content: "<:errorwarningline:1510529314515320944> | 播放失敗",
+        content: `${EMOJIS.errorwarningline} | 播放失敗`,
         ephemeral: true,
       });
     }

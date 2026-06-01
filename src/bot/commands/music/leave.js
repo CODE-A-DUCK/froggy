@@ -2,6 +2,7 @@ import { SlashCommandBuilder, MessageFlags } from "discord.js";
 
 import { ContainerFactory } from "../../../player/ui/container-factory.js";
 import { validateVoiceState } from "../../../player/utils/voice-guard.js";
+import { EMOJIS } from "../../../shared/emojis.js";
 
 export const leaveCommand = {
   name: "leave",
@@ -39,7 +40,7 @@ export const leaveCommand = {
         components: [
           ContainerFactory.buildReply(
             "success",
-            `<:logoutcircleline:1510533877545041980> | 我已離開語音頻道：\`${botVoiceChannel.name}\``,
+            `${EMOJIS.logoutcircleline} | 我已離開語音頻道：\`${botVoiceChannel.name}\``,
             interaction.user,
           ),
         ],
@@ -51,7 +52,7 @@ export const leaveCommand = {
         components: [
           ContainerFactory.buildReply(
             "error",
-            "<:errorwarningline:1510533865805058188> | 執行時發生錯誤，請稍後再試。",
+            `${EMOJIS.errorwarningline} | 執行時發生錯誤，請稍後再試。`,
             interaction.user,
           ),
         ],

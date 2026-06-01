@@ -4,9 +4,12 @@ import {
   PermissionsBitField,
 } from "discord.js";
 
+import { EMOJIS } from "../../../shared/emojis.js";
+
+
 export const kickCommand = {
   name: "kick",
-  category: "<:adminline:1510555676378796093> | 版主",
+  category: `${EMOJIS.adminline} | 版主`,
   data: new SlashCommandBuilder()
     .setName("kick")
     .setDescription("將指定成員踢出伺服器")
@@ -28,7 +31,7 @@ export const kickCommand = {
       ) {
         return interaction.editReply({
           content:
-            "<:errorwarningline:1510529314515320944> | 你沒有踢出成員的權限",
+            `${EMOJIS.errorwarningline} | 你沒有踢出成員的權限`,
         });
       }
 
@@ -36,7 +39,7 @@ export const kickCommand = {
       if (!botMember.permissions.has(PermissionsBitField.Flags.KickMembers)) {
         return interaction.editReply({
           content:
-            "<:errorwarningline:1510529314515320944> | 我沒有踢出成員的權限",
+            `${EMOJIS.errorwarningline} | 我沒有踢出成員的權限`,
         });
       }
 
@@ -48,7 +51,7 @@ export const kickCommand = {
         .catch(() => null);
       if (!targetMember) {
         return interaction.editReply({
-          content: "<:errorwarningline:1510529314515320944> | 找不到該成員",
+          content: `${EMOJIS.errorwarningline} | 找不到該成員`,
         });
       }
 
@@ -59,7 +62,7 @@ export const kickCommand = {
       ) {
         return interaction.editReply({
           content:
-            "<:errorwarningline:1510529314515320944> | 你無法踢出權限高於或等於你的成員",
+            `${EMOJIS.errorwarningline} | 你無法踢出權限高於或等於你的成員`,
         });
       }
 
@@ -68,7 +71,7 @@ export const kickCommand = {
       ) {
         return interaction.editReply({
           content:
-            "<:errorwarningline:1510529314515320944> | 我無法踢出該成員，該成員權限高於或等於我",
+            `${EMOJIS.errorwarningline} | 我無法踢出該成員，該成員權限高於或等於我`,
         });
       }
 
@@ -89,7 +92,7 @@ export const kickCommand = {
       console.error("[Command:kick] Error:", error);
       await interaction.editReply({
         content:
-          "<:errorwarningline:1510529314515320944> | 踢出目標成員時發生錯誤",
+          `${EMOJIS.errorwarningline} | 踢出目標成員時發生錯誤`,
       });
     }
   },

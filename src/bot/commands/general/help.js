@@ -6,9 +6,12 @@ import {
   StringSelectMenuOptionBuilder,
 } from "discord.js";
 
+import { EMOJIS } from "../../../shared/emojis.js";
+
+
 export const helpCommand = {
   name: "help",
-  category: "<:homeline:1510525361702699048> | 基本",
+  category: `${EMOJIS.homeline} | 基本`,
   data: new SlashCommandBuilder()
     .setName("help")
     .setDescription("這應該是百科全書")
@@ -92,7 +95,7 @@ export const helpCommand = {
   async showCommandDetails(interaction, commandName) {
     const command = interaction.client.commands.get(commandName);
     if (!command) {
-      const errorContent = `<:errorwarningline:1510529314515320944> | 我找不到名為 \`${commandName}\` 的指令。`;
+      const errorContent = `${EMOJIS.errorwarningline} | 我找不到名為 \`${commandName}\` 的指令。`;
       if (interaction.deferred || interaction.replied) {
         return interaction.editReply({
           content: errorContent,

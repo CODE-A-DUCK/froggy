@@ -13,6 +13,7 @@ import {
   SeparatorBuilder,
 } from "discord.js";
 
+import { EMOJIS } from "../../shared/emojis.js";
 import { formatDuration } from "../utils/format-duration.js";
 
 const LOOP_CONFIG = [
@@ -31,7 +32,7 @@ export class ContainerFactory {
       : (event.title ?? "未知標題");
 
     const textContent = [
-      `### <:music2line:1510533879390277732> 正在播放 ${titleLink}`,
+      `### ${EMOJIS.music2line} 正在播放 ${titleLink}`,
       // 可能是 Discord 的渲染處理的問題，所以當有
       // 膚色修飾符的 emoji（如 🧔🏿 = 🧔 + 🏿 兩個 Unicode 碼位組合）放在 [文字](url) 的文字部分裡，
       // Discord 的 Markdown parser 會在那個組合 emoji 的地方斷掉，導致整個連結語法解析失敗。
@@ -170,15 +171,15 @@ export class ContainerFactory {
 
   static buildReply(type, description, user = null) {
     const headers = {
-      success: "<:LingLong:1510515456321261699> 音樂中心",
-      error: "<:LingLong:1510515456321261699> 音樂中心",
-      info: "<:LingLong:1510515456321261699> 音樂中心",
-      warning: "<:LingLong:1510515456321261699> 音樂中心",
+      success: `${EMOJIS.LingLong} 音樂中心`,
+      error: `${EMOJIS.LingLong} 音樂中心`,
+      info: `${EMOJIS.LingLong} 音樂中心`,
+      warning: `${EMOJIS.LingLong} 音樂中心`,
     };
 
     const container = new ContainerBuilder().addTextDisplayComponents(
       new TextDisplayBuilder().setContent(
-        `### ${headers[type] ?? "<:LingLong:1510515456321261699> 音樂中心"}\n${description}`,
+        `### ${headers[type] ?? `${EMOJIS.LingLong} 音樂中心`}\n${description}`,
       ),
     );
 

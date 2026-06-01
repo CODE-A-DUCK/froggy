@@ -4,9 +4,12 @@ import {
   PermissionFlagsBits,
 } from "discord.js";
 
+import { EMOJIS } from "../../../shared/emojis.js";
+
+
 export const unbanCommand = {
   name: "unban",
-  category: "<:adminline:1510555676378796093> | 版主",
+  category: `${EMOJIS.adminline} | 版主`,
 
   data: new SlashCommandBuilder()
     .setName("unban")
@@ -29,7 +32,7 @@ export const unbanCommand = {
       if (!member.permissions.has(PermissionFlagsBits.BanMembers)) {
         return interaction.editReply({
           content:
-            "<:errorwarningline:1510529314515320944> | 你沒有封鎖成員權限",
+            `${EMOJIS.errorwarningline} | 你沒有封鎖成員權限`,
         });
       }
 
@@ -37,7 +40,7 @@ export const unbanCommand = {
       if (!botMember.permissions.has(PermissionFlagsBits.BanMembers)) {
         return interaction.editReply({
           content:
-            "<:errorwarningline:1510529314515320944> | 我沒有權限解除封鎖",
+            `${EMOJIS.errorwarningline} | 我沒有權限解除封鎖`,
         });
       }
 
@@ -66,7 +69,7 @@ export const unbanCommand = {
       console.error("[Command:unban] Error:", error);
       await interaction.editReply({
         content:
-          "<:errorwarningline:1510529314515320944> | 解除封鎖時發生錯誤，請確認目標成員的 ID 是否正確，並且我是否有足夠的權限",
+          `${EMOJIS.errorwarningline} | 解除封鎖時發生錯誤，請確認目標成員的 ID 是否正確，並且我是否有足夠的權限`,
       });
     }
   },

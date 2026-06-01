@@ -4,9 +4,12 @@ import {
   PermissionsBitField,
 } from "discord.js";
 
+import { EMOJIS } from "../../../shared/emojis.js";
+
+
 export const removeroleCommand = {
   name: "removerole",
-  category: "<:adminline:1510555676378796093> | 版主",
+  category: `${EMOJIS.adminline} | 版主`,
   data: new SlashCommandBuilder()
     .setName("removerole")
     .setDescription("為指定成員移除身份組")
@@ -47,7 +50,7 @@ export const removeroleCommand = {
       if (!targetUser || !targetRole) {
         return interaction.editReply({
           content:
-            "<:errorwarningline:1510529314515320944> | 請提供有效的成員和身份組",
+            `${EMOJIS.errorwarningline} | 請提供有效的成員和身份組`,
         });
       }
 
@@ -57,14 +60,14 @@ export const removeroleCommand = {
 
       if (!targetMember) {
         return interaction.editReply({
-          content: "<:errorwarningline:1510529314515320944> | 找不到該成員",
+          content: `${EMOJIS.errorwarningline} | 找不到該成員`,
         });
       }
 
       if (targetRole.position >= botMember.roles.highest.position) {
         return interaction.editReply({
           content:
-            "<:errorwarningline:1510529314515320944> | 該身份組的權限高於我，無法移除",
+            `${EMOJIS.errorwarningline} | 該身份組的權限高於我，無法移除`,
         });
       }
 
@@ -88,7 +91,7 @@ export const removeroleCommand = {
       console.error("[Command:removerole] Error:", error);
       await interaction.editReply({
         content:
-          "<:errorwarningline:1510529314515320944> | 移除身份組時發生錯誤",
+          `${EMOJIS.errorwarningline} | 移除身份組時發生錯誤`,
       });
     }
   },

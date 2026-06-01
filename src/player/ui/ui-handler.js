@@ -1,5 +1,7 @@
 import { MessageFlags } from "discord.js";
 
+import { EMOJIS } from "../../shared/emojis.js";
+
 import { ContainerFactory } from "./container-factory.js";
 
 function formatUserFacingError(errorMsg) {
@@ -160,10 +162,10 @@ export class UIHandler {
       this.controllerStore.clearCurrentTrack(event.guild_id);
 
       const container = ContainerFactory.buildSimpleMessage(
-        "<:LingLong:1510515456321261699> 音樂中心",
+        `${EMOJIS.LingLong} 音樂中心`,
         stopped
-          ? "<:fileshredline:1510533869080805457> | 已停止播放並清空隊列！"
-          : "<:checkdoubleline:1510533861052907621> | 隊列內的歌曲均已播放完畢！",
+          ? `${EMOJIS.fileshredline} | 已停止播放並清空隊列！`
+          : `${EMOJIS.checkdoubleline} | 隊列內的歌曲均已播放完畢！`,
         requester,
       );
 
@@ -221,7 +223,7 @@ export class UIHandler {
         : null;
 
       const container = ContainerFactory.buildSimpleMessage(
-        "<:playlistaddline:1510533888630329455> | 已加入隊列",
+        `${EMOJIS.playlistaddline} | 已加入隊列`,
         `**[${event.title}](${event.url})**`,
         requester,
       );
@@ -256,7 +258,7 @@ export class UIHandler {
       const safeError = formatUserFacingError(event.error);
       const container = ContainerFactory.buildSimpleMessage(
         "播放錯誤",
-        `<:errorwarningline:1510533865805058188> | 無法播放此歌曲：\n\`\`\`${safeError}\`\`\``,
+        `${EMOJIS.errorwarningline} | 無法播放此歌曲：\n\`\`\`${safeError}\`\`\``,
         requester,
       );
 

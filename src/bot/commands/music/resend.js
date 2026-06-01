@@ -2,6 +2,7 @@ import { SlashCommandBuilder, MessageFlags } from "discord.js";
 
 import { ContainerFactory } from "../../../player/ui/container-factory.js";
 import { validateVoiceState } from "../../../player/utils/voice-guard.js";
+import { EMOJIS } from "../../../shared/emojis.js";
 
 export const resendCommand = {
   name: "resend",
@@ -20,7 +21,7 @@ export const resendCommand = {
         components: [
           ContainerFactory.buildReply(
             "info",
-            "<:playlistline:1510533890257977457> | 列隊裏沒有任何歌曲。",
+            `${EMOJIS.playlistline} | 列隊裏沒有任何歌曲。`,
             interaction.user,
           ),
         ],
@@ -38,7 +39,7 @@ export const resendCommand = {
         components: [
           ContainerFactory.buildReply(
             "success",
-            "<:remotecontrol2line:1510553755446415370> | 已重新發送遙控器。",
+            `${EMOJIS.remotecontrol2line} | 已重新發送遙控器。`,
             interaction.user,
           ),
         ],
@@ -50,7 +51,7 @@ export const resendCommand = {
         components: [
           ContainerFactory.buildReply(
             "error",
-            "<:errorwarningline:1510533865805058188> | 執行時發生錯誤，請稍後再試。",
+            `${EMOJIS.errorwarningline} | 執行時發生錯誤，請稍後再試。`,
             interaction.user,
           ),
         ],

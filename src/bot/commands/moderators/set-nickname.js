@@ -4,9 +4,12 @@ import {
   PermissionFlagsBits,
 } from "discord.js";
 
+import { EMOJIS } from "../../../shared/emojis.js";
+
+
 export const setnicknameCommand = {
   name: "setnickname",
-  category: "<:adminline:1510555676378796093> | 版主",
+  category: `${EMOJIS.adminline} | 版主`,
   data: new SlashCommandBuilder()
     .setName("setnickname")
     .setDescription("設定或移除伺服器成員的暱稱")
@@ -31,7 +34,7 @@ export const setnicknameCommand = {
       if (!member.permissions.has(PermissionFlagsBits.ManageNicknames)) {
         return interaction.editReply({
           content:
-            "<:errorwarningline:1510529314515320944> | 你沒有設定暱稱的權限",
+            `${EMOJIS.errorwarningline} | 你沒有設定暱稱的權限`,
         });
       }
 
@@ -39,7 +42,7 @@ export const setnicknameCommand = {
       if (!botMember.permissions.has(PermissionFlagsBits.ManageNicknames)) {
         return interaction.editReply({
           content:
-            "<:errorwarningline:1510529314515320944> | 我沒有權限設定暱稱",
+            `${EMOJIS.errorwarningline} | 我沒有權限設定暱稱`,
         });
       }
 
@@ -49,7 +52,7 @@ export const setnicknameCommand = {
         .catch(() => null);
       if (!targetMember) {
         return interaction.editReply({
-          content: "<:errorwarningline:1510529314515320944> | 找不到該成員",
+          content: `${EMOJIS.errorwarningline} | 找不到該成員`,
         });
       }
 
@@ -59,7 +62,7 @@ export const setnicknameCommand = {
       ) {
         return interaction.editReply({
           content:
-            "<:errorwarningline:1510529314515320944> | 該成員的權限高於或等於你，因此你無法修改其暱稱",
+            `${EMOJIS.errorwarningline} | 該成員的權限高於或等於你，因此你無法修改其暱稱`,
         });
       }
 
@@ -83,7 +86,7 @@ export const setnicknameCommand = {
       console.error("[Command:setnickname] Error:", error);
       await interaction.editReply({
         content:
-          "<:errorwarningline:1510529314515320944> | 設定暱稱時發生錯誤或你無法修改比你更高或同等權限的成員暱稱",
+          `${EMOJIS.errorwarningline} | 設定暱稱時發生錯誤或你無法修改比你更高或同等權限的成員暱稱`,
       });
     }
   },

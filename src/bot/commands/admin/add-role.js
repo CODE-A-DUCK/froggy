@@ -4,9 +4,12 @@ import {
   PermissionsBitField,
 } from "discord.js";
 
+import { EMOJIS } from "../../../shared/emojis.js";
+
+
 export const addroleCommand = {
   name: "addrole",
-  category: "<:adminline:1510555676378796093> | 版主",
+  category: `${EMOJIS.adminline} | 版主`,
   data: new SlashCommandBuilder()
     .setName("addrole")
     .setDescription("為指定成員添加指定身份組")
@@ -31,7 +34,7 @@ export const addroleCommand = {
       ) {
         return interaction.editReply({
           content:
-            "<:errorwarningline:1510529314515320944> | 你沒有管理身份組的權限",
+            `${EMOJIS.errorwarningline} | 你沒有管理身份組的權限`,
         });
       }
 
@@ -39,7 +42,7 @@ export const addroleCommand = {
       if (!botMember.permissions.has(PermissionsBitField.Flags.ManageRoles)) {
         return interaction.editReply({
           content:
-            "<:errorwarningline:1510529314515320944> | 我沒有管理身份組的權限",
+            `${EMOJIS.errorwarningline} | 我沒有管理身份組的權限`,
         });
       }
 
@@ -49,7 +52,7 @@ export const addroleCommand = {
       if (!targetUser || !targetRole) {
         return interaction.editReply({
           content:
-            "<:errorwarningline:1510529314515320944> | 請提供有效的成員和身份組",
+            `${EMOJIS.errorwarningline} | 請提供有效的成員和身份組`,
         });
       }
 
@@ -59,20 +62,20 @@ export const addroleCommand = {
 
       if (!targetMember) {
         return interaction.editReply({
-          content: "<:errorwarningline:1510529314515320944> | 找不到該成員",
+          content: `${EMOJIS.errorwarningline} | 找不到該成員`,
         });
       }
 
       if (targetRole.position >= botMember.roles.highest.position) {
         return interaction.editReply({
           content:
-            "<:errorwarningline:1510529314515320944> | 該身份組的權限高於或等於我，無法添加",
+            `${EMOJIS.errorwarningline} | 該身份組的權限高於或等於我，無法添加`,
         });
       }
 
       if (targetMember.roles.cache.has(targetRole.id)) {
         return interaction.editReply({
-          content: `<:errorwarningline:1510529314515320944> | ${targetUser.tag} 已經擁有 **${targetRole.name}** 身份組`,
+          content: `${EMOJIS.errorwarningline} | ${targetUser.tag} 已經擁有 **${targetRole.name}** 身份組`,
         });
       }
 
@@ -92,7 +95,7 @@ export const addroleCommand = {
       console.error("[Command:addrole] Error:", error);
       await interaction.editReply({
         content:
-          "<:errorwarningline:1510529314515320944> | 添加身份組時發生錯誤",
+          `${EMOJIS.errorwarningline} | 添加身份組時發生錯誤`,
       });
     }
   },

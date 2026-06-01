@@ -1,8 +1,10 @@
 import { SlashCommandBuilder, EmbedBuilder } from "discord.js";
 
+import { EMOJIS } from "../../../shared/emojis.js";
+
 export const roleinfoCommand = {
   name: "roleinfo",
-  category: "<:homeline:1510525361702699048> | 基本",
+  category: `${EMOJIS.homeline} | 基本`,
 
   data: new SlashCommandBuilder()
     .setName("roleinfo")
@@ -19,7 +21,7 @@ export const roleinfoCommand = {
 
       if (!role) {
         return interaction.editReply({
-          content: "<:errorwarningline:1510529314515320944> | 找不到該身份組",
+          content: `${EMOJIS.errorwarningline} | 找不到該身份組`,
         });
       }
 
@@ -102,7 +104,7 @@ export const roleinfoCommand = {
 
       await interaction.editReply({
         content:
-          "<:errorwarningline:1510529314515320944> | 查詢身份組資訊時發生錯誤",
+          `${EMOJIS.errorwarningline} | 查詢身份組資訊時發生錯誤`,
       });
     }
   },

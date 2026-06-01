@@ -8,6 +8,9 @@ import { SlashCommandBuilder, AttachmentBuilder } from "discord.js";
 import ffmpegStatic from "ffmpeg-static";
 import ffmpeg from "fluent-ffmpeg";
 
+import { EMOJIS } from "../../../../shared/emojis.js";
+
+
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const defaultBgPath = join(__dirname, "../../../../../assets/images/default-bg.png");
 const STEAM_KEY = process.env.STEAM_API_KEY;
@@ -143,7 +146,7 @@ export const steamCommand = {
         const resolveData = await resolveRes.json();
         if (resolveData.response?.success !== 1)
           return interaction.editReply(
-            "<:errorwarningline:1510529314515320944> | 找不到這位 Steam 玩家",
+            `${EMOJIS.errorwarningline} | 找不到這位 Steam 玩家`,
           );
         steam64 = resolveData.response.steamid;
       } else if (!/^\d{17}$/.test(cleanInput)) {
@@ -153,7 +156,7 @@ export const steamCommand = {
         const resolveData = await resolveRes.json();
         if (resolveData.response?.success !== 1)
           return interaction.editReply(
-            "<:errorwarningline:1510529314515320944> | 找不到這位 Steam 玩家",
+            `${EMOJIS.errorwarningline} | 找不到這位 Steam 玩家`,
           );
         steam64 = resolveData.response.steamid;
       }
@@ -164,7 +167,7 @@ export const steamCommand = {
       const player = (await summaryRes.json()).response?.players?.[0];
       if (!player)
         return interaction.editReply(
-          "<:errorwarningline:1510529314515320944> | 找不到這位 Steam 玩家",
+          `${EMOJIS.errorwarningline} | 找不到這位 Steam 玩家`,
         );
 
       const levelRes = await fetch(
@@ -532,7 +535,7 @@ export const steamCommand = {
       console.error("[Command:Steam] Error:", error);
       await interaction.editReply({
         content:
-          "<:errorwarningline:1510529314515320944> | 該玩家已將其 Steam 賬戶設為私密，或暫時無法取得資料",
+          `${EMOJIS.errorwarningline} | 該玩家已將其 Steam 賬戶設為私密，或暫時無法取得資料`,
       });
     }
   },
