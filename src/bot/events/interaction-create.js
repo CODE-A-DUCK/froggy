@@ -127,8 +127,8 @@ const handleButtonInteraction = async (interaction, context) => {
         `<:errorwarningline:1510533865805058188> | 你必須跟我進入同一個頻道 <#${botVoiceChannel.id}> 才能控制我！`,
       );
 
-    const ownerId = controllerStore.getOwner(guildId);
-    if (ownerId && ownerId !== interaction.user.id)
+    const hasOwners = controllerStore.getOwners(guildId).size > 0;
+    if (hasOwners && !controllerStore.isOwner(guildId, interaction.user.id))
       return replyError(interaction, CONTROLLER_DENIED_MESSAGE);
 
     const VALID_BUTTON_ACTIONS = new Set([

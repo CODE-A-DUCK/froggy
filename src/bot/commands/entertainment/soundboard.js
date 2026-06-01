@@ -67,7 +67,14 @@ export const soundboardCommand = {
     .setName("soundboard")
     .setDescription("打開我的音效面板，在語音頻道播放私人音效"),
 
-  async execute(interaction) {
+  async execute(interaction, context) {
+    if (context.controllerStore.getOwner(interaction.guild.id)) {
+      return interaction.reply({
+        content: "<:errorwarningline:1510529314515320944> | 音樂播放中，無法使用音效面板",
+        ephemeral: true,
+      });
+    }
+
     await interaction.deferReply();
 
     const validation = await validateVoiceState(interaction, {
@@ -134,7 +141,14 @@ export const soundboardCommand = {
     });
   },
 
-  async handleSelectMenu(interaction) {
+  async handleSelectMenu(interaction, context) {
+    if (context.controllerStore.getOwner(interaction.guild.id)) {
+      return interaction.reply({
+        content: "<:errorwarningline:1510529314515320944> | 音樂播放中，無法使用音效面板",
+        ephemeral: true,
+      });
+    }
+
     await interaction.deferUpdate();
 
     const customId = interaction.customId;

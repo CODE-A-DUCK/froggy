@@ -31,7 +31,11 @@ export class ContainerFactory {
       : (event.title ?? "未知標題");
 
     const textContent = [
-      `### <:music2line:1510533879390277732> 正在播放：${titleLink}`,
+      "### <:music2line:1510533879390277732> 正在播放：",
+      `**${titleLink}**`, // 會有大空格，但沒辦法了。
+      // 嘗試過使用 ### ${titleLink}，但可能是 Discord 的渲染處理的問題，所以換成 **${titleLink}**。
+      // 原因是，當使用 ### 時， Discord Markdown 處理含膚色修飾符的 emoji（如 🧔🏿 = 🧔 + 🏿 兩個 Unicode 碼位組合）放在 [文字](url) 的文字部分裡，
+      // Discord 的 Markdown parser 會在那個組合 emoji 的地方斷掉，導致整個連結語法解析失敗。
       `**發佈者**：${event.uploader ?? "未知"}`,
       `**時長**：${event.duration ? formatDuration(event.duration) : "LIVE"}`,
       `**狀態**：${event.is_paused ? "暫停中" : "播放中"}`,

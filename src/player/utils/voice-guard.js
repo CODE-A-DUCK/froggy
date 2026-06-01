@@ -60,8 +60,9 @@ export async function validateVoiceState(interaction, options = {}) {
   }
 
   if (requireController) {
-    const ownerId = controllerStore.getOwner(guild.id);
-    if (ownerId && ownerId !== interaction.user.id) {
+    const owners = controllerStore.getOwners(guild.id);
+    const hasOwners = owners.size > 0;
+    if (hasOwners && !owners.has(interaction.user.id)) {
       await reply(CONTROLLER_DENIED_MESSAGE);
       return null;
     }
@@ -71,7 +72,7 @@ export async function validateVoiceState(interaction, options = {}) {
       userVoiceChannel,
       botMember,
       botVoiceChannel,
-      ownerId,
+      ownerId: Array.from(owners)[0] ?? null, // Retain for backwards compatibility
     };
   }
 

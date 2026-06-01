@@ -1,5 +1,5 @@
 class ControllerStore {
-  /** @type {Map<string, string>} guildId -> userId */
+  /** @type {Map<string, Set<string>>} guildId -> Set of userIds */
   #owners = new Map();
   /** @type {Map<string, string>} guildId -> messageId */
   #messages = new Map();
@@ -7,18 +7,37 @@ class ControllerStore {
   #tracks = new Map();
 
   getOwner(guildId) {
-    return this.#owners.get(guildId) ?? null;
+    const owners = this.#owners.get(guildId);
+    if (!owners || owners.size === 0) return null;
+    return Array.from(owners)[0]; // Retain for backwards compatibility where a single string is expected
+  }
+
+  getOwners(guildId) {
+    return this.#owners.get(guildId) ?? new Set();
+  }
+
+  isOwner(guildId, userId) {
+    const owners = this.#owners.get(guildId);
+    return owners ? owners.has(userId) : false;
   }
 
   claimOwner(guildId, userId) {
-    const existing = this.#owners.get(guildId);
-    if (existing && existing !== userId) return false;
-    this.#owners.set(guildId, userId);
+    let owners = this.#owners.get(guildId);
+    if (!owners) {
+      owners = new Set();
+      this.#owners.set(guildId, owners);
+    }
+    owners.add(userId);
     return true;
   }
 
   setOwner(guildId, userId) {
-    this.#owners.set(guildId, userId);
+    let owners = this.#owners.get(guildId);
+    if (!owners) {
+      owners = new Set();
+      this.#owners.set(guildId, owners);
+    }
+    owners.add(userId);
   }
 
   clearOwner(guildId) {
