@@ -12,7 +12,7 @@ import { GuildPlayerManager } from "./player/guild-player-manager.js";
 import { UIHandler } from "./player/ui/ui-handler.js";
 
 const client = new Client({
-  intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildVoiceStates],
+  intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildVoiceStates, GatewayIntentBits.GuildMessages],
 });
 
 client.commands = new Collection(commands.map((c) => [c.name, c]));
