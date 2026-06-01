@@ -7,6 +7,8 @@ import { controllerStore } from "../store/ControllerStore.js";
 import { registerEvents } from "./events/index.js";
 import { commands } from "../commands/index.js";
 import presence from "./features/presence.js";
+import { setupGoResponse } from "./events/goResponse.js";
+import { startAutoUnban } from "../utils/timedBanManager.js";
 
 const client = new Client({
   intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildVoiceStates],
@@ -23,6 +25,8 @@ const context = { guildPlayerManager, controllerStore };
 
 registerEvents(client, context);
 presence(client);
+setupGoResponse(client);
+startAutoUnban(client);
 
 client.on("shardReady", (id) => console.info(`[Shard ${id}] Ready`));
 client.on("shardReconnecting", (id) =>
