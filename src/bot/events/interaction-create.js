@@ -8,7 +8,6 @@ import { formatDuration } from "../../player/utils/format-duration.js";
 import { formatUploadDate } from "../../player/utils/format-upload-date.js";
 import { CONTROLLER_DENIED_MESSAGE } from "../../player/utils/voice-guard.js";
 import { handleInteraction } from "../commands/index.js";
-import { handleMusicPlayModal } from "../commands/music/play.js";
 import { handleMusicSearchModal } from "../commands/music/search.js";
 import { controllerStore } from "../store/controller-store.js";
 
@@ -46,11 +45,6 @@ const replyError = (interaction, description) =>
 const handleModalInteraction = async (interaction, context) => {
   if (interaction.customId === "MusicSearchModal") {
     await handleMusicSearchModal(interaction, context);
-    return;
-  }
-
-  if (interaction.customId === "MusicPlayModal") {
-    await handleMusicPlayModal(interaction, context);
     return;
   }
 

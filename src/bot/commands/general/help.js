@@ -14,23 +14,22 @@ export const helpCommand = {
     .setDescription("這應該是百科全書")
     .addStringOption((option) =>
       option
-        .setName("command_name")
+        .setName("command")
         .setDescription("要查詢的指令名稱")
         .setAutocomplete(true),
     ),
 
-  async command_name(interaction) {
-    const focusedValue = interaction.options.getFocused();
-    const fuzzyPattern = focusedValue.split("").join(".*");
-    const regex = new RegExp(fuzzyPattern, "i");
-
+  async autocomplete(interaction) {
+    const focusedValue = interaction.options.getFocused().toLowerCase();
+    
+    // 從 client.commands 獲取，若未初始化則使用預設 Collection
     const commands = interaction.client.commands;
     if (!commands) {
       return interaction.respond([]).catch(() => {});
     }
 
     const choices = commands
-      .filter((cmd) => regex.test(cmd.name))
+      .filter((cmd) => cmd.name.toLowerCase().includes(focusedValue))
       .map((cmd) => ({ name: cmd.name, value: cmd.name }))
       .slice(0, 25);
 
@@ -39,7 +38,7 @@ export const helpCommand = {
 
   async execute(interaction) {
     await interaction.deferReply();
-    const commandName = interaction.options.getString("command_name");
+    const commandName = interaction.options.getString("command");
 
     if (!commandName) {
       const commands = Array.from(interaction.client.commands.values());

@@ -72,10 +72,11 @@ export async function handleInteraction(interaction, context) {
   const command = commandsByName.get(commandName);
   if (!command) return;
 
+  if (!interaction.client.commands) {
+    interaction.client.commands = new Collection(commands.map((c) => [c.name, c]));
+  }
+
   if (interaction.isChatInputCommand()) {
-    if (!interaction.client.commands) {
-      interaction.client.commands = new Collection(commands.map((c) => [c.name, c]));
-    }
     await command.execute(interaction, context);
   } else if (interaction.isAutocomplete()) {
     if (typeof command.autocomplete === "function") {

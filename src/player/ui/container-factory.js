@@ -6,8 +6,6 @@ import {
   ActionRowBuilder,
   ButtonBuilder,
   ButtonStyle,
-  TextInputStyle,
-  TextInputBuilder,
   ContainerBuilder,
   SectionBuilder,
   TextDisplayBuilder,
@@ -167,34 +165,6 @@ export class ContainerFactory {
     return modal;
   }
 
-  static buildPlayModal() {
-    const textInput = new TextInputBuilder()
-      .setCustomId("MusicPlayUrlInput")
-      .setStyle(TextInputStyle.Short)
-      .setPlaceholder("請貼上 YouTube 連結...")
-      .setRequired(true)
-      .setMinLength(10)
-      .setMaxLength(200);
-
-    const label = new LabelBuilder()
-      .setLabel("輸入播放網址")
-      .setDescription("輸入你要播放的 YouTube 歌曲或清單連結")
-      .setTextInputComponent(textInput);
-
-    const modal = new ModalBuilder()
-      .setTitle("播放音樂")
-      .setCustomId("MusicPlayModal")
-      .addLabelComponents(label);
-
-    return modal;
-  }
-
-  /**
-   * 指令回覆用的 Container（取代單次回覆的 EmbedBuilder）
-   * @param {"success"|"error"|"info"|"warning"} type
-   * @param {string} description  custom emoji + markdown
-   * @param {import("discord.js").User} [user]  顯示於 footer
-   */
   static buildReply(type, description, user = null) {
     const headers = {
       success: "<:LingLong:1510515456321261699> 音樂中心",
