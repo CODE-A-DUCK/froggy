@@ -10,7 +10,10 @@ export const roleinfoCommand = {
     .setName("roleinfo")
     .setDescription("查看指定身份組的詳細資訊")
     .addRoleOption((option) =>
-      option.setName("role").setDescription("要查詢的身份組").setRequired(true),
+      option
+        .setName("身份組")
+        .setDescription("要查詢的身份組")
+        .setRequired(true),
     ),
 
   async execute(interaction) {
@@ -103,8 +106,7 @@ export const roleinfoCommand = {
       console.error("[roleinfo] Error:", error);
 
       await interaction.editReply({
-        content:
-          `${EMOJIS.errorwarningline} | 查詢身份組資訊時發生錯誤`,
+        content: `${EMOJIS.errorwarningline} | 查詢身份組資訊時發生錯誤`,
       });
     }
   },

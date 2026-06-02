@@ -6,18 +6,17 @@ import {
 
 import { EMOJIS } from "../../../shared/emojis.js";
 
-
 export const kickCommand = {
   name: "kick",
   category: `${EMOJIS.adminline} | 版主`,
   data: new SlashCommandBuilder()
     .setName("kick")
-    .setDescription("將指定成員踢出伺服器")
+    .setDescription("將你討厭的成員踢出伺服器")
     .addUserOption((opt) =>
-      opt.setName("user").setDescription("要踢出的成員").setRequired(true),
+      opt.setName("成員").setDescription("要踢出的成員").setRequired(true),
     )
     .addStringOption((opt) =>
-      opt.setName("reason").setDescription("踢出原因").setRequired(false),
+      opt.setName("原因").setDescription("踢出原因").setRequired(false),
     ),
 
   async execute(interaction) {
@@ -30,16 +29,14 @@ export const kickCommand = {
         )
       ) {
         return interaction.editReply({
-          content:
-            `${EMOJIS.errorwarningline} | 你沒有踢出成員的權限`,
+          content: `${EMOJIS.errorwarningline} | 你沒有踢出成員的權限`,
         });
       }
 
       const botMember = interaction.guild.members.me;
       if (!botMember.permissions.has(PermissionsBitField.Flags.KickMembers)) {
         return interaction.editReply({
-          content:
-            `${EMOJIS.errorwarningline} | 我沒有踢出成員的權限`,
+          content: `${EMOJIS.errorwarningline} | 我沒有踢出成員的權限`,
         });
       }
 
@@ -61,8 +58,7 @@ export const kickCommand = {
         interaction.user.id !== interaction.guild.ownerId
       ) {
         return interaction.editReply({
-          content:
-            `${EMOJIS.errorwarningline} | 你無法踢出權限高於或等於你的成員`,
+          content: `${EMOJIS.errorwarningline} | 你無法踢出權限高於或等於你的成員`,
         });
       }
 
@@ -70,8 +66,7 @@ export const kickCommand = {
         targetMember.roles.highest.position >= botMember.roles.highest.position
       ) {
         return interaction.editReply({
-          content:
-            `${EMOJIS.errorwarningline} | 我無法踢出該成員，該成員權限高於或等於我`,
+          content: `${EMOJIS.errorwarningline} | 我無法踢出該成員，該成員權限高於或等於我`,
         });
       }
 
@@ -91,8 +86,7 @@ export const kickCommand = {
     } catch (error) {
       console.error("[Command:kick] Error:", error);
       await interaction.editReply({
-        content:
-          `${EMOJIS.errorwarningline} | 踢出目標成員時發生錯誤`,
+        content: `${EMOJIS.errorwarningline} | 踢出目標成員時發生錯誤`,
       });
     }
   },

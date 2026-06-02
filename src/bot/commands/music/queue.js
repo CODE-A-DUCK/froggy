@@ -8,7 +8,7 @@ export const queueCommand = {
   category: ":notes: | 音樂",
   data: new SlashCommandBuilder()
     .setName("queue")
-    .setDescription("查看當前播放隊列並移除歌曲"),
+    .setDescription("查看當前播放隊列，移除歌曲"),
   async execute(interaction, context) {
     try {
       const { current, queue } = await context.guildPlayerManager.getQueue(

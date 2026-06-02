@@ -9,7 +9,7 @@ export const resendCommand = {
   category: ":notes: | 音樂",
   data: new SlashCommandBuilder()
     .setName("resend")
-    .setDescription("重新發送音樂遙控器"),
+    .setDescription("把遙控器找回來"),
   async execute(interaction, context) {
     const validation = await validateVoiceState(interaction);
     if (!validation) return;

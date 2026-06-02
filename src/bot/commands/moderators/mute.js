@@ -6,7 +6,6 @@ import {
 
 import { EMOJIS } from "../../../shared/emojis.js";
 
-
 export const muteCommand = {
   name: "mute",
   category: `${EMOJIS.adminline} | 版主`,
@@ -14,7 +13,7 @@ export const muteCommand = {
     .setName("mute")
     .setDescription("禁言指定成員一段時間，期間無法發送消息")
     .addUserOption((opt) =>
-      opt.setName("user").setDescription("選擇要禁言的成員").setRequired(true),
+      opt.setName("成員").setDescription("選擇要禁言的成員").setRequired(true),
     )
     .addIntegerOption((opt) =>
       opt
@@ -41,8 +40,7 @@ export const muteCommand = {
         )
       ) {
         return interaction.editReply({
-          content:
-            `${EMOJIS.errorwarningline} | 你沒有禁言成員的權限`,
+          content: `${EMOJIS.errorwarningline} | 你沒有禁言成員的權限`,
         });
       }
 
@@ -51,8 +49,7 @@ export const muteCommand = {
         !botMember.permissions.has(PermissionsBitField.Flags.ModerateMembers)
       ) {
         return interaction.editReply({
-          content:
-            `${EMOJIS.errorwarningline} | 我沒有禁言成員的權限`,
+          content: `${EMOJIS.errorwarningline} | 我沒有禁言成員的權限`,
         });
       }
 
@@ -75,8 +72,7 @@ export const muteCommand = {
         interaction.user.id !== interaction.guild.ownerId
       ) {
         return interaction.editReply({
-          content:
-            `${EMOJIS.errorwarningline} | 你無法禁言權限高於或等於你的成員`,
+          content: `${EMOJIS.errorwarningline} | 你無法禁言權限高於或等於你的成員`,
         });
       }
 
@@ -84,8 +80,7 @@ export const muteCommand = {
         targetMember.roles.highest.position >= botMember.roles.highest.position
       ) {
         return interaction.editReply({
-          content:
-            `${EMOJIS.errorwarningline} | 我無法禁言該成員，該成員權限高於或等於我`,
+          content: `${EMOJIS.errorwarningline} | 我無法禁言該成員，該成員權限高於或等於我`,
         });
       }
 
@@ -107,8 +102,7 @@ export const muteCommand = {
     } catch (error) {
       console.error("[Command:mute] Error:", error);
       await interaction.editReply({
-        content:
-          `${EMOJIS.errorwarningline} | 禁言目標成員時發生錯誤`,
+        content: `${EMOJIS.errorwarningline} | 禁言目標成員時發生錯誤`,
       });
     }
   },

@@ -6,7 +6,6 @@ import {
 
 import { EMOJIS } from "../../../shared/emojis.js";
 
-
 export const setnicknameCommand = {
   name: "setnickname",
   category: `${EMOJIS.adminline} | 版主`,
@@ -14,7 +13,7 @@ export const setnicknameCommand = {
     .setName("setnickname")
     .setDescription("設定或移除伺服器成員的暱稱")
     .addUserOption((opt) =>
-      opt.setName("user").setDescription("要設定暱稱的成員").setRequired(true),
+      opt.setName("成員").setDescription("要設定暱稱的成員").setRequired(true),
     )
     .addStringOption((opt) =>
       opt
@@ -23,7 +22,7 @@ export const setnicknameCommand = {
         .setRequired(false),
     )
     .addStringOption((opt) =>
-      opt.setName("reason").setDescription("原因（可選）").setRequired(false),
+      opt.setName("原因").setDescription("原因（可選）").setRequired(false),
     ),
 
   async execute(interaction) {
@@ -33,16 +32,14 @@ export const setnicknameCommand = {
       const member = interaction.member;
       if (!member.permissions.has(PermissionFlagsBits.ManageNicknames)) {
         return interaction.editReply({
-          content:
-            `${EMOJIS.errorwarningline} | 你沒有設定暱稱的權限`,
+          content: `${EMOJIS.errorwarningline} | 你沒有設定暱稱的權限`,
         });
       }
 
       const botMember = interaction.guild.members.me;
       if (!botMember.permissions.has(PermissionFlagsBits.ManageNicknames)) {
         return interaction.editReply({
-          content:
-            `${EMOJIS.errorwarningline} | 我沒有權限設定暱稱`,
+          content: `${EMOJIS.errorwarningline} | 我沒有權限設定暱稱`,
         });
       }
 
@@ -61,8 +58,7 @@ export const setnicknameCommand = {
         member.id !== interaction.guild.ownerId
       ) {
         return interaction.editReply({
-          content:
-            `${EMOJIS.errorwarningline} | 該成員的權限高於或等於你，因此你無法修改其暱稱`,
+          content: `${EMOJIS.errorwarningline} | 該成員的權限高於或等於你，因此你無法修改其暱稱`,
         });
       }
 
@@ -85,8 +81,7 @@ export const setnicknameCommand = {
     } catch (error) {
       console.error("[Command:setnickname] Error:", error);
       await interaction.editReply({
-        content:
-          `${EMOJIS.errorwarningline} | 設定暱稱時發生錯誤或你無法修改比你更高或同等權限的成員暱稱`,
+        content: `${EMOJIS.errorwarningline} | 設定暱稱時發生錯誤或你無法修改比你更高或同等權限的成員暱稱`,
       });
     }
   },

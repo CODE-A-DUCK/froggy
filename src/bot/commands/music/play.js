@@ -27,7 +27,7 @@ export const playCommand = {
     .setDescription("透過 YouTube 連結直接播放歌曲（搜尋歌曲請用 /search）")
     .addStringOption((option) =>
       option
-        .setName("link")
+        .setName("鏈接")
         .setDescription("YouTube 影片或播放清單連結")
         .setRequired(true),
     ),

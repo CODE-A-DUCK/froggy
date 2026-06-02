@@ -18,7 +18,7 @@ export const searchCommand = {
     .setName("search")
     .setDescription("搜尋歌曲，從結果中選擇後播放")
     .addStringOption((o) =>
-      o.setName("query").setDescription("歌曲名稱或關鍵字").setRequired(true),
+      o.setName("內容").setDescription("歌曲名稱或關鍵字").setRequired(true),
     ),
 
   async execute(interaction) {

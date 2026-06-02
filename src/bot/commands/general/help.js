@@ -16,7 +16,7 @@ export const helpCommand = {
     .setDescription("這應該是百科全書")
     .addStringOption((option) =>
       option
-        .setName("指令學名")
+        .setName("指令名稱")
         .setDescription("要查詢的指令名稱")
         .setAutocomplete(true),
     ),
@@ -24,7 +24,6 @@ export const helpCommand = {
   async autocomplete(interaction) {
     const focusedValue = interaction.options.getFocused().toLowerCase();
 
-    // 從 client.commands 獲取，若未初始化則使用預設 Collection
     const commands = interaction.client.commands;
     if (!commands) {
       return interaction.respond([]).catch(() => {});
@@ -60,7 +59,10 @@ export const helpCommand = {
           .map((cmd) => `${cmd.name}`)
           .join(", ");
 
-        embed.addFields({ name: cat, value: catCommands || "無可用指令" });
+        embed.addFields({
+          name: cat,
+          value: catCommands || "可悲啊！你無可用指令",
+        });
       }
 
       const selectMenu = new StringSelectMenuBuilder()
