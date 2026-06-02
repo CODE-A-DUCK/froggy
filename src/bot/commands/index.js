@@ -24,7 +24,10 @@ async function loadCommands(dir = __dirname) {
       if (command) {
         if (!command.category) {
           const cat = dir.split(/[\\/]/).pop();
-          command.category = cat === "commands" || cat === "general" ? "General" : cat.charAt(0).toUpperCase() + cat.slice(1);
+          command.category =
+            cat === "commands" || cat === "general"
+              ? "General"
+              : cat.charAt(0).toUpperCase() + cat.slice(1);
         }
         loaded.push(command);
       }
@@ -46,7 +49,7 @@ export async function registerCommands({ token, applicationId }) {
 
 export async function clearCommands({ token, applicationId }) {
   const rest = new REST({ version: "10" }).setToken(token);
-  
+
   // Clear global commands
   await rest.put(Routes.applicationCommands(applicationId), { body: [] });
   console.info("[Deploy] Cleared all global commands.");
@@ -55,25 +58,40 @@ export async function clearCommands({ token, applicationId }) {
   try {
     const guilds = await rest.get(Routes.userGuilds());
     for (const guild of guilds) {
-      await rest.put(Routes.applicationGuildCommands(applicationId, guild.id), { body: [] });
-      console.info(`[Deploy] Cleared commands for guild: ${guild.name} (${guild.id})`);
+      await rest.put(Routes.applicationGuildCommands(applicationId, guild.id), {
+        body: [],
+      });
+      console.info(
+        `[Deploy] Cleared commands for guild: ${guild.name} (${guild.id})`,
+      );
     }
   } catch (err) {
-    console.warn("[Deploy] Failed to fetch or clear guild commands:", err.message);
+    console.warn(
+      "[Deploy] Failed to fetch or clear guild commands:",
+      err.message,
+    );
   }
 }
 
 export async function handleInteraction(interaction, context) {
   let commandName = interaction.commandName;
-  if (!commandName && (interaction.isButton() || interaction.isStringSelectMenu() || interaction.isModalSubmit())) {
-    if (interaction.customId.includes(":")) commandName = interaction.customId.split(":")[0];
+  if (
+    !commandName &&
+    (interaction.isButton() ||
+      interaction.isStringSelectMenu() ||
+      interaction.isModalSubmit())
+  ) {
+    if (interaction.customId.includes(":"))
+      commandName = interaction.customId.split(":")[0];
   }
 
   const command = commandsByName.get(commandName);
   if (!command) return;
 
   if (!interaction.client.commands) {
-    interaction.client.commands = new Collection(commands.map((c) => [c.name, c]));
+    interaction.client.commands = new Collection(
+      commands.map((c) => [c.name, c]),
+    );
   }
 
   if (interaction.isChatInputCommand()) {

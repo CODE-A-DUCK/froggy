@@ -8,7 +8,6 @@ import {
 
 import { EMOJIS } from "../../../shared/emojis.js";
 
-
 export const helpCommand = {
   name: "help",
   category: `${EMOJIS.homeline} | 基本`,
@@ -17,14 +16,14 @@ export const helpCommand = {
     .setDescription("這應該是百科全書")
     .addStringOption((option) =>
       option
-        .setName("command")
+        .setName("指令學名")
         .setDescription("要查詢的指令名稱")
         .setAutocomplete(true),
     ),
 
   async autocomplete(interaction) {
     const focusedValue = interaction.options.getFocused().toLowerCase();
-    
+
     // 從 client.commands 獲取，若未初始化則使用預設 Collection
     const commands = interaction.client.commands;
     if (!commands) {

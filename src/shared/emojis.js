@@ -1,18 +1,18 @@
-// =============== How to use? ===============
-// Syntax:
+// =============== 如何使用？ ===============
 // emojiname: "emoji markdown"
-// ===========================================
-// Usage:
+// =========================================
+// 用法:
 // import { EMOJIS } from "file.../shared/emojis.js";
 //
 // ${EMOJIS.errorwarningline}
-// ===========================================
+// =========================================
 
 export const EMOJIS = {
   albumline: "<:albumline:1510533853306159134>",
   appsline: "<:appsline:1510533855071834242>",
   attachmentline: "<:attachmentline:1510533856833568868>",
   bookshelfline: "<:bookshelfline:1510533859245031484>",
+  calculatorline: "<:calculatorline:1511397145670844456>",
   calendarline: "<:calendarline:1510539690841866342>",
   checkdoubleline: "<:checkdoubleline:1510533861052907621>",
   codeline: "<:codeline:1510553753193812048>",
@@ -21,6 +21,7 @@ export const EMOJIS = {
   eyeline: "<:eyeline:1510533867583569920>",
   fileinfoline: "<:fileinfoline:1510539692716855326>",
   fileshredline: "<:fileshredline:1510533869080805457>",
+  formula: "<:formula:1511397147734708364>",
   headphoneline: "<:headphoneline:1510533870645153792>",
   hourglassline: "<:hourglassline:1510533872285253662>",
   infinityline: "<:infinityline:1510533874059444326>",
@@ -31,6 +32,7 @@ export const EMOJIS = {
   notificationline: "<:notificationline:1510533880950820864>",
   notificationoffline: "<:notificationoffline:1510533883064615032>",
   pausecircleline: "<:pausecircleline:1510533885270691870>",
+  pencilruler2line: "<:pencilruler2line:1511384205102153830>",
   playcircleline: "<:playcircleline:1510533886839488594>",
   playlistaddline: "<:playlistaddline:1510533888630329455>",
   playlistline: "<:playlistline:1510533890257977457>",
