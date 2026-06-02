@@ -48,17 +48,27 @@ export const latexCommand = {
 
   async execute(interaction) {
     await interaction.deferReply();
-    const latex = interaction.options.getString("公式");
+    const rawLatex = interaction.options.getString("公式");
     let color = interaction.options.getString("顏色");
+
+    // 移除常見的包裝符號 \[ ... \] 或 $$ ... $$
+    let latex = rawLatex.trim();
+    if (latex.startsWith("\\[") && latex.endsWith("\\]")) {
+      latex = latex.slice(2, -2).trim();
+    } else if (latex.startsWith("$$") && latex.endsWith("$$")) {
+      latex = latex.slice(2, -2).trim();
+    }
 
     if (color && /^[0-9a-fA-F]{3,6}$/.test(color)) color = `#${color}`;
     if (latex.length > MAX_LATEX_LENGTH)
       return interaction.editReply(`${EMOJIS.errorwarningline} | 表達式過長。`);
 
     try {
-      const finalInput = latex.includes("\\\\")
-        ? `\\begin{gather}${latex}\\end{gather}`
-        : latex;
+      const hasEnvironment = /\\begin\{/.test(latex);
+      const finalInput =
+        latex.includes("\\\\") && !hasEnvironment
+          ? `\\begin{gather}${latex}\\end{gather}`
+          : latex;
 
       const svgString = texToSvg(finalInput, color);
       const buffer = await Promise.race([
@@ -72,8 +82,9 @@ export const latexCommand = {
         files: [new AttachmentBuilder(buffer, { name: "latex.png" })],
       });
     } catch (error) {
+      console.error("[Command:Latex] Error:", error);
       await interaction.editReply(
-        `${EMOJIS.errorwarningline} | 失敗: \`${error.message}\``,
+        `${EMOJIS.errorwarningline} | 渲染失敗，請檢查 LaTeX 語法是否正確。`,
       );
     }
   },

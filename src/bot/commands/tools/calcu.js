@@ -18,10 +18,10 @@ export const calcuCommand = {
 
   async execute(interaction) {
     await interaction.deferReply();
-    const input = interaction.options.getString("expression");
+    const input = interaction.options.getString("公式");
 
-    if (input.length > MAX_EXPR_LENGTH) {
-      return interaction.editReply(`${EMOJIS.errorwarningline} | 公式過長。`);
+    if (!input || input.length > MAX_EXPR_LENGTH) {
+      return interaction.editReply(`${EMOJIS.errorwarningline} | 公式無效或過長。`);
     }
 
     try {
@@ -37,7 +37,7 @@ export const calcuCommand = {
     } catch (error) {
       console.error("[Command:Calcu] Evaluation error:", error);
       await interaction.editReply(
-        `${EMOJIS.errorwarningline} | 計算失敗，請檢查格式。\n錯誤訊息: \`${error.message}\``,
+        `${EMOJIS.errorwarningline} | 計算失敗，請檢查格式。`,
       );
     }
   },
