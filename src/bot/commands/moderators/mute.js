@@ -8,7 +8,7 @@ import { EMOJIS } from "../../../shared/emojis.js";
 
 export const muteCommand = {
   name: "mute",
-  category: `${EMOJIS.adminline} | 版主`,
+  category: `${EMOJIS.shielduserline} | 版主`,
   data: new SlashCommandBuilder()
     .setName("mute")
     .setDescription("禁言指定成員一段時間，期間無法發送消息")
@@ -24,10 +24,7 @@ export const muteCommand = {
         .setMaxValue(40320),
     )
     .addStringOption((opt) =>
-      opt
-        .setName("原因")
-        .setDescription("禁言原因（可選）")
-        .setRequired(false),
+      opt.setName("原因").setDescription("禁言原因（可選）").setRequired(false),
     ),
 
   async execute(interaction) {

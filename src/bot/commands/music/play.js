@@ -13,7 +13,7 @@ const PLAY_COOLDOWN_MS = 3000;
 
 export const playCommand = {
   name: "play",
-  category: ":notes: | 音樂",
+  category: `${EMOJIS.music2line} | 音樂`,
   data: new SlashCommandBuilder()
     .setName("play")
     .setDescription("透過 YouTube 連結直接播放歌曲（搜尋歌曲請用 /search）")

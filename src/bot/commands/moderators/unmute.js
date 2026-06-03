@@ -6,10 +6,9 @@ import {
 
 import { EMOJIS } from "../../../shared/emojis.js";
 
-
 export const unmuteCommand = {
   name: "unmute",
-  category: `${EMOJIS.adminline} | 版主`,
+  category: `${EMOJIS.shielduserline} | 版主`,
 
   data: new SlashCommandBuilder()
     .setName("unmute")
@@ -28,16 +27,14 @@ export const unmuteCommand = {
       const member = interaction.member;
       if (!member.permissions.has(PermissionFlagsBits.ModerateMembers)) {
         return interaction.editReply({
-          content:
-            `${EMOJIS.errorwarningline} | 你沒有管理成員的權限`,
+          content: `${EMOJIS.errorwarningline} | 你沒有管理成員的權限`,
         });
       }
 
       const botMember = interaction.guild.members.me;
       if (!botMember.permissions.has(PermissionFlagsBits.ModerateMembers)) {
         return interaction.editReply({
-          content:
-            `${EMOJIS.errorwarningline} | 我沒有管理成員的權限`,
+          content: `${EMOJIS.errorwarningline} | 我沒有管理成員的權限`,
         });
       }
 
@@ -53,8 +50,7 @@ export const unmuteCommand = {
 
       if (!targetMember.isCommunicationDisabled()) {
         return interaction.editReply({
-          content:
-            `${EMOJIS.errorwarningline} | 該成員目前並沒有被禁言`,
+          content: `${EMOJIS.errorwarningline} | 該成員目前並沒有被禁言`,
         });
       }
 
@@ -63,8 +59,7 @@ export const unmuteCommand = {
         member.id !== interaction.guild.ownerId
       ) {
         return interaction.editReply({
-          content:
-            `${EMOJIS.errorwarningline} | 該成員的權限高於或等於你，無法解除其禁言`,
+          content: `${EMOJIS.errorwarningline} | 該成員的權限高於或等於你，無法解除其禁言`,
         });
       }
 

@@ -14,7 +14,7 @@ const SEARCH_COOLDOWN_MS = 5000;
 
 export const searchCommand = {
   name: "search",
-  category: ":notes: | 音樂",
+  category: `${EMOJIS.music2line} | 音樂`,
   data: new SlashCommandBuilder()
     .setName("search")
     .setDescription("搜尋歌曲，從結果中選擇後播放")

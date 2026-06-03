@@ -48,7 +48,14 @@ export async function clearCommands({ token, applicationId }) {
 }
 
 export async function handleInteraction(interaction, context) {
-  const command = commandsByName.get(interaction.commandName);
+  let commandName = interaction.commandName;
+
+  // 如果是組件交互，則嘗試從 customId 中解析指令名稱 (格式: "command:action")
+  if (!commandName && (interaction.isStringSelectMenu() || interaction.isButton())) {
+    commandName = interaction.customId.split(":")[0];
+  }
+
+  const command = commandsByName.get(commandName);
   if (!command) return;
 
   if (interaction.isChatInputCommand()) {
@@ -57,5 +64,7 @@ export async function handleInteraction(interaction, context) {
     await command.autocomplete(interaction, context);
   } else if (interaction.isStringSelectMenu() && typeof command.handleSelectMenu === "function") {
     await command.handleSelectMenu(interaction, context);
+  } else if (interaction.isButton() && typeof command.handleButton === "function") {
+    await command.handleButton(interaction, context);
   }
 }

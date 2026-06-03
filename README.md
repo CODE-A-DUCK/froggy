@@ -6,7 +6,7 @@
     可能具備一些功能。
   </p>
   <p>
-    <img src="https://img.shields.io/badge/Node.js-24.x-43853d?style=flat-square&logo=node.js&logoColor=white" alt="Node.js Version" />
+    <img src="https://img.shields.io/badge/Node.js-18.x-43853d?style=flat-square&logo=node.js&logoColor=white" alt="Node.js Version" />
     <img src="https://img.shields.io/badge/Discord.js-v14-5865F2?style=flat-square&logo=discord&logoColor=white" alt="Discord.js Version" />
     <img src="https://img.shields.io/badge/License-MIT-blue?style=flat-square" alt="License" />
   </p>
@@ -19,7 +19,7 @@
 
 在開始之前，請確保您的系統已安裝以下軟體：
 
-*   <a href="https://nodejs.org/"><b>Node.js</b></a>（建議使用 v24 或以上版本, 因爲我用的 v24.X :O ）
+*   <a href="https://nodejs.org/"><b>Node.js</b></a>（建議使用 v18 或以上版本）
 *   <a href="https://github.com/yt-dlp/yt-dlp"><b>yt-dlp</b></a>（音樂播放器解析 YouTube 網址與音訊流之必要套件）
 *   <i>（備註：FFmpeg 已由 <code>ffmpeg-static</code> 依賴項自動處理，但仍建議您在環境中安裝它）。</i>
 

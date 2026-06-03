@@ -6,7 +6,7 @@ import { EMOJIS } from "../../../shared/emojis.js";
 
 export const controllerCommand = {
   name: "controller",
-  category: ":notes: | 音樂",
+  category: `${EMOJIS.music2line} | 音樂`,
   data: new SlashCommandBuilder()
     .setName("controller")
     .setDescription("把遙控器找回來"),

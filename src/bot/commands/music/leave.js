@@ -6,7 +6,7 @@ import { EMOJIS } from "../../../shared/emojis.js";
 
 export const leaveCommand = {
   name: "leave",
-  category: ":notes: | 音樂",
+  category: `${EMOJIS.music2line} | 音樂`,
   data: new SlashCommandBuilder()
     .setName("leave")
     .setDescription("讓我離開語音頻道"),

@@ -8,7 +8,7 @@ import { EMOJIS } from "../../../shared/emojis.js";
 
 export const setnicknameCommand = {
   name: "setnickname",
-  category: `${EMOJIS.adminline} | 版主`,
+  category: `${EMOJIS.shielduserline} | 版主`,
   data: new SlashCommandBuilder()
     .setName("setnickname")
     .setDescription("設定或移除伺服器成員的暱稱")

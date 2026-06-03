@@ -15,7 +15,7 @@ function formatNumber(num) {
 
 export const youtubeCommand = {
   name: "youtube",
-  category: `${EMOJIS.gameline} | 檔案查詢`,
+  category: `${EMOJIS.infocardline} | 主頁查詢`,
   data: new SlashCommandBuilder()
     .setName("youtube")
     .setDescription("查詢 YouTube 頻道檔案")
@@ -230,8 +230,7 @@ export const youtubeCommand = {
     } catch (error) {
       console.error("[Command:YouTube] Error:", error);
       await interaction.editReply({
-        content:
-          `${EMOJIS.errorwarningline} | 該頻道可能已設為不公開，或暫時無法取得資料`,
+        content: `${EMOJIS.errorwarningline} | 該頻道可能已設為不公開，或暫時無法取得資料`,
       });
     }
   },
