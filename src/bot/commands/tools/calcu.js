@@ -5,6 +5,7 @@ import { EMOJIS } from "../../../shared/emojis.js";
 
 const math = create(all);
 const MAX_EXPR_LENGTH = 512;
+const MAX_RESULT_LENGTH = 1024;
 
 export const calcuCommand = {
   name: "calcu",
@@ -21,24 +22,31 @@ export const calcuCommand = {
     const input = interaction.options.getString("公式");
 
     if (!input || input.length > MAX_EXPR_LENGTH) {
-      return interaction.editReply(`${EMOJIS.errorwarningline} | 公式無效或過長。`);
+      return interaction.editReply(
+        `${EMOJIS.errorwarningline} | 公式無效或過長。`,
+      );
     }
 
+    let result;
     try {
-      const result = math.evaluate(input);
-      const formatted = math.format(result, { precision: 10 });
-
-      const response = [
-        `${EMOJIS.formula} | 公式：\`\`\`${input}\`\`\``,
-        `${EMOJIS.calculatorline} | 計算結果：\`\`\`${formatted}\`\`\``,
-      ].join("\n");
-
-      await interaction.editReply(response);
+      result = math.evaluate(input);
     } catch (error) {
       console.error("[Command:Calcu] Evaluation error:", error);
-      await interaction.editReply(
+      return interaction.editReply(
         `${EMOJIS.errorwarningline} | 計算失敗，請檢查格式。`,
       );
     }
+
+    const formatted = math.format(result, { precision: 10 });
+
+    if (formatted.length > MAX_RESULT_LENGTH) {
+      return interaction.editReply(
+        `${EMOJIS.errorwarningline} | 計算結果過長，無法顯示。`,
+      );
+    }
+
+    await interaction.editReply(
+      `${EMOJIS.formula} | 公式：\`\`\`${input}\`\`\`\n${EMOJIS.calculatorline} | 計算結果：\`\`\`${formatted}\`\`\``,
+    );
   },
 };

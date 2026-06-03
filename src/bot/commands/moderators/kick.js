@@ -40,8 +40,8 @@ export const kickCommand = {
         });
       }
 
-      const targetUser = interaction.options.getUser("user");
-      const reason = interaction.options.getString("reason") || "未提供原因";
+      const targetUser = interaction.options.getUser("成員");
+      const reason = interaction.options.getString("原因") || "未提供原因";
 
       const targetMember = await interaction.guild.members
         .fetch(targetUser.id)

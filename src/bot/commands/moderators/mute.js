@@ -17,7 +17,7 @@ export const muteCommand = {
     )
     .addIntegerOption((opt) =>
       opt
-        .setName("minutes")
+        .setName("分鐘")
         .setDescription("禁言時長（分鐘，1~40320）")
         .setRequired(true)
         .setMinValue(1)
@@ -25,7 +25,7 @@ export const muteCommand = {
     )
     .addStringOption((opt) =>
       opt
-        .setName("reason")
+        .setName("原因")
         .setDescription("禁言原因（可選）")
         .setRequired(false),
     ),
@@ -53,9 +53,9 @@ export const muteCommand = {
         });
       }
 
-      const targetUser = interaction.options.getUser("user");
-      const minutes = interaction.options.getInteger("minutes");
-      const reason = interaction.options.getString("reason") || "未提供原因";
+      const targetUser = interaction.options.getUser("成員");
+      const minutes = interaction.options.getInteger("分鐘");
+      const reason = interaction.options.getString("原因") || "未提供原因";
 
       const targetMember = await interaction.guild.members
         .fetch(targetUser.id)

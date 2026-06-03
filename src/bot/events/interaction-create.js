@@ -111,6 +111,32 @@ const handleButtonInteraction = async (interaction, context) => {
 
     await interaction.deferUpdate().catch(() => null);
 
+    const VALID_BUTTON_ACTIONS = new Set([
+      "stop",
+      "skip",
+      "pause",
+      "resume",
+      "loop",
+      "details",
+      "refresh_controller",
+    ]);
+    if (!VALID_BUTTON_ACTIONS.has(control.action)) return;
+
+    if (control.action === "details") {
+      const track = controllerStore.getCurrentTrack(guildId);
+      if (!track)
+        return replyError(
+          interaction,
+          `${EMOJIS.errorwarningline} | 找不到目前的歌曲資訊。`,
+        );
+      return interaction
+        .followUp({
+          embeds: [buildDetailsEmbed(track)],
+          flags: [MessageFlags.Ephemeral],
+        })
+        .catch(() => null);
+    }
+
     const botMember = await interaction.guild.members
       .fetch(interaction.client.user.id)
       .catch(() => null);
@@ -131,32 +157,6 @@ const handleButtonInteraction = async (interaction, context) => {
     const hasOwners = controllerStore.getOwners(guildId).size > 0;
     if (hasOwners && !controllerStore.isOwner(guildId, interaction.user.id))
       return replyError(interaction, CONTROLLER_DENIED_MESSAGE);
-
-    const VALID_BUTTON_ACTIONS = new Set([
-      "stop",
-      "skip",
-      "pause",
-      "resume",
-      "loop",
-      "details",
-      "resend_ui",
-    ]);
-    if (!VALID_BUTTON_ACTIONS.has(control.action)) return;
-
-    if (control.action === "details") {
-      const track = controllerStore.getCurrentTrack(guildId);
-      if (!track)
-        return replyError(
-          interaction,
-          `${EMOJIS.errorwarningline} | 找不到目前的歌曲資訊。`,
-        );
-      return interaction
-        .followUp({
-          embeds: [buildDetailsEmbed(track)],
-          flags: [MessageFlags.Ephemeral],
-        })
-        .catch(() => null);
-    }
 
     const optimisticUpdate = shouldOptimisticallyUpdate(control.action)
       ? optimisticallyUpdateController(interaction, control.action)

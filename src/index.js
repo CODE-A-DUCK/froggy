@@ -8,7 +8,7 @@ import presence from "./bot/features/presence.js";
 import { controllerStore } from "./bot/store/controller-store.js";
 import { startAutoUnban } from "./bot/utils/timed-ban-manager.js";
 import { config } from "./config.js";
-import { GuildPlayerManager } from "./player/guild-player-manager.js";
+import { MusicManager } from "./player/MusicManager.js";
 import { UIHandler } from "./player/ui/ui-handler.js";
 
 const client = new Client({
@@ -17,7 +17,7 @@ const client = new Client({
 
 client.commands = new Collection(commands.map((c) => [c.name, c]));
 
-const guildPlayerManager = new GuildPlayerManager({ client });
+const guildPlayerManager = new MusicManager({ client });
 
 const uiHandler = new UIHandler({ client, controllerStore });
 uiHandler.attach(guildPlayerManager);

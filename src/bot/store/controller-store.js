@@ -9,7 +9,7 @@ class ControllerStore {
   getOwner(guildId) {
     const owners = this.#owners.get(guildId);
     if (!owners || owners.size === 0) return null;
-    return Array.from(owners)[0]; // Retain for backwards compatibility where a single string is expected
+    return Array.from(owners)[0];
   }
 
   getOwners(guildId) {

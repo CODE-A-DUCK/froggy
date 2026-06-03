@@ -5,7 +5,8 @@ import {
   checkCooldown,
   getRemainingCooldown,
 } from "../../../player/utils/cooldown.js";
-import { ytSearch } from "../../../player/utils/yt-search.js";
+import { formatUserFacingError } from "../../../player/utils/error-formatter.js";
+import { searchTracks } from "../../../player/youtube.js";
 import { EMOJIS } from "../../../shared/emojis.js";
 import { validatePlayUrl } from "../../security/sanitize-query.js";
 
@@ -22,8 +23,6 @@ export const searchCommand = {
     ),
 
   async execute(interaction) {
-    const query = interaction.options.getString("query", true).trim();
-
     if (!checkCooldown(interaction.user.id, "search", SEARCH_COOLDOWN_MS)) {
       const ms = getRemainingCooldown(interaction.user.id, "search");
       return interaction.reply({
@@ -38,18 +37,21 @@ export const searchCommand = {
       });
     }
 
+    const query = interaction.options.getString("內容", true).trim();
+
     // Note: Do not deferReply here because we want to show a Modal afterwards
     let results;
     try {
-      results = await ytSearch(query, 10);
+      results = await searchTracks(query, 10);
     } catch (err) {
       console.error("[Command] Search error:", err.message);
+      const safeError = formatUserFacingError(err.message);
       return interaction.reply({
         flags: [MessageFlags.Ephemeral, MessageFlags.IsComponentsV2],
         components: [
-          ContainerFactory.buildReply(
-            "error",
-            `${EMOJIS.errorwarningline} | 搜尋失敗，請稍後再試。`,
+          ContainerFactory.buildSimpleMessage(
+            "搜尋失敗",
+            `${EMOJIS.errorwarningline} | ${safeError}`,
             interaction.user,
           ).toJSON(),
         ],
@@ -176,12 +178,13 @@ export async function handleMusicSearchModal(interaction, context) {
   } catch (err) {
     cs.clearOwner(guildId);
     console.error("[Command] Search select error:", err);
+    const safeError = formatUserFacingError(err.message);
     await interaction.followUp({
       flags: [MessageFlags.Ephemeral, MessageFlags.IsComponentsV2],
       components: [
-        ContainerFactory.buildReply(
-          "error",
-          `${EMOJIS.errorwarningline} | 處理請求時發生錯誤，請稍後再試。`,
+        ContainerFactory.buildSimpleMessage(
+          "處理錯誤",
+          `${EMOJIS.errorwarningline} | ${safeError}`,
           interaction.user,
         ).toJSON(),
       ],

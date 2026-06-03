@@ -17,7 +17,7 @@ export const setnicknameCommand = {
     )
     .addStringOption((opt) =>
       opt
-        .setName("nickname")
+        .setName("暱稱")
         .setDescription("新的暱稱（最多32字元，不選擇則清除）")
         .setRequired(false),
     )
@@ -43,7 +43,7 @@ export const setnicknameCommand = {
         });
       }
 
-      const targetUser = interaction.options.getUser("user");
+      const targetUser = interaction.options.getUser("成員");
       const targetMember = await interaction.guild.members
         .fetch(targetUser.id)
         .catch(() => null);
@@ -62,8 +62,8 @@ export const setnicknameCommand = {
         });
       }
 
-      const newNickname = interaction.options.getString("nickname") || null;
-      const reason = interaction.options.getString("reason") || "無原因";
+      const newNickname = interaction.options.getString("暱稱") || null;
+      const reason = interaction.options.getString("原因") || "無原因";
 
       await targetMember.setNickname(newNickname, reason);
 

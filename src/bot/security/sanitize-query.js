@@ -1,7 +1,15 @@
-const MAX_URL_LENGTH = 2048;
+// 不消毒怎麼行？
+
 const MAX_QUERY_LENGTH = 200;
-const BLOCKED_HOST =
-  /^(localhost|127\.|10\.|192\.168\.|172\.(1[6-9]|2\d|3[01])\.|::1|::ffff:|0\.0\.0\.0|169\.254\.|fd[0-9a-f]{2}:)/i;
+
+// Allowlist
+const ALLOWED_HOSTS = new Set([
+  "youtube.com",
+  "www.youtube.com",
+  "youtu.be",
+  "m.youtube.com",
+  "music.youtube.com",
+]);
 
 /**
  * 在將 URL 傳遞給 yt-dlp（/play 指令使用）之前對其進行驗證。
@@ -11,12 +19,6 @@ const BLOCKED_HOST =
 export function validatePlayUrl(input) {
   if (typeof input !== "string")
     return { ok: false, reason: "Input must be a string" };
-
-  if (input.includes("\0"))
-    return { ok: false, reason: "Null bytes are not allowed" };
-
-  if (input.length > MAX_URL_LENGTH)
-    return { ok: false, reason: `URL exceeds max length (${MAX_URL_LENGTH})` };
 
   let url;
   try {
@@ -28,14 +30,8 @@ export function validatePlayUrl(input) {
   if (url.protocol !== "http:" && url.protocol !== "https:")
     return { ok: false, reason: "Only http/https URLs are permitted" };
 
-  const rawHost = url.hostname.replace(/^\[|\]$/g, "");
-  if (BLOCKED_HOST.test(rawHost) || /^\d+$/.test(rawHost))
-    return {
-      ok: false,
-      reason: "Access to internal or decimal addresses is not permitted",
-    };
-  if (url.hostname.startsWith("-") || url.pathname.startsWith("/-"))
-    return { ok: false, reason: "Suspicious URL structure rejected" };
+  if (!ALLOWED_HOSTS.has(url.hostname))
+    return { ok: false, reason: "Only YouTube URLs are permitted" };
 
   return { ok: true, url: url.href };
 }

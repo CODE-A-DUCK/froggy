@@ -39,7 +39,7 @@ export const helpCommand = {
 
   async execute(interaction) {
     await interaction.deferReply();
-    const commandName = interaction.options.getString("command");
+    const commandName = interaction.options.getString("指令名稱");
 
     if (!commandName) {
       const commands = Array.from(interaction.client.commands.values());

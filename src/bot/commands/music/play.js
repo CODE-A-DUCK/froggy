@@ -5,19 +5,11 @@ import {
   checkCooldown,
   getRemainingCooldown,
 } from "../../../player/utils/cooldown.js";
+import { formatUserFacingError } from "../../../player/utils/error-formatter.js";
 import { validateVoiceState } from "../../../player/utils/voice-guard.js";
 import { EMOJIS } from "../../../shared/emojis.js";
 
 const PLAY_COOLDOWN_MS = 3000;
-
-function isUrl(input) {
-  try {
-    const u = new URL(input);
-    return u.protocol === "http:" || u.protocol === "https:";
-  } catch {
-    return false;
-  }
-}
 
 export const playCommand = {
   name: "play",
@@ -47,20 +39,7 @@ export const playCommand = {
       });
     }
 
-    const query = interaction.options.getString("link", true).trim();
-
-    if (!isUrl(query)) {
-      return interaction.reply({
-        components: [
-          ContainerFactory.buildReply(
-            "error",
-            `${EMOJIS.errorwarningline} | \`/play\` 只接受 YouTube 連結。\n若要搜尋歌曲，請使用 \`/search\`。`,
-            interaction.user,
-          ),
-        ],
-        flags: [MessageFlags.Ephemeral, MessageFlags.IsComponentsV2],
-      });
-    }
+    const query = interaction.options.getString("鏈接", true).trim();
 
     const validation = await validateVoiceState(interaction, {
       requireBotInVC: false,
@@ -94,11 +73,13 @@ export const playCommand = {
     } catch (err) {
       console.error("[Command] Play error:", err);
       cs.clearOwner(guild.id);
+
+      const safeError = formatUserFacingError(err.message);
       await interaction.editReply({
         components: [
-          ContainerFactory.buildReply(
-            "error",
-            `${EMOJIS.errorwarningline} | 執行時發生錯誤，請稍後再試。`,
+          ContainerFactory.buildSimpleMessage(
+            "播放錯誤",
+            `${EMOJIS.errorwarningline} | ${safeError}`,
             interaction.user,
           ),
         ],

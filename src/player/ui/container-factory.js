@@ -177,23 +177,11 @@ export class ContainerFactory {
       warning: `${EMOJIS.LingLong} 音樂中心`,
     };
 
-    const container = new ContainerBuilder().addTextDisplayComponents(
-      new TextDisplayBuilder().setContent(
-        `### ${headers[type] ?? `${EMOJIS.LingLong} 音樂中心`}\n${description}`,
-      ),
+    return this.buildSimpleMessage(
+      headers[type] ?? `${EMOJIS.LingLong} 音樂中心`,
+      description,
+      user
     );
-
-    if (user) {
-      container.addSeparatorComponents(new SeparatorBuilder().setSpacing(1));
-      const timestamp = Math.floor(Date.now() / 1000);
-      container.addTextDisplayComponents(
-        new TextDisplayBuilder().setContent(
-          `-# 由 ${user.tag} 指定 • <t:${timestamp}:R>`,
-        ),
-      );
-    }
-
-    return container;
   }
 
   static buildSimpleMessage(title, description, requester = null) {
@@ -206,7 +194,7 @@ export class ContainerFactory {
       const timestamp = Math.floor(Date.now() / 1000);
       container.addTextDisplayComponents(
         new TextDisplayBuilder().setContent(
-          `-# 由 ${requester.tag} 指定 • <t:${timestamp}:R>`,
+          `-# 由 ${requester.tag || requester.username || "未知"} 指定 • <t:${timestamp}:R>`,
         ),
       );
     }
