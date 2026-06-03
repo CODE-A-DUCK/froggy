@@ -4,6 +4,8 @@ import { fileURLToPath } from "node:url";
 import { createCanvas, loadImage } from "canvas";
 import { SlashCommandBuilder, AttachmentBuilder } from "discord.js";
 
+import { EMOJIS } from "../../../../shared/emojis.js";
+
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const STEAM_KEY = process.env.STEAM_API_KEY;
 
@@ -11,7 +13,7 @@ const bgPath = join(__dirname, "../../../../../assets/images/bg_hoi.jpg");
 
 export const hoi4profileCommand = {
   name: "hoi4profile",
-  category: "<:hoi_anime:1510586144067424366> | 鋼鐵雄心IV",
+  category: `${EMOJIS.hoi_anime} | 鋼鐵雄心IV`,
   data: new SlashCommandBuilder()
     .setName("hoi4profile")
     .setDescription("查詢 Hearts of Iron IV 玩家檔案與成就")
@@ -47,7 +49,7 @@ export const hoi4profileCommand = {
         const data = await res.json();
         if (data.response?.success !== 1)
           return interaction.editReply(
-            "<:errorwarningline:1510529314515320944> | 找不到這位 Steam 玩家",
+            `${EMOJIS.errorwarningline} | 找不到這位 Steam 玩家`,
           );
         steam64 = data.response.steamid;
       } else if (!/^\d{17}$/.test(cleanInput)) {
@@ -57,7 +59,7 @@ export const hoi4profileCommand = {
         const data = await res.json();
         if (data.response?.success !== 1)
           return interaction.editReply(
-            "<:errorwarningline:1510529314515320944> | 找不到這位 Steam 玩家",
+            `${EMOJIS.errorwarningline} | 找不到這位 Steam 玩家`,
           );
         steam64 = data.response.steamid;
       }
@@ -68,7 +70,7 @@ export const hoi4profileCommand = {
       const player = (await summaryRes.json()).response?.players?.[0];
       if (!player)
         return interaction.editReply(
-          "<:errorwarningline:1510529314515320944> | 找不到這位 Steam 玩家",
+          `${EMOJIS.errorwarningline} | 找不到這位 Steam 玩家`,
         );
 
       const ownedRes = await fetch(
@@ -194,7 +196,7 @@ export const hoi4profileCommand = {
     } catch (error) {
       console.error("[HOI4Profile] Error:", error);
       await interaction.editReply({
-        content: "<:errorwarningline:1510529314515320944> | 資料取得失敗",
+        content: `${EMOJIS.errorwarningline} | 資料取得失敗`,
       });
     }
   },

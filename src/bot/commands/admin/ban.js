@@ -4,9 +4,12 @@ import {
   PermissionsBitField,
 } from "discord.js";
 
+import { EMOJIS } from "../../../shared/emojis.js";
+
+
 export const banCommand = {
   name: "ban",
-  category: "<:adminline:1510555676378796093> | 版主",
+  category: `${EMOJIS.adminline} | 版主`,
   data: new SlashCommandBuilder()
     .setName("ban")
     .setDescription(
@@ -33,7 +36,7 @@ export const banCommand = {
       ) {
         return interaction.editReply({
           content:
-            "<:errorwarningline:1510529314515320944> | 你沒有封鎖成員的權限",
+            `${EMOJIS.errorwarningline} | 你沒有封鎖成員的權限`,
         });
       }
 
@@ -41,7 +44,7 @@ export const banCommand = {
       if (!botMember.permissions.has(PermissionsBitField.Flags.BanMembers)) {
         return interaction.editReply({
           content:
-            "<:errorwarningline:1510529314515320944> | 我沒有封鎖成員的權限",
+            `${EMOJIS.errorwarningline} | 我沒有封鎖成員的權限`,
         });
       }
 
@@ -60,7 +63,7 @@ export const banCommand = {
         ) {
           return interaction.editReply({
             content:
-              "<:errorwarningline:1510529314515320944> | 你無法封鎖權限高於或等於你的成員",
+              `${EMOJIS.errorwarningline} | 你無法封鎖權限高於或等於你的成員`,
           });
         }
 
@@ -70,7 +73,7 @@ export const banCommand = {
         ) {
           return interaction.editReply({
             content:
-              "<:errorwarningline:1510529314515320944> | 我無法封鎖該成員，該成員的權限高於或等於我",
+              `${EMOJIS.errorwarningline} | 我無法封鎖該成員，該成員的權限高於或等於我`,
           });
         }
       }
@@ -92,7 +95,7 @@ export const banCommand = {
       console.error("[Command:ban] Error:", error);
       await interaction.editReply({
         content:
-          "<:errorwarningline:1510529314515320944> | 封鎖目標成員時發生錯誤",
+          `${EMOJIS.errorwarningline} | 封鎖目標成員時發生錯誤`,
       });
     }
   },

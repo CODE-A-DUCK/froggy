@@ -2,6 +2,7 @@ import { SlashCommandBuilder, MessageFlags } from "discord.js";
 
 import { ContainerFactory } from "../../../player/ui/container-factory.js";
 import { validateVoiceState } from "../../../player/utils/voice-guard.js";
+import { EMOJIS } from "../../../shared/emojis.js";
 
 export const joinCommand = {
   name: "join",
@@ -29,7 +30,7 @@ export const joinCommand = {
         components: [
           ContainerFactory.buildReply(
             "success",
-            `<:headphoneline:1510533870645153792> | 我已加入語音頻道：\`${userVoiceChannel.name}\``,
+            `${EMOJIS.headphoneline} | 我已加入語音頻道：\`${userVoiceChannel.name}\``,
             interaction.user,
           ),
         ],
@@ -41,7 +42,7 @@ export const joinCommand = {
         components: [
           ContainerFactory.buildReply(
             "error",
-            "<:errorwarningline:1510533865805058188> | 執行時發生錯誤，請稍後再試。",
+            `${EMOJIS.errorwarningline} | 執行時發生錯誤，請稍後再試。`,
             interaction.user,
           ),
         ],

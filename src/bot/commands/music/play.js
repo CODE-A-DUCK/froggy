@@ -6,6 +6,7 @@ import {
   getRemainingCooldown,
 } from "../../../player/utils/cooldown.js";
 import { validateVoiceState } from "../../../player/utils/voice-guard.js";
+import { EMOJIS } from "../../../shared/emojis.js";
 
 const PLAY_COOLDOWN_MS = 3000;
 
@@ -26,7 +27,7 @@ export const playCommand = {
     .setDescription("透過 YouTube 連結直接播放歌曲（搜尋歌曲請用 /search）")
     .addStringOption((option) =>
       option
-        .setName("link")
+        .setName("鏈接")
         .setDescription("YouTube 影片或播放清單連結")
         .setRequired(true),
     ),
@@ -38,7 +39,7 @@ export const playCommand = {
         components: [
           ContainerFactory.buildReply(
             "warning",
-            `<:hourglassline:1510533872285253662> | 請等待 ${(ms / 1000).toFixed(1)} 秒後再使用。`,
+            `${EMOJIS.hourglassline} | 請等待 ${(ms / 1000).toFixed(1)} 秒後再使用。`,
             interaction.user,
           ),
         ],
@@ -53,7 +54,7 @@ export const playCommand = {
         components: [
           ContainerFactory.buildReply(
             "error",
-            "<:errorwarningline:1510533865805058188> | `/play` 只接受 YouTube 連結。\n若要搜尋歌曲，請使用 `/search`。",
+            `${EMOJIS.errorwarningline} | \`/play\` 只接受 YouTube 連結。\n若要搜尋歌曲，請使用 \`/search\`。`,
             interaction.user,
           ),
         ],
@@ -97,7 +98,7 @@ export const playCommand = {
         components: [
           ContainerFactory.buildReply(
             "error",
-            "<:errorwarningline:1510533865805058188> | 執行時發生錯誤，請稍後再試。",
+            `${EMOJIS.errorwarningline} | 執行時發生錯誤，請稍後再試。`,
             interaction.user,
           ),
         ],

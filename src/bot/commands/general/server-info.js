@@ -1,8 +1,10 @@
 import { SlashCommandBuilder, EmbedBuilder } from "discord.js";
 
+import { EMOJIS } from "../../../shared/emojis.js";
+
 export const serverinfo = {
   name: "serverinfo",
-  category: "<:homeline:1510525361702699048> | 基本",
+  category: `${EMOJIS.homeline} | 基本`,
   data: new SlashCommandBuilder()
     .setName("serverinfo")
     .setDescription("查看當前伺服器資訊"),
@@ -16,7 +18,7 @@ export const serverinfo = {
       if (!guild) {
         return interaction.editReply({
           content:
-            "<:errorwarningline:1510529314515320944> | 這個指令只能在伺服器中使用",
+            `${EMOJIS.errorwarningline} | 這個指令只能在伺服器中使用`,
         });
       }
 
@@ -70,7 +72,7 @@ export const serverinfo = {
       console.error("[Command:serverinfo] Error:", error);
       await interaction.editReply({
         content:
-          "<:errorwarningline:1510529314515320944> | 查詢伺服器資訊時發生錯誤。",
+          `${EMOJIS.errorwarningline} | 查詢伺服器資訊時發生錯誤。`,
       });
     }
   },

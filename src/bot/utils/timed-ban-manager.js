@@ -19,8 +19,6 @@ export function scheduleUnban(guildId, userId, unbanAt, reason = "") {
 }
 
 export function startAutoUnban(client) {
-  console.log("[TimedBan] Started timed ban manager");
-
   setInterval(async () => {
     const now = Date.now();
     const toUnban = timedBans.filter((b) => b.unbanAt <= now);
@@ -36,12 +34,8 @@ export function startAutoUnban(client) {
           (b) => !(b.guildId === ban.guildId && b.userId === ban.userId),
         );
         save();
-
-        console.log(
-          `[TimedBan] auto unbanned：${ban.userId}（server ${ban.guildId}）`,
-        );
       } catch (err) {
-        console.error("[TimedBan] autounban failed", err);
+        console.error(err);
       }
     }
   }, 60 * 1000); // check every 60 seconds

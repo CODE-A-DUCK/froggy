@@ -7,6 +7,7 @@ import {
 import { formatDuration } from "../../player/utils/format-duration.js";
 import { formatUploadDate } from "../../player/utils/format-upload-date.js";
 import { CONTROLLER_DENIED_MESSAGE } from "../../player/utils/voice-guard.js";
+import { EMOJIS } from "../../shared/emojis.js";
 import { handleInteraction } from "../commands/index.js";
 import { handleMusicSearchModal } from "../commands/music/search.js";
 import { controllerStore } from "../store/controller-store.js";
@@ -63,7 +64,7 @@ const handleModalInteraction = async (interaction, context) => {
     if (selectedIndices.length === 0) {
       return interaction.reply({
         content:
-          "<:errorwarningline:1510533865805058188> | 你沒有選擇任何歌曲。",
+          `${EMOJIS.errorwarningline} | 你沒有選擇任何歌曲。`,
         flags: [MessageFlags.Ephemeral],
       });
     }
@@ -78,14 +79,14 @@ const handleModalInteraction = async (interaction, context) => {
       if (removed.length === 0) {
         return interaction.reply({
           content:
-            "<:errorwarningline:1510533865805058188> | 找不到要移除的歌曲，請確認隊列編號是否仍然有效。",
+            `${EMOJIS.errorwarningline} | 找不到要移除的歌曲，請確認隊列編號是否仍然有效。`,
           flags: [MessageFlags.Ephemeral],
         });
       }
 
       await interaction.reply({
         content: [
-          `<:checkdoubleline:1510533861052907621> | 已成功從隊列中移除 ${removed.length} 首歌曲：`,
+          `${EMOJIS.checkdoubleline} | 已成功從隊列中移除 ${removed.length} 首歌曲：`,
           removed.map((track) => `- ${track.title}`).join("\n"),
         ].join("\n"),
         flags: [MessageFlags.Ephemeral],
@@ -94,7 +95,7 @@ const handleModalInteraction = async (interaction, context) => {
       console.error("[Modal] Remove error:", err);
       await interaction.reply({
         content:
-          "<:errorwarningline:1510533865805058188> | 移除歌曲時發生錯誤。",
+          `${EMOJIS.errorwarningline} | 移除歌曲時發生錯誤。`,
         flags: [MessageFlags.Ephemeral],
       });
     }
@@ -118,13 +119,13 @@ const handleButtonInteraction = async (interaction, context) => {
     if (!botVoiceChannel)
       return replyError(
         interaction,
-        "<:errorwarningline:1510533865805058188> | 我目前不在語音頻道中，無法執行此操作。",
+        `${EMOJIS.errorwarningline} | 我目前不在語音頻道中，無法執行此操作。`,
       );
 
     if (!member.voice.channel || member.voice.channel.id !== botVoiceChannel.id)
       return replyError(
         interaction,
-        `<:errorwarningline:1510533865805058188> | 你必須跟我進入同一個頻道 <#${botVoiceChannel.id}> 才能控制我！`,
+        `${EMOJIS.errorwarningline} | 你必須跟我進入同一個頻道 <#${botVoiceChannel.id}> 才能控制我！`,
       );
 
     const hasOwners = controllerStore.getOwners(guildId).size > 0;
@@ -147,7 +148,7 @@ const handleButtonInteraction = async (interaction, context) => {
       if (!track)
         return replyError(
           interaction,
-          "<:errorwarningline:1510533865805058188> | 找不到目前的歌曲資訊。",
+          `${EMOJIS.errorwarningline} | 找不到目前的歌曲資訊。`,
         );
       return interaction
         .followUp({
@@ -182,27 +183,27 @@ function buildDetailsEmbed(event) {
     .setThumbnail(event.thumbnail ?? null)
     .addFields(
       {
-        name: "<:userline:1510539696906965022> | 發佈者",
+        name: `${EMOJIS.userline} | 發佈者`,
         value: event.uploader ?? "未知",
         inline: true,
       },
       {
-        name: "<:timeline:1510539695111540797> | 時長",
+        name: `${EMOJIS.timeline} | 時長`,
         value: event.duration ? formatDuration(event.duration) : "LIVE",
         inline: true,
       },
       {
-        name: "<:calendarline:1510539690841866342> | 上傳日期",
+        name: `${EMOJIS.calendarline} | 上傳日期`,
         value: formatUploadDate(event.upload_date) ?? "未知",
         inline: true,
       },
       {
-        name: "<:eyeline:1510533867583569920> | 觀看次數",
+        name: `${EMOJIS.eyeline} | 觀看次數`,
         value: event.view_count?.toLocaleString() ?? "未知",
         inline: true,
       },
       {
-        name: "<:thumbupline:1510533908331237488> | 點讚數量",
+        name: `${EMOJIS.thumbupline} | 點讚數量`,
         value: event.like_count?.toLocaleString() ?? "未知",
         inline: true,
       },

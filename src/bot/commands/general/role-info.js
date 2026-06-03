@@ -1,14 +1,19 @@
 import { SlashCommandBuilder, EmbedBuilder } from "discord.js";
 
+import { EMOJIS } from "../../../shared/emojis.js";
+
 export const roleinfoCommand = {
   name: "roleinfo",
-  category: "<:homeline:1510525361702699048> | 基本",
+  category: `${EMOJIS.homeline} | 基本`,
 
   data: new SlashCommandBuilder()
     .setName("roleinfo")
     .setDescription("查看指定身份組的詳細資訊")
     .addRoleOption((option) =>
-      option.setName("role").setDescription("要查詢的身份組").setRequired(true),
+      option
+        .setName("身份組")
+        .setDescription("要查詢的身份組")
+        .setRequired(true),
     ),
 
   async execute(interaction) {
@@ -19,7 +24,7 @@ export const roleinfoCommand = {
 
       if (!role) {
         return interaction.editReply({
-          content: "<:errorwarningline:1510529314515320944> | 找不到該身份組",
+          content: `${EMOJIS.errorwarningline} | 找不到該身份組`,
         });
       }
 
@@ -101,8 +106,7 @@ export const roleinfoCommand = {
       console.error("[roleinfo] Error:", error);
 
       await interaction.editReply({
-        content:
-          "<:errorwarningline:1510529314515320944> | 查詢身份組資訊時發生錯誤",
+        content: `${EMOJIS.errorwarningline} | 查詢身份組資訊時發生錯誤`,
       });
     }
   },

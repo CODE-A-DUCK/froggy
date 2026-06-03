@@ -1,5 +1,7 @@
 import { MessageFlags } from "discord.js";
 
+import { EMOJIS } from "../../shared/emojis.js";
+
 const LOOP_SEQUENCE = {
   關閉: "重播一次",
   重播一次: "單曲循環",
@@ -53,15 +55,15 @@ function updateContent(content, action) {
   if (action === "pause")
     return content
       .replace(
-        "### <:music2line:1510533879390277732> 正在播放：",
-        "### <:pausecircleline:1510533885270691870> 目前暫停：",
+        `### ${EMOJIS.music2line} 正在播放：`,
+        `### ${EMOJIS.pausecircleline} 目前暫停：`,
       )
       .replace("**狀態**：播放中", "**狀態**：暫停");
   if (action === "resume")
     return content
       .replace(
-        "### <:pausecircleline:1510533885270691870> 目前暫停：",
-        "### <:music2line:1510533879390277732> 正在播放：",
+        `### ${EMOJIS.pausecircleline} 目前暫停：`,
+        `### ${EMOJIS.music2line} 正在播放：`,
       )
       .replace("**狀態**：暫停", "**狀態**：播放中");
   if (action === "loop")

@@ -8,6 +8,9 @@ import {
   version as djsVersion,
 } from "discord.js";
 
+import { EMOJIS } from "../../../shared/emojis.js";
+
+
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const packagePath = join(__dirname, "../../../../package.json");
 const { version, description } = JSON.parse(readFileSync(packagePath, "utf8"));
@@ -27,7 +30,7 @@ function getReadableTime(ms) {
 
 export const botinfoCommand = {
   name: "botinfo",
-  category: "<:homeline:1510525361702699048> | 基本",
+  category: `${EMOJIS.homeline} | 基本`,
   data: new SlashCommandBuilder()
     .setName("botinfo")
     .setDescription("查看我的信息"),

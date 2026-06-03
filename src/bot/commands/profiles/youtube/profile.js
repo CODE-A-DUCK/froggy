@@ -1,5 +1,8 @@
 import { createCanvas, loadImage } from "canvas";
 import { SlashCommandBuilder, AttachmentBuilder } from "discord.js";
+
+import { EMOJIS } from "../../../../shared/emojis.js";
+
 const YOUTUBE_API_KEY = process.env.YOUTUBE_API_KEY;
 
 //數字格式化（1.2M / 345K）
@@ -12,7 +15,7 @@ function formatNumber(num) {
 
 export const youtubeCommand = {
   name: "youtube",
-  category: "<:gameline:1510524519494848512> | 檔案查詢",
+  category: `${EMOJIS.gameline} | 檔案查詢`,
   data: new SlashCommandBuilder()
     .setName("youtube")
     .setDescription("查詢 YouTube 頻道檔案")
@@ -65,7 +68,7 @@ export const youtubeCommand = {
 
       if (!data.items || data.items.length === 0) {
         return interaction.editReply(
-          "<:errorwarningline:1510529314515320944> | 找不到這個 YouTube 頻道，請確認 ID 或 @handle 是否正確",
+          `${EMOJIS.errorwarningline} | 找不到這個 YouTube 頻道，請確認 ID 或 @handle 是否正確`,
         );
       }
 
@@ -228,7 +231,7 @@ export const youtubeCommand = {
       console.error("[Command:YouTube] Error:", error);
       await interaction.editReply({
         content:
-          "<:errorwarningline:1510529314515320944> | 該頻道可能已設為不公開，或暫時無法取得資料",
+          `${EMOJIS.errorwarningline} | 該頻道可能已設為不公開，或暫時無法取得資料`,
       });
     }
   },

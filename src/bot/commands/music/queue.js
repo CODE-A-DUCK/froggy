@@ -1,13 +1,14 @@
 import { SlashCommandBuilder, MessageFlags } from "discord.js";
 
 import { ContainerFactory } from "../../../player/ui/container-factory.js";
+import { EMOJIS } from "../../../shared/emojis.js";
 
 export const queueCommand = {
   name: "queue",
   category: ":notes: | 音樂",
   data: new SlashCommandBuilder()
     .setName("queue")
-    .setDescription("查看當前播放隊列並移除歌曲"),
+    .setDescription("查看當前播放隊列，移除歌曲"),
   async execute(interaction, context) {
     try {
       const { current, queue } = await context.guildPlayerManager.getQueue(
@@ -19,7 +20,7 @@ export const queueCommand = {
           components: [
             ContainerFactory.buildReply(
               "info",
-              "<:playlistline:1510533890257977457> | 隊列是空的。",
+              `${EMOJIS.playlistline} | 隊列是空的。`,
               interaction.user,
             ),
           ],
@@ -32,7 +33,7 @@ export const queueCommand = {
           components: [
             ContainerFactory.buildReply(
               "info",
-              `<:music2line:1510533879390277732> | 正在播放：**${current.title}**\n\n<:playlistline:1510533890257977457> | 隊列中沒有其他歌曲。`,
+              `${EMOJIS.music2line} | 正在播放：**${current.title}**\n\n${EMOJIS.playlistline} | 隊列中沒有其他歌曲。`,
               interaction.user,
             ),
           ],
@@ -48,7 +49,7 @@ export const queueCommand = {
         components: [
           ContainerFactory.buildReply(
             "error",
-            "<:errorwarningline:1510533865805058188> | 執行時發生錯誤，請稍後再試。",
+            `${EMOJIS.errorwarningline} | 執行時發生錯誤，請稍後再試。`,
             interaction.user,
           ),
         ],

@@ -6,23 +6,24 @@ import {
   StringSelectMenuOptionBuilder,
 } from "discord.js";
 
+import { EMOJIS } from "../../../shared/emojis.js";
+
 export const helpCommand = {
   name: "help",
-  category: "<:homeline:1510525361702699048> | 基本",
+  category: `${EMOJIS.homeline} | 基本`,
   data: new SlashCommandBuilder()
     .setName("help")
     .setDescription("這應該是百科全書")
     .addStringOption((option) =>
       option
-        .setName("command")
+        .setName("指令名稱")
         .setDescription("要查詢的指令名稱")
         .setAutocomplete(true),
     ),
 
   async autocomplete(interaction) {
     const focusedValue = interaction.options.getFocused().toLowerCase();
-    
-    // 從 client.commands 獲取，若未初始化則使用預設 Collection
+
     const commands = interaction.client.commands;
     if (!commands) {
       return interaction.respond([]).catch(() => {});
@@ -58,7 +59,10 @@ export const helpCommand = {
           .map((cmd) => `${cmd.name}`)
           .join(", ");
 
-        embed.addFields({ name: cat, value: catCommands || "無可用指令" });
+        embed.addFields({
+          name: cat,
+          value: catCommands || "可悲啊！你無可用指令",
+        });
       }
 
       const selectMenu = new StringSelectMenuBuilder()
@@ -92,7 +96,7 @@ export const helpCommand = {
   async showCommandDetails(interaction, commandName) {
     const command = interaction.client.commands.get(commandName);
     if (!command) {
-      const errorContent = `<:errorwarningline:1510529314515320944> | 我找不到名為 \`${commandName}\` 的指令。`;
+      const errorContent = `${EMOJIS.errorwarningline} | 我找不到名為 \`${commandName}\` 的指令。`;
       if (interaction.deferred || interaction.replied) {
         return interaction.editReply({
           content: errorContent,
