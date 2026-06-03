@@ -2,6 +2,7 @@ import { MessageFlags } from "discord.js";
 
 import { controllerStore } from "../../bot/store/controller-store.js";
 import { EMOJIS } from "../../shared/emojis.js";
+import { ContainerFactory } from "../ui/container-factory.js";
 
 const CONTROLLER_DENIED_MESSAGE = ":lock: | 你不能搶別人的遙控器";
 
@@ -14,12 +15,18 @@ export async function validateVoiceState(interaction, options = {}) {
 
   const guild = interaction.guild;
   const reply = async (content) => {
+    const payload = {
+      components: [
+        ContainerFactory.buildReply("error", content, interaction.user)
+      ],
+      flags: [MessageFlags.Ephemeral, MessageFlags.IsComponentsV2]
+    };
     if (interaction.deferred || interaction.replied)
       return interaction
-        .editReply({ content, flags: MessageFlags.Ephemeral })
+        .editReply(payload)
         .catch(() => null);
     return interaction
-      .reply({ content, flags: MessageFlags.Ephemeral })
+      .reply(payload)
       .catch(() => null);
   };
 
@@ -44,7 +51,7 @@ export async function validateVoiceState(interaction, options = {}) {
 
   if (requireBotInVC && !botVoiceChannel) {
     await reply(
-      `${EMOJIS.errorwarningline} | 我目前不在語音頻道中。`,
+      `${EMOJIS.errorwarningline} | 我目前不在語音頻道中。請先使用 \`/join\` 指令讓我加入！`,
     );
     return null;
   }

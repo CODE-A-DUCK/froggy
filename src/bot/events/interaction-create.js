@@ -7,6 +7,7 @@ import {
 import { formatDuration } from "../../player/utils/format-duration.js";
 import { formatUploadDate } from "../../player/utils/format-upload-date.js";
 import { CONTROLLER_DENIED_MESSAGE } from "../../player/utils/voice-guard.js";
+import { ContainerFactory } from "../../player/ui/container-factory.js";
 import { EMOJIS } from "../../shared/emojis.js";
 import { handleInteraction } from "../commands/index.js";
 import { handleMusicSearchModal } from "../commands/music/search.js";
@@ -63,9 +64,10 @@ const handleModalInteraction = async (interaction, context) => {
 
     if (selectedIndices.length === 0) {
       return interaction.reply({
-        content:
-          `${EMOJIS.errorwarningline} | 你沒有選擇任何歌曲。`,
-        flags: [MessageFlags.Ephemeral],
+        components: [
+          ContainerFactory.buildReply("warning", `${EMOJIS.errorwarningline} | 你沒有選擇任何歌曲。`, interaction.user)
+        ],
+        flags: [MessageFlags.IsComponentsV2]
       });
     }
 
@@ -78,25 +80,29 @@ const handleModalInteraction = async (interaction, context) => {
 
       if (removed.length === 0) {
         return interaction.reply({
-          content:
-            `${EMOJIS.errorwarningline} | 找不到要移除的歌曲，請確認隊列編號是否仍然有效。`,
-          flags: [MessageFlags.Ephemeral],
+          components: [
+            ContainerFactory.buildReply("warning", `${EMOJIS.errorwarningline} | 找不到要移除的歌曲，請確認隊列編號是否仍然有效。`, interaction.user)
+          ],
+          flags: [MessageFlags.IsComponentsV2]
         });
       }
 
       await interaction.reply({
-        content: [
-          `${EMOJIS.checkdoubleline} | 已成功從隊列中移除 ${removed.length} 首歌曲：`,
-          removed.map((track) => `- ${track.title}`).join("\n"),
-        ].join("\n"),
-        flags: [MessageFlags.Ephemeral],
+        components: [
+          ContainerFactory.buildReply("success", [
+            `${EMOJIS.checkdoubleline} | 已成功從隊列中移除 ${removed.length} 首歌曲：`,
+            removed.map((track) => `- ${track.title}`).join("\n")
+          ].join("\n"), interaction.user)
+        ],
+        flags: [MessageFlags.IsComponentsV2]
       });
     } catch (err) {
       console.error("[Modal] Remove error:", err);
       await interaction.reply({
-        content:
-          `${EMOJIS.errorwarningline} | 移除歌曲時發生錯誤。`,
-        flags: [MessageFlags.Ephemeral],
+        components: [
+          ContainerFactory.buildReply("error", `${EMOJIS.errorwarningline} | 移除歌曲時發生錯誤。`, interaction.user)
+        ],
+        flags: [MessageFlags.IsComponentsV2]
       });
     }
   }

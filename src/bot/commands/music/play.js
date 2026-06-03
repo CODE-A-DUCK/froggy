@@ -8,6 +8,7 @@ import {
 import { formatUserFacingError } from "../../../player/utils/error-formatter.js";
 import { validateVoiceState } from "../../../player/utils/voice-guard.js";
 import { EMOJIS } from "../../../shared/emojis.js";
+import { validatePlayUrl } from "../../security/sanitize-query.js";
 
 const PLAY_COOLDOWN_MS = 3000;
 
@@ -41,8 +42,22 @@ export const playCommand = {
 
     const query = interaction.options.getString("鏈接", true).trim();
 
+    const urlValidation = validatePlayUrl(query);
+    if (!urlValidation.ok) {
+      return interaction.reply({
+        components: [
+          ContainerFactory.buildReply(
+            "warning",
+            `${EMOJIS.errorwarningline} | 請提供有效的 YouTube 連結。搜尋歌曲請使用 \`/search\` 指令。`,
+            interaction.user,
+          ),
+        ],
+        flags: [MessageFlags.Ephemeral, MessageFlags.IsComponentsV2],
+      });
+    }
+
     const validation = await validateVoiceState(interaction, {
-      requireBotInVC: false,
+      requireBotInVC: true,
       requireController: false,
     });
     if (!validation) return;
@@ -65,7 +80,7 @@ export const playCommand = {
         guild_id: guild.id,
         action: "play",
         channel_id: userVoiceChannel.id,
-        track_url: query,
+        track_url: urlValidation.url,
         interaction_token: interaction.token,
         text_channel_id: interaction.channelId,
         controller_user_id: interaction.user.id,

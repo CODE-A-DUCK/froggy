@@ -38,10 +38,13 @@ export class MusicManager extends EventEmitter {
   }
 
   #bindEvents(player) {
-    const events = ["trackStarted", "sessionUpdated", "trackQueued", "queueFinished", "trackStopped", "trackError"];
+    const events = ["trackStarted", "sessionUpdated", "trackQueued", "queueFinished", "trackStopped", "trackError", "botDisconnect"];
     for (const event of events) {
       player.on(event, (data) => this.emit(event, data));
     }
+    player.on("botDisconnect", (data) => {
+      this.players.delete(data.guild_id);
+    });
   }
 
   /**
@@ -60,7 +63,11 @@ export class MusicManager extends EventEmitter {
         silent: task.silent
       });
     case "stop":
-      return player.stop();
+      return player.stop({
+        interactionToken: task.interaction_token,
+        textChannelId: task.text_channel_id,
+        controllerUserId: task.controller_user_id
+      });
     case "skip":
       return player.skip();
     case "pause":
@@ -69,6 +76,17 @@ export class MusicManager extends EventEmitter {
       return player.resume();
     case "loop":
       return player.toggleLoop();
+    case "remove":
+      return player.remove(task.indices);
+    case "join":
+      return player.ensureConnection(task.channel_id, { textChannelId: task.text_channel_id });
+    case "leave":
+      player.destroy();
+      this.players.delete(task.guild_id);
+      return;
+    case "refresh_controller":
+      if (task.text_channel_id) player.textChannelId = task.text_channel_id;
+      return player.emitUpdate();
     default:
       console.warn(`[MusicManager] 未知的操作: ${task.action}`);
     }

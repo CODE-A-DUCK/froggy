@@ -30,6 +30,9 @@ export class UIHandler {
     guildPlayerManager.on("trackError", (e) =>
       this.#safe(() => this.#handleTrackError(e)),
     );
+    guildPlayerManager.on("botDisconnect", (e) =>
+      this.#safe(() => this.#handleBotDisconnect(e)),
+    );
   }
 
   #safe(fn) {
@@ -97,6 +100,20 @@ export class UIHandler {
       }
 
       if (!acknowledged) {
+        if (event.is_update) {
+          const oldMessageId = this.controllerStore.getMessageId(event.guild_id);
+          if (oldMessageId) {
+            const msg = await targetChannel.messages.fetch(oldMessageId).catch(() => null);
+            if (msg) {
+              await msg.edit({
+                components: [container],
+                flags: [MessageFlags.IsComponentsV2],
+              }).catch(() => null);
+              return; // 如果成功編輯現有遙控器，就不用再發了
+            }
+          }
+        }
+
         // 始終重新發送遙控器（刪除舊的並發送新的）
         await this.#deletePreviousController(event.guild_id, targetChannel);
         const msg = await targetChannel.send({
@@ -105,8 +122,10 @@ export class UIHandler {
         });
         messageId = msg.id;
       } else {
-        // 如果已透過互動回應，我們仍然需要清除之前的遙控器，因為現在這個互動回應成了新的遙控器
-        await this.#deletePreviousController(event.guild_id, targetChannel);
+        // 如果是新歌曲且已透過互動回應，我們需要清除之前的遙控器
+        if (!event.is_update) {
+          await this.#deletePreviousController(event.guild_id, targetChannel);
+        }
       }
 
       if (messageId) {
@@ -175,9 +194,41 @@ export class UIHandler {
             components: [container],
             flags: [MessageFlags.IsComponentsV2],
           })
-          .catch(() => null);
+          .catch((err) =>
+            console.error("[UIHandler] Error sending stop message:", err),
+          );
     } catch (err) {
       console.error("[UIHandler] Error in handleTrackEnded:", err);
+    }
+  }
+
+  async #handleBotDisconnect(event) {
+    console.info(`[UIHandler] bot_disconnect Guild ${event.guild_id}`);
+    try {
+      const guild = this.client.guilds.cache.get(event.guild_id);
+      if (!guild) return;
+
+      const chId = event.text_channel_id || this.controllerStore.getCurrentTrack(event.guild_id)?.text_channel_id;
+      if (!chId) return;
+
+      const ch = await this.#resolveTextChannel(guild, chId);
+      if (!ch) return;
+
+      await this.#deletePreviousController(event.guild_id, ch);
+      this.controllerStore.clearOwner(event.guild_id);
+      this.controllerStore.clearCurrentTrack(event.guild_id);
+
+      const container = ContainerFactory.buildSimpleMessage(
+        `${EMOJIS.LingLong} 音樂中心`,
+        `${EMOJIS.logoutcircleline} | 由於語音頻道已無其他成員，我已自動離開！`,
+      );
+
+      await ch.send({
+        components: [container],
+        flags: [MessageFlags.IsComponentsV2],
+      }).catch(err => console.error("[UIHandler] Error sending auto-leave message:", err));
+    } catch (err) {
+      console.error("[UIHandler] Error in handleBotDisconnect:", err);
     }
   }
 

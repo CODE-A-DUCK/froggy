@@ -9,6 +9,7 @@ import { formatUserFacingError } from "../../../player/utils/error-formatter.js"
 import { searchTracks } from "../../../player/youtube.js";
 import { EMOJIS } from "../../../shared/emojis.js";
 import { validatePlayUrl } from "../../security/sanitize-query.js";
+import { validateVoiceState } from "../../../player/utils/voice-guard.js";
 
 const SEARCH_COOLDOWN_MS = 5000;
 
@@ -95,43 +96,14 @@ export async function handleMusicSearchModal(interaction, context) {
 
   await interaction.deferReply();
 
+  const validation = await validateVoiceState(interaction, {
+    requireBotInVC: true,
+    requireController: false,
+  });
+  if (!validation) return;
+
   const { guildId, channelId } = interaction;
-  const guild = interaction.guild;
-  const member = await guild.members
-    .fetch(interaction.user.id)
-    .catch(() => null);
-  const userVoiceChannel = member?.voice?.channel;
-
-  if (!userVoiceChannel) {
-    return interaction.followUp({
-      flags: [MessageFlags.Ephemeral, MessageFlags.IsComponentsV2],
-      components: [
-        ContainerFactory.buildReply(
-          "error",
-          `${EMOJIS.errorwarningline} | 你必須在語音頻道中才能播放音樂。`,
-          interaction.user,
-        ).toJSON(),
-      ],
-    });
-  }
-
-  const botMember = await guild.members
-    .fetch(interaction.client.user.id)
-    .catch(() => null);
-  const botVoiceChannel = botMember?.voice?.channel;
-
-  if (botVoiceChannel && botVoiceChannel.id !== userVoiceChannel.id) {
-    return interaction.followUp({
-      flags: [MessageFlags.Ephemeral, MessageFlags.IsComponentsV2],
-      components: [
-        ContainerFactory.buildReply(
-          "error",
-          `${EMOJIS.errorwarningline} | 你必須跟我在同一個頻道 <#${botVoiceChannel.id}> 才能播放音樂！`,
-          interaction.user,
-        ).toJSON(),
-      ],
-    });
-  }
+  const { guild, userVoiceChannel, botVoiceChannel } = validation;
 
   const { controllerStore: cs } = context;
   let ownerId = cs.getOwner(guildId);

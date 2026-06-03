@@ -1,6 +1,6 @@
 import { spawn } from "node:child_process";
 
-import { StreamType } from "@discordjs/voice";
+import { StreamType, demuxProbe } from "@discordjs/voice";
 import ffmpegPath from "ffmpeg-static";
 
 import {
@@ -166,9 +166,7 @@ export async function searchTracks(query, count = 5) {
 /**
  * 建立串流。
  */
-export function createAudioStream(url) {
-  if (!ffmpegPath) throw new Error("找不到 ffmpeg 執行檔");
-
+export async function createAudioStream(url) {
   // stream 前驗證 URL
   const check = validatePlayUrl(url);
   if (!check.ok) throw new Error(check.reason);
@@ -180,7 +178,7 @@ export function createAudioStream(url) {
       "--no-warnings",
       "--no-progress",
       "-f",
-      "bestaudio/best",
+      "bestaudio[ext=webm][acodec=opus]/bestaudio/best",
       "-o",
       "-",
       url,
@@ -188,58 +186,77 @@ export function createAudioStream(url) {
     { stdio: ["ignore", "pipe", "pipe"], shell: false },
   );
 
-  const ffmpeg = spawn(
-    ffmpegPath,
-    [
-      "-hide_banner",
-      "-loglevel",
-      "error",
-      "-i",
-      "pipe:0",
-      "-vn",
-      "-f",
-      "s16le",
-      "-ar",
-      "48000",
-      "-ac",
-      "2",
-      "pipe:1",
-    ],
-    { stdio: ["pipe", "pipe", "pipe"], shell: false },
-  );
-
-  ytDlp.stdout.pipe(ffmpeg.stdin);
-
-  // 處理 EPIPE，避免 yt-dlp 提前結束時丟出未捕獲異常
-  ffmpeg.stdin.on("error", (err) => {
-    if (err.code !== "EPIPE")
-      console.error("[createAudioStream] stdin error:", err);
-  });
-
   let producedAudio = false;
   let cleanedUp = false;
+  let ffmpeg = null;
 
   const cleanup = () => {
     if (cleanedUp) return;
     cleanedUp = true;
     ytDlp.kill("SIGKILL");
-    ffmpeg.kill("SIGKILL");
+    if (ffmpeg) ffmpeg.kill("SIGKILL");
   };
-
-  ffmpeg.stdout.on("data", () => {
-    producedAudio = true;
-  });
 
   // 15秒無音訊自動超時
   const stallTimeout = setTimeout(() => {
     if (!producedAudio) cleanup();
   }, 15_000);
 
-  ffmpeg.on("close", () => clearTimeout(stallTimeout));
+  ytDlp.on("close", () => clearTimeout(stallTimeout));
 
-  return {
-    stream: ffmpeg.stdout,
-    inputType: StreamType.Raw,
-    cleanup,
-  };
+  try {
+    const { stream: probedStream, type } = await demuxProbe(ytDlp.stdout);
+
+    if (type === StreamType.WebmOpus || type === StreamType.OggOpus) {
+      probedStream.on("data", () => { producedAudio = true; });
+      return {
+        stream: probedStream,
+        inputType: type,
+        cleanup,
+      };
+    }
+
+    if (!ffmpegPath) throw new Error("找不到 ffmpeg 執行檔來進行轉碼");
+
+    ffmpeg = spawn(
+      ffmpegPath,
+      [
+        "-hide_banner",
+        "-loglevel",
+        "error",
+        "-i",
+        "pipe:0",
+        "-vn",
+        "-f",
+        "s16le",
+        "-ar",
+        "48000",
+        "-ac",
+        "2",
+        "pipe:1",
+      ],
+      { stdio: ["pipe", "pipe", "pipe"], shell: false },
+    );
+
+    probedStream.pipe(ffmpeg.stdin);
+    ffmpeg.stdin.on("error", (err) => {
+      if (err.code !== "EPIPE")
+        console.error("[createAudioStream] stdin error:", err);
+    });
+
+    ffmpeg.stdout.on("data", () => {
+      producedAudio = true;
+    });
+
+    ffmpeg.on("close", () => clearTimeout(stallTimeout));
+
+    return {
+      stream: ffmpeg.stdout,
+      inputType: StreamType.Raw,
+      cleanup,
+    };
+  } catch (error) {
+    cleanup();
+    throw error;
+  }
 }
