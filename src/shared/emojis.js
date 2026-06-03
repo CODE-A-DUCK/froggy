@@ -8,6 +8,7 @@
 // =========================================
 
 export const EMOJIS = {
+  adminline: "<:adminline:1510555676378796093>",
   albumline: "<:albumline:1510533853306159134>",
   appsline: "<:appsline:1510533855071834242>",
   attachmentline: "<:attachmentline:1510533856833568868>",
@@ -18,12 +19,16 @@ export const EMOJIS = {
   codeline: "<:codeline:1510553753193812048>",
   dashboardline: "<:dashboardline:1510533863678410842>",
   errorwarningline: "<:errorwarningline:1510533865805058188>",
+  game2line: "<:game2line:1510524992155025478>",
   eyeline: "<:eyeline:1510533867583569920>",
   fileinfoline: "<:fileinfoline:1510539692716855326>",
   fileshredline: "<:fileshredline:1510533869080805457>",
   formula: "<:formula:1511397147734708364>",
+  gameline: "<:gameline:1510524519494848512>",
   headphoneline: "<:headphoneline:1510533870645153792>",
   hourglassline: "<:hourglassline:1510533872285253662>",
+  homeline: "<:homeline:1510525361702699048>",
+  hoi_anime: "<:hoi_anime:1510586144067424366>",
   infinityline: "<:infinityline:1510533874059444326>",
   informationline: "<:informationline:1510533875712004106>",
   LingLong: "<:LingLong:1510515456321261699>",
