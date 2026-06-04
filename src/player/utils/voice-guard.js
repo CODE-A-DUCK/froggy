@@ -37,8 +37,13 @@ export async function validateVoiceState(interaction, options = {}) {
     return null;
   }
 
-  const member = await guild.members.fetch(interaction.user.id);
-  const userVoiceChannel = member.voice.channel;
+  // Optimize member fetching: use interaction.member if it's a GuildMember (has .voice), else fetch
+  let member = interaction.member;
+  if (!member || !member.voice) {
+    member = await guild.members.fetch(interaction.user.id);
+  }
+  const userVoiceChannel = member.voice?.channel;
+
   if (!userVoiceChannel) {
     await reply(
       `${EMOJIS.errorwarningline} | 你必須在語音頻道中才能使用這個指令。`,
@@ -46,8 +51,8 @@ export async function validateVoiceState(interaction, options = {}) {
     return null;
   }
 
-  const botMember = await guild.members.fetch(interaction.client.user.id);
-  const botVoiceChannel = botMember.voice.channel;
+  const botMember = guild.members.me || await guild.members.fetch(interaction.client.user.id);
+  const botVoiceChannel = botMember.voice?.channel;
 
   if (requireBotInVC && !botVoiceChannel) {
     await reply(

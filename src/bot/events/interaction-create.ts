@@ -76,6 +76,8 @@ const handleModalInteraction = async (interaction: any, context: any) => {
     }
 
     try {
+      await interaction.deferReply().catch(() => null);
+
       const removed = await context.guildPlayerManager.dispatch({
         guild_id: interaction.guildId,
         action: "remove",
@@ -83,7 +85,7 @@ const handleModalInteraction = async (interaction: any, context: any) => {
       });
 
       if (removed.length === 0) {
-        return interaction.reply({
+        return interaction.editReply({
           components: [
             ContainerFactory.buildReply(
               "warning",
@@ -92,10 +94,10 @@ const handleModalInteraction = async (interaction: any, context: any) => {
             ),
           ],
           flags: [MessageFlags.IsComponentsV2],
-        });
+        }).catch(() => null);
       }
 
-      await interaction.reply({
+      await interaction.editReply({
         components: [
           ContainerFactory.buildReply(
             "success",
@@ -107,10 +109,10 @@ const handleModalInteraction = async (interaction: any, context: any) => {
           ),
         ],
         flags: [MessageFlags.IsComponentsV2],
-      });
+      }).catch(() => null);
     } catch (err) {
       console.error("[Modal] Remove error:", err);
-      await interaction.reply({
+      await interaction.editReply({
         components: [
           ContainerFactory.buildReply(
             "error",
@@ -119,7 +121,7 @@ const handleModalInteraction = async (interaction: any, context: any) => {
           ),
         ],
         flags: [MessageFlags.IsComponentsV2],
-      });
+      }).catch(() => null);
     }
   }
 };

@@ -93,16 +93,6 @@ export class ContainerFactory {
         .setEmoji({ id: "1510539692716855326" }),
     );
 
-    if (event.source_url) {
-      actionRow.addComponents(
-        new ButtonBuilder()
-          .setLabel("| URL")
-          .setStyle(ButtonStyle.Link)
-          .setURL(event.source_url)
-          .setEmoji({ id: "1511693322605826178" })
-      );
-    }
-
     container.addActionRowComponents(actionRow);
 
     // Footer（脚？
