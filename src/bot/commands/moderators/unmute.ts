@@ -2,6 +2,8 @@ import {
   SlashCommandBuilder,
   EmbedBuilder,
   PermissionFlagsBits,
+  ChatInputCommandInteraction,
+  GuildMember,
 } from "discord.js";
 
 import { EMOJIS } from "../../../shared/emojis.js";
@@ -20,26 +22,27 @@ export const unmuteCommand = {
       opt.setName("reason").setDescription("原因（可選）").setRequired(false),
     ),
 
-  async execute(interaction) {
+  async execute(interaction: ChatInputCommandInteraction) {
     await interaction.deferReply();
 
     try {
-      const member = interaction.member;
-      if (!member.permissions.has(PermissionFlagsBits.ModerateMembers)) {
+      const member = interaction.member as GuildMember;
+      if (!member || !member.permissions.has(PermissionFlagsBits.ModerateMembers)) {
         return interaction.editReply({
           content: `${EMOJIS.errorwarningline} | 你沒有管理成員的權限`,
         });
       }
 
-      const botMember = interaction.guild.members.me;
-      if (!botMember.permissions.has(PermissionFlagsBits.ModerateMembers)) {
+      const botMember = interaction.guild?.members.me;
+      if (!botMember || !botMember.permissions.has(PermissionFlagsBits.ModerateMembers)) {
         return interaction.editReply({
           content: `${EMOJIS.errorwarningline} | 我沒有管理成員的權限`,
         });
       }
 
       const targetUser = interaction.options.getUser("user");
-      const targetMember = await interaction.guild.members
+      if (!targetUser) return interaction.editReply("找不到該成員");
+      const targetMember = await interaction.guild?.members
         .fetch(targetUser.id)
         .catch(() => null);
       if (!targetMember) {
@@ -56,7 +59,7 @@ export const unmuteCommand = {
 
       if (
         targetMember.roles.highest.position >= member.roles.highest.position &&
-        member.id !== interaction.guild.ownerId
+        member.id !== interaction.guild?.ownerId
       ) {
         return interaction.editReply({
           content: `${EMOJIS.errorwarningline} | 該成員的權限高於或等於你，無法解除其禁言`,

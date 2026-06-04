@@ -3,6 +3,9 @@ import {
   EmbedBuilder,
   PermissionFlagsBits,
   ChannelType,
+  ChatInputCommandInteraction,
+  GuildMember,
+  TextChannel,
 } from "discord.js";
 
 import { EMOJIS } from "../../../shared/emojis.js";
@@ -32,29 +35,29 @@ export const slowmodeCommand = {
       opt.setName("reason").setDescription("原因（可選）").setRequired(false),
     ),
 
-  async execute(interaction) {
+  async execute(interaction: ChatInputCommandInteraction) {
     await interaction.deferReply();
 
     try {
-      const member = interaction.member;
-      if (!member.permissions.has(PermissionFlagsBits.ManageChannels)) {
+      const member = interaction.member as GuildMember;
+      if (!member || !member.permissions.has(PermissionFlagsBits.ManageChannels)) {
         return interaction.editReply({
           content: `${EMOJIS.errorwarningline} | 你沒有管理頻道的權限`,
         });
       }
 
-      const botMember = interaction.guild.members.me;
-      if (!botMember.permissions.has(PermissionFlagsBits.ManageChannels)) {
+      const botMember = interaction.guild?.members.me;
+      if (!botMember || !botMember.permissions.has(PermissionFlagsBits.ManageChannels)) {
         return interaction.editReply({
           content: `${EMOJIS.errorwarningline} | 我沒有管理頻道的權限`,
         });
       }
 
-      const seconds = interaction.options.getInteger("seconds");
+      const seconds = interaction.options.getInteger("seconds") || 0;
       const targetChannel =
-        interaction.options.getChannel("channel") || interaction.channel;
+        (interaction.options.getChannel("channel") as TextChannel) || (interaction.channel as TextChannel);
 
-      if (targetChannel.type !== ChannelType.GuildText) {
+      if (!targetChannel || targetChannel.type !== ChannelType.GuildText) {
         return interaction.editReply({
           content: `${EMOJIS.errorwarningline} | 只能在文字頻道設定慢速模式`,
         });

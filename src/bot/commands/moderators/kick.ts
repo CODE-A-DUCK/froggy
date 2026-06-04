@@ -2,6 +2,8 @@ import {
   SlashCommandBuilder,
   EmbedBuilder,
   PermissionsBitField,
+  ChatInputCommandInteraction,
+  GuildMember,
 } from "discord.js";
 
 import { EMOJIS } from "../../../shared/emojis.js";
@@ -19,12 +21,14 @@ export const kickCommand = {
       opt.setName("原因").setDescription("踢出原因").setRequired(false),
     ),
 
-  async execute(interaction) {
+  async execute(interaction: ChatInputCommandInteraction) {
     await interaction.deferReply();
 
     try {
+      const member = interaction.member as GuildMember;
       if (
-        !interaction.member.permissions.has(
+        !member ||
+        !member.permissions.has(
           PermissionsBitField.Flags.KickMembers,
         )
       ) {
@@ -33,8 +37,8 @@ export const kickCommand = {
         });
       }
 
-      const botMember = interaction.guild.members.me;
-      if (!botMember.permissions.has(PermissionsBitField.Flags.KickMembers)) {
+      const botMember = interaction.guild?.members.me;
+      if (!botMember || !botMember.permissions.has(PermissionsBitField.Flags.KickMembers)) {
         return interaction.editReply({
           content: `${EMOJIS.errorwarningline} | 我沒有踢出成員的權限`,
         });
@@ -43,7 +47,8 @@ export const kickCommand = {
       const targetUser = interaction.options.getUser("成員");
       const reason = interaction.options.getString("原因") || "未提供原因";
 
-      const targetMember = await interaction.guild.members
+      if (!targetUser) return interaction.editReply("找不到該成員");
+      const targetMember = await interaction.guild?.members
         .fetch(targetUser.id)
         .catch(() => null);
       if (!targetMember) {
@@ -54,8 +59,8 @@ export const kickCommand = {
 
       if (
         targetMember.roles.highest.position >=
-          interaction.member.roles.highest.position &&
-        interaction.user.id !== interaction.guild.ownerId
+          member.roles.highest.position &&
+        interaction.user.id !== interaction.guild?.ownerId
       ) {
         return interaction.editReply({
           content: `${EMOJIS.errorwarningline} | 你無法踢出權限高於或等於你的成員`,
@@ -78,7 +83,7 @@ export const kickCommand = {
           `**${targetUser.tag}** 已被踢出伺服器\n\n**原因：** ${reason}`,
         )
         .setColor(0xffa500)
-        .setThumbnail(targetUser.displayAvatarURL({ dynamic: true }))
+        .setThumbnail(targetUser.displayAvatarURL())
         .setFooter({ text: `由 ${interaction.user.tag} 執行` })
         .setTimestamp();
 

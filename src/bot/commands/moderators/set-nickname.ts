@@ -2,6 +2,8 @@ import {
   SlashCommandBuilder,
   EmbedBuilder,
   PermissionFlagsBits,
+  ChatInputCommandInteraction,
+  GuildMember,
 } from "discord.js";
 
 import { EMOJIS } from "../../../shared/emojis.js";
@@ -25,26 +27,27 @@ export const setnicknameCommand = {
       opt.setName("原因").setDescription("原因（可選）").setRequired(false),
     ),
 
-  async execute(interaction) {
+  async execute(interaction: ChatInputCommandInteraction) {
     await interaction.deferReply();
 
     try {
-      const member = interaction.member;
-      if (!member.permissions.has(PermissionFlagsBits.ManageNicknames)) {
+      const member = interaction.member as GuildMember;
+      if (!member || !member.permissions.has(PermissionFlagsBits.ManageNicknames)) {
         return interaction.editReply({
           content: `${EMOJIS.errorwarningline} | 你沒有設定暱稱的權限`,
         });
       }
 
-      const botMember = interaction.guild.members.me;
-      if (!botMember.permissions.has(PermissionFlagsBits.ManageNicknames)) {
+      const botMember = interaction.guild?.members.me;
+      if (!botMember || !botMember.permissions.has(PermissionFlagsBits.ManageNicknames)) {
         return interaction.editReply({
           content: `${EMOJIS.errorwarningline} | 我沒有權限設定暱稱`,
         });
       }
 
       const targetUser = interaction.options.getUser("成員");
-      const targetMember = await interaction.guild.members
+      if (!targetUser) return interaction.editReply("找不到該成員");
+      const targetMember = await interaction.guild?.members
         .fetch(targetUser.id)
         .catch(() => null);
       if (!targetMember) {
@@ -55,7 +58,7 @@ export const setnicknameCommand = {
 
       if (
         targetMember.roles.highest.position >= member.roles.highest.position &&
-        member.id !== interaction.guild.ownerId
+        member.id !== interaction.guild?.ownerId
       ) {
         return interaction.editReply({
           content: `${EMOJIS.errorwarningline} | 該成員的權限高於或等於你，因此你無法修改其暱稱`,

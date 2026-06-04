@@ -2,6 +2,8 @@ import {
   SlashCommandBuilder,
   EmbedBuilder,
   PermissionFlagsBits,
+  ChatInputCommandInteraction,
+  GuildMember,
 } from "discord.js";
 
 import { EMOJIS } from "../../../shared/emojis.js";
@@ -35,36 +37,37 @@ export const timedbanCommand = {
         .setRequired(false),
     ),
 
-  async execute(interaction) {
+  async execute(interaction: ChatInputCommandInteraction) {
     await interaction.deferReply();
 
     try {
-      const member = interaction.member;
-      if (!member.permissions.has(PermissionFlagsBits.BanMembers)) {
+      const member = interaction.member as GuildMember;
+      if (!member || !member.permissions.has(PermissionFlagsBits.BanMembers)) {
         return interaction.editReply({
           content: `${EMOJIS.errorwarningline} | 你沒有封鎖成員的權限`,
         });
       }
 
-      const botMember = interaction.guild.members.me;
-      if (!botMember.permissions.has(PermissionFlagsBits.BanMembers)) {
+      const botMember = interaction.guild?.members.me;
+      if (!botMember || !botMember.permissions.has(PermissionFlagsBits.BanMembers)) {
         return interaction.editReply({
           content: `${EMOJIS.errorwarningline} | 我沒有封鎖成員的權限`,
         });
       }
 
       const targetUser = interaction.options.getUser("user");
-      const days = interaction.options.getInteger("days");
+      if (!targetUser) return interaction.editReply("找不到該成員");
+      const days = interaction.options.getInteger("days") || 1;
       const reason = interaction.options.getString("reason") || "暫時封鎖";
 
-      const targetMember = await interaction.guild.members
+      const targetMember = await interaction.guild?.members
         .fetch(targetUser.id)
         .catch(() => null);
       if (targetMember) {
         if (
           targetMember.roles.highest.position >=
             member.roles.highest.position &&
-          member.id !== interaction.guild.ownerId
+          member.id !== interaction.guild?.ownerId
         ) {
           return interaction.editReply({
             content: `${EMOJIS.errorwarningline} | 目標成員的權限於你相同或高於你，無法執行封鎖程序`,
@@ -83,12 +86,14 @@ export const timedbanCommand = {
       });
 
       // ban
-      await interaction.guild.members.ban(targetUser.id, {
+      await interaction.guild?.members.ban(targetUser.id, {
         reason: `${reason}（${days} 天後自動解除）`,
       });
 
       // auto unban
-      scheduleUnban(interaction.guild.id, targetUser.id, unbanAt, reason);
+      if (interaction.guild) {
+        scheduleUnban(interaction.guild.id, targetUser.id, unbanAt, reason);
+      }
 
       const embed = new EmbedBuilder()
         .setTitle("暫時封鎖成功")

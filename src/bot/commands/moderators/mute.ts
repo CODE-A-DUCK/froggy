@@ -2,6 +2,8 @@ import {
   SlashCommandBuilder,
   EmbedBuilder,
   PermissionsBitField,
+  ChatInputCommandInteraction,
+  GuildMember,
 } from "discord.js";
 
 import { EMOJIS } from "../../../shared/emojis.js";
@@ -27,12 +29,14 @@ export const muteCommand = {
       opt.setName("原因").setDescription("禁言原因（可選）").setRequired(false),
     ),
 
-  async execute(interaction) {
+  async execute(interaction: ChatInputCommandInteraction) {
     await interaction.deferReply();
 
     try {
+      const member = interaction.member as GuildMember;
       if (
-        !interaction.member.permissions.has(
+        !member ||
+        !member.permissions.has(
           PermissionsBitField.Flags.ModerateMembers,
         )
       ) {
@@ -41,9 +45,9 @@ export const muteCommand = {
         });
       }
 
-      const botMember = interaction.guild.members.me;
+      const botMember = interaction.guild?.members.me;
       if (
-        !botMember.permissions.has(PermissionsBitField.Flags.ModerateMembers)
+        !botMember || !botMember.permissions.has(PermissionsBitField.Flags.ModerateMembers)
       ) {
         return interaction.editReply({
           content: `${EMOJIS.errorwarningline} | 我沒有禁言成員的權限`,
@@ -51,10 +55,11 @@ export const muteCommand = {
       }
 
       const targetUser = interaction.options.getUser("成員");
-      const minutes = interaction.options.getInteger("分鐘");
+      if (!targetUser) return interaction.editReply("找不到該成員");
+      const minutes = interaction.options.getInteger("分鐘") || 1;
       const reason = interaction.options.getString("原因") || "未提供原因";
 
-      const targetMember = await interaction.guild.members
+      const targetMember = await interaction.guild?.members
         .fetch(targetUser.id)
         .catch(() => null);
       if (!targetMember) {
@@ -65,8 +70,8 @@ export const muteCommand = {
 
       if (
         targetMember.roles.highest.position >=
-          interaction.member.roles.highest.position &&
-        interaction.user.id !== interaction.guild.ownerId
+          member.roles.highest.position &&
+        interaction.user.id !== interaction.guild?.ownerId
       ) {
         return interaction.editReply({
           content: `${EMOJIS.errorwarningline} | 你無法禁言權限高於或等於你的成員`,
@@ -91,7 +96,7 @@ export const muteCommand = {
           `**${targetUser.tag}** 已被禁言 **${minutes} 分鐘**\n\n**原因：** ${reason}`,
         )
         .setColor(0x9b59b6)
-        .setThumbnail(targetUser.displayAvatarURL({ dynamic: true }))
+        .setThumbnail(targetUser.displayAvatarURL())
         .setFooter({ text: `由 ${interaction.user.tag} 執行` })
         .setTimestamp();
 
