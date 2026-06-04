@@ -1,4 +1,4 @@
-import { SlashCommandBuilder } from "discord.js";
+import { SlashCommandBuilder, ChatInputCommandInteraction } from "discord.js";
 
 import { EMOJIS } from "../../../shared/emojis.js";
 
@@ -9,7 +9,7 @@ export const randomEmojiCommand = {
     .setName("randomemoji")
     .setDescription("隨機的表情符號"),
 
-  async execute(interaction) {
+  async execute(interaction: ChatInputCommandInteraction) {
     await interaction.deferReply();
 
     const emojiList = [

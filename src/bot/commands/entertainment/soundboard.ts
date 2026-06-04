@@ -13,6 +13,10 @@ import {
   ActionRowBuilder,
   StringSelectMenuBuilder,
   StringSelectMenuOptionBuilder,
+  ChatInputCommandInteraction,
+  StringSelectMenuInteraction,
+  GuildMember,
+  Embed,
 } from "discord.js";
 
 import { validateVoiceState } from "../../../player/utils/voice-guard.js";
@@ -68,8 +72,8 @@ export const soundboardCommand = {
     .setName("soundboard")
     .setDescription("打開我的音效面板，在語音頻道播放私人音效"),
 
-  async execute(interaction, context) {
-    if (context.controllerStore.getOwner(interaction.guild.id)) {
+  async execute(interaction: ChatInputCommandInteraction, context: any) {
+    if (interaction.guild && context.controllerStore.getOwner(interaction.guild.id)) {
       return interaction.reply({
         content: `${EMOJIS.errorwarningline} | 音樂播放中，無法使用音效面板`,
         ephemeral: true,
@@ -132,9 +136,9 @@ export const soundboardCommand = {
           .setValue("leave"),
       ]);
 
-    const row1 = new ActionRowBuilder().addComponents(selectMenu1);
-    const row2 = new ActionRowBuilder().addComponents(selectMenu2);
-    const row3 = new ActionRowBuilder().addComponents(controlMenu);
+    const row1 = new ActionRowBuilder<StringSelectMenuBuilder>().addComponents(selectMenu1);
+    const row2 = new ActionRowBuilder<StringSelectMenuBuilder>().addComponents(selectMenu2);
+    const row3 = new ActionRowBuilder<StringSelectMenuBuilder>().addComponents(controlMenu);
 
     await interaction.editReply({
       embeds: [embed],
@@ -142,8 +146,8 @@ export const soundboardCommand = {
     });
   },
 
-  async handleSelectMenu(interaction, context) {
-    if (context.controllerStore.getOwner(interaction.guild.id)) {
+  async handleSelectMenu(interaction: StringSelectMenuInteraction, context: any) {
+    if (interaction.guild && context.controllerStore.getOwner(interaction.guild.id)) {
       return interaction.reply({
         content: `${EMOJIS.errorwarningline} | 音樂播放中，無法使用音效面板`,
         ephemeral: true,
@@ -163,11 +167,11 @@ export const soundboardCommand = {
           soundList[Math.floor(Math.random() * soundList.length)];
         await this.playSound(interaction, randomSound, embed);
       } else if (value === "leave") {
-        const connection = getVoiceConnection(interaction.guild.id);
+        const connection = interaction.guild ? getVoiceConnection(interaction.guild.id) : null;
         if (connection) {
           connection.destroy();
           const newEmbed =
-            EmbedBuilder.from(embed).setDescription("已離開語音頻道");
+            EmbedBuilder.from(embed as any).setDescription("已離開語音頻道");
           await interaction.editReply({ embeds: [newEmbed], components: [] });
         }
       }
@@ -177,18 +181,21 @@ export const soundboardCommand = {
     }
   },
 
-  async playSound(interaction, soundName, currentEmbed = null) {
+  async playSound(interaction: StringSelectMenuInteraction, soundName: string, currentEmbed: Embed | null = null) {
     const soundPath = join(soundsDir, `${soundName}.mp3`);
 
     try {
-      let connection = getVoiceConnection(interaction.guild.id);
-      if (!connection) {
+      let connection = interaction.guild ? getVoiceConnection(interaction.guild.id) : null;
+      if (!connection && interaction.guild) {
+        const member = interaction.member as GuildMember;
         connection = joinVoiceChannel({
-          channelId: interaction.member.voice.channel.id,
+          channelId: member.voice.channel?.id as string,
           guildId: interaction.guild.id,
-          adapterCreator: interaction.guild.voiceAdapterCreator,
+          adapterCreator: interaction.guild.voiceAdapterCreator as any,
         });
       }
+
+      if (!connection) return;
 
       const player = createAudioPlayer();
       const resource = createAudioResource(soundPath);
@@ -196,7 +203,7 @@ export const soundboardCommand = {
       player.play(resource);
 
       const embed = currentEmbed
-        ? EmbedBuilder.from(currentEmbed)
+        ? EmbedBuilder.from(currentEmbed as any)
         : new EmbedBuilder().setTitle("Froggy soundboard").setColor(0x9ec27f);
 
       embed.setDescription(`正在播放：**${soundName}**`);

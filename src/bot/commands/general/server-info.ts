@@ -1,4 +1,4 @@
-import { SlashCommandBuilder, EmbedBuilder } from "discord.js";
+import { SlashCommandBuilder, EmbedBuilder, ChatInputCommandInteraction } from "discord.js";
 
 import { EMOJIS } from "../../../shared/emojis.js";
 
@@ -9,7 +9,7 @@ export const serverinfo = {
     .setName("serverinfo")
     .setDescription("查看當前伺服器資訊"),
 
-  async execute(interaction) {
+  async execute(interaction: ChatInputCommandInteraction) {
     await interaction.deferReply();
 
     try {
@@ -29,8 +29,8 @@ export const serverinfo = {
         .setDescription(guild.description || "這個伺服器沒有設定描述")
         .setColor(0xd98d30)
         .setThumbnail(
-          guild.iconURL({ dynamic: true }) ||
-            interaction.client.user.displayAvatarURL({ dynamic: true }),
+          guild.iconURL() ||
+            interaction.client.user?.displayAvatarURL() || null,
         )
         .addFields(
           { name: "伺服器 ID", value: guild.id, inline: true },

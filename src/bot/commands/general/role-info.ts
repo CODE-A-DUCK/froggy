@@ -1,4 +1,4 @@
-import { SlashCommandBuilder, EmbedBuilder } from "discord.js";
+import { SlashCommandBuilder, EmbedBuilder, ChatInputCommandInteraction, Role } from "discord.js";
 
 import { EMOJIS } from "../../../shared/emojis.js";
 
@@ -16,11 +16,11 @@ export const roleinfoCommand = {
         .setRequired(true),
     ),
 
-  async execute(interaction) {
+  async execute(interaction: ChatInputCommandInteraction) {
     await interaction.deferReply();
 
     try {
-      const role = interaction.options.getRole("身份組");
+      const role = interaction.options.getRole("身份組") as Role | null;
 
       if (!role) {
         return interaction.editReply({
@@ -43,10 +43,10 @@ export const roleinfoCommand = {
         .setTitle(`${role.name} 身份組資訊`)
         .setColor(role.color || 0x5865f2)
         .setThumbnail(
-          interaction.guild.iconURL({
+          interaction.guild?.iconURL({
             extension: "png",
             size: 1024,
-          }) || interaction.client.user.displayAvatarURL(),
+          }) || interaction.client.user?.displayAvatarURL() || null,
         )
         .addFields(
           {

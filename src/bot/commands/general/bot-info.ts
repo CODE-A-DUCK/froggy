@@ -6,6 +6,7 @@ import {
   SlashCommandBuilder,
   EmbedBuilder,
   version as djsVersion,
+  ChatInputCommandInteraction,
 } from "discord.js";
 
 import { EMOJIS } from "../../../shared/emojis.js";
@@ -15,7 +16,7 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 const packagePath = join(__dirname, "../../../../package.json");
 const { version, description } = JSON.parse(readFileSync(packagePath, "utf8"));
 
-function getReadableTime(ms) {
+function getReadableTime(ms: number) {
   const s = Math.floor((ms / 1000) % 60);
   const m = Math.floor((ms / (1000 * 60)) % 60);
   const h = Math.floor((ms / (1000 * 60 * 60)) % 24);
@@ -34,9 +35,14 @@ export const botinfoCommand = {
   data: new SlashCommandBuilder()
     .setName("botinfo")
     .setDescription("查看我的信息"),
-  async execute(interaction) {
+  async execute(interaction: ChatInputCommandInteraction) {
     await interaction.deferReply();
     const { client } = interaction;
+    if (!client.user || !interaction.guild || !interaction.guild.members.me) {
+      await interaction.editReply("無法取得機器人資訊。");
+      return;
+    }
+
     const embed = new EmbedBuilder()
       .setAuthor({
         name: `${client.user.username} 的資訊`,
@@ -78,7 +84,7 @@ export const botinfoCommand = {
         },
         {
           name: `加入 ${interaction.guild.name} 時間`,
-          value: `<t:${Math.floor(interaction.guild.joinedAt.getTime() / 1000)}:F>`,
+          value: interaction.guild.joinedAt ? `<t:${Math.floor(interaction.guild.joinedAt.getTime() / 1000)}:F>` : "未知",
           inline: true,
         },
       )

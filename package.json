@@ -6,8 +6,8 @@
   "scripts": {
     "start": "tsx src/index.ts",
     "dev": "tsx watch src/index.ts",
-    "deploy": "tsx deploy/deploy.js",
-    "clear": "tsx deploy/clear.js",
+    "deploy": "tsx deploy/deploy.ts",
+    "clear": "tsx deploy/clear.ts",
     "lint": "eslint src deploy",
     "lint:fix": "eslint src deploy --fix"
   },

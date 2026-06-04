@@ -2,6 +2,8 @@ import {
   SlashCommandBuilder,
   EmbedBuilder,
   PermissionsBitField,
+  ChatInputCommandInteraction,
+  GuildMember,
 } from "discord.js";
 
 import { EMOJIS } from "../../../shared/emojis.js";
@@ -24,12 +26,14 @@ export const banCommand = {
         .setRequired(false),
     ),
 
-  async execute(interaction) {
+  async execute(interaction: ChatInputCommandInteraction) {
     await interaction.deferReply();
 
     try {
+      const member = interaction.member as GuildMember;
       if (
-        !interaction.member.permissions.has(
+        !member ||
+        !member.permissions.has(
           PermissionsBitField.Flags.BanMembers,
         )
       ) {
@@ -38,8 +42,8 @@ export const banCommand = {
         });
       }
 
-      const botMember = interaction.guild.members.me;
-      if (!botMember.permissions.has(PermissionsBitField.Flags.BanMembers)) {
+      const botMember = interaction.guild?.members.me;
+      if (!botMember || !botMember.permissions.has(PermissionsBitField.Flags.BanMembers)) {
         return interaction.editReply({
           content: `${EMOJIS.errorwarningline} | 我沒有封鎖成員的權限`,
         });
@@ -48,14 +52,15 @@ export const banCommand = {
       const targetUser = interaction.options.getUser("user");
       const reason = interaction.options.getString("reason") || "未提供原因";
 
-      const targetMember = await interaction.guild.members
+      if (!targetUser) return interaction.editReply("找不到該成員");
+      const targetMember = await interaction.guild?.members
         .fetch(targetUser.id)
         .catch(() => null);
 
       if (targetMember) {
         if (
           targetMember.roles.highest.position >=
-            interaction.member.roles.highest.position &&
+            member.roles.highest.position &&
           interaction.user.id !== interaction.guild.ownerId
         ) {
           return interaction.editReply({
@@ -73,7 +78,7 @@ export const banCommand = {
         }
       }
 
-      await interaction.guild.members.ban(targetUser.id, { reason });
+      await interaction.guild?.members.ban(targetUser.id, { reason });
 
       const embed = new EmbedBuilder()
         .setTitle("成員已被封鎖")
@@ -81,7 +86,7 @@ export const banCommand = {
           `**${targetUser.tag}** 已被永久封鎖\n\n**原因：** ${reason}`,
         )
         .setColor(0xff0000)
-        .setThumbnail(targetUser.displayAvatarURL({ dynamic: true }))
+        .setThumbnail(targetUser.displayAvatarURL())
         .setFooter({ text: `由 ${interaction.user.tag} 執行` })
         .setTimestamp();
 

@@ -7,7 +7,7 @@ if (!TOKEN) {
   process.exit(1);
 }
 
-async function getAppId(token) {
+async function getAppId(token: string) {
   const res = await fetch("https://discord.com/api/v10/users/@me", {
     headers: { Authorization: `Bot ${token}` },
   });

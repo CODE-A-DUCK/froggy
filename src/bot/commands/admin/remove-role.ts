@@ -2,6 +2,9 @@ import {
   SlashCommandBuilder,
   EmbedBuilder,
   PermissionsBitField,
+  ChatInputCommandInteraction,
+  GuildMember,
+  Role,
 } from "discord.js";
 
 import { EMOJIS } from "../../../shared/emojis.js";
@@ -22,12 +25,14 @@ export const removeroleCommand = {
       opt.setName("role").setDescription("要移除的身份組").setRequired(true),
     ),
 
-  async execute(interaction) {
+  async execute(interaction: ChatInputCommandInteraction) {
     await interaction.deferReply();
 
     try {
+      const member = interaction.member as GuildMember;
       if (
-        !interaction.member.permissions.has(
+        !member ||
+        !member.permissions.has(
           PermissionsBitField.Flags.ManageRoles,
         )
       ) {
@@ -36,15 +41,15 @@ export const removeroleCommand = {
         });
       }
 
-      const botMember = interaction.guild.members.me;
-      if (!botMember.permissions.has(PermissionsBitField.Flags.ManageRoles)) {
+      const botMember = interaction.guild?.members.me;
+      if (!botMember || !botMember.permissions.has(PermissionsBitField.Flags.ManageRoles)) {
         return interaction.editReply({
           content: "我沒有管理身份組的權限",
         });
       }
 
       const targetUser = interaction.options.getUser("user");
-      const targetRole = interaction.options.getRole("role");
+      const targetRole = interaction.options.getRole("role") as Role;
 
       if (!targetUser || !targetRole) {
         return interaction.editReply({
@@ -52,7 +57,7 @@ export const removeroleCommand = {
         });
       }
 
-      const targetMember = await interaction.guild.members
+      const targetMember = await interaction.guild?.members
         .fetch(targetUser.id)
         .catch(() => null);
 

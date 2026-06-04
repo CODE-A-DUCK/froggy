@@ -2,6 +2,8 @@ import {
   SlashCommandBuilder,
   EmbedBuilder,
   PermissionFlagsBits,
+  ChatInputCommandInteraction,
+  GuildMember,
 } from "discord.js";
 
 import { EMOJIS } from "../../../shared/emojis.js";
@@ -23,35 +25,37 @@ export const unbanCommand = {
       opt.setName("reason").setDescription("原因（可選）").setRequired(false),
     ),
 
-  async execute(interaction) {
+  async execute(interaction: ChatInputCommandInteraction) {
     await interaction.deferReply();
 
     try {
-      const member = interaction.member;
-      if (!member.permissions.has(PermissionFlagsBits.BanMembers)) {
+      const member = interaction.member as GuildMember;
+      if (!member || !member.permissions.has(PermissionFlagsBits.BanMembers)) {
         return interaction.editReply({
           content: `${EMOJIS.errorwarningline} | 你沒有封鎖成員權限`,
         });
       }
 
-      const botMember = interaction.guild.members.me;
-      if (!botMember.permissions.has(PermissionFlagsBits.BanMembers)) {
+      const botMember = interaction.guild?.members.me;
+      if (!botMember || !botMember.permissions.has(PermissionFlagsBits.BanMembers)) {
         return interaction.editReply({
           content: `${EMOJIS.errorwarningline} | 我沒有權限解除封鎖`,
         });
       }
 
-      const userId = interaction.options.getString("user_id").trim();
+      const userId = interaction.options.getString("user_id")?.trim();
       const reason = interaction.options.getString("reason") || "無原因";
 
-      const banList = await interaction.guild.bans.fetch().catch(() => null);
+      if (!userId) return interaction.editReply("請提供要解除封鎖的成員 ID");
+
+      const banList = await interaction.guild?.bans.fetch().catch(() => null);
       if (!banList || !banList.has(userId)) {
         return interaction.editReply({
           content: `成員 ID \`${userId}\` 並未被封鎖`,
         });
       }
 
-      await interaction.guild.members.unban(userId, reason);
+      await interaction.guild?.members.unban(userId, reason);
 
       const embed = new EmbedBuilder()
         .setTitle("解除封鎖成功")

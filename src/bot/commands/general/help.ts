@@ -5,6 +5,9 @@ import {
   ActionRowBuilder,
   StringSelectMenuBuilder,
   MessageFlags,
+  ChatInputCommandInteraction,
+  AutocompleteInteraction,
+  StringSelectMenuInteraction,
 } from "discord.js";
 
 import { EMOJIS } from "../../../shared/emojis.js";
@@ -14,8 +17,8 @@ import { EMOJIS } from "../../../shared/emojis.js";
  * @param {number} type
  * @returns {string}
  */
-function getOptionTypeName(type) {
-  const types = {
+function getOptionTypeName(type: number): string {
+  const types: Record<number, string> = {
     [ApplicationCommandOptionType.String]: "文字",
     [ApplicationCommandOptionType.Integer]: "整数",
     [ApplicationCommandOptionType.Boolean]: "布尔值",
@@ -34,13 +37,13 @@ function getOptionTypeName(type) {
  * @param {Object} option
  * @returns {string}
  */
-function formatOptionDetail(option) {
+function formatOptionDetail(option: any): string {
   const wrap = option.required ? ["<", ">"] : ["[", "]"];
   let detail = `**${wrap[0]}${option.name}${wrap[1]}**：${option.description || "无描述"}`;
   detail += ` (${option.required ? "必填" : "可选"}, 类型: ${getOptionTypeName(option.type)})`;
 
   if (option.choices?.length) {
-    const choices = option.choices.map((c) => `\`${c.name}\``).join("、");
+    const choices = option.choices.map((c: any) => `\`${c.name}\``).join("、");
     detail += `\n  可选值：${choices}`;
   }
 
@@ -65,7 +68,7 @@ function formatOptionDetail(option) {
  * @param {number} indent
  * @returns {string}
  */
-function formatOptionsRecursively(options, indent = 0) {
+function formatOptionsRecursively(options: any[], indent = 0): string {
   if (!options || options.length === 0) return "无参数";
   const lines = [];
   for (const opt of options) {
@@ -91,7 +94,7 @@ function formatOptionsRecursively(options, indent = 0) {
   return lines.join("\n");
 }
 
-const CATEGORY_DESCRIPTIONS = {
+const CATEGORY_DESCRIPTIONS: Record<string, string> = {
   基本: "爛 bot 該有的。",
   音樂: "爛音樂功能。",
   管理: "誰敢臭你！",
@@ -115,7 +118,7 @@ export const helpCommand = {
         .setAutocomplete(true),
     ),
 
-  async autocomplete(interaction) {
+  async autocomplete(interaction: AutocompleteInteraction) {
     const focusedValue = interaction.options.getFocused().toLowerCase();
     const commands = interaction.client.commands;
     if (!commands) {
@@ -123,21 +126,21 @@ export const helpCommand = {
     }
 
     const choices = commands
-      .filter((cmd) => cmd.name.toLowerCase().includes(focusedValue))
-      .map((cmd) => ({ name: cmd.name, value: cmd.name }))
+      .filter((cmd: any) => cmd.name.toLowerCase().includes(focusedValue))
+      .map((cmd: any) => ({ name: cmd.name, value: cmd.name }))
       .slice(0, 25);
 
     await interaction.respond(choices).catch(() => {});
   },
 
-  async handleSelectMenu(interaction) {
+  async handleSelectMenu(interaction: StringSelectMenuInteraction) {
     if (interaction.customId !== "help:category_select") return;
 
     const categoryValue = interaction.values[0];
 
     // 精準比對前 100 個字元 (因為選單的 value 最多只能存 100 字)
     const commands = Array.from(interaction.client.commands.values()).filter(
-      (cmd) => cmd.category && cmd.category.substring(0, 100) === categoryValue,
+      (cmd: any) => cmd.category && cmd.category.substring(0, 100) === categoryValue,
     );
 
     const parts = categoryValue.split("|");
@@ -152,7 +155,7 @@ export const helpCommand = {
     } else {
       description += commands
         .map(
-          (cmd) =>
+          (cmd: any) =>
             `**/${cmd.name}**\n${cmd.data.description || "此指令無描述。"}`,
         )
         .join("\n\n");
@@ -174,7 +177,7 @@ export const helpCommand = {
       .catch(console.error);
   },
 
-  async execute(interaction) {
+  async execute(interaction: ChatInputCommandInteraction) {
     // 設置為 ephemeral，這樣 editReply 也會是僅個人可見
     await interaction.deferReply().catch(() => {});
     const commandName = interaction.options.getString("指令名稱");
@@ -183,7 +186,7 @@ export const helpCommand = {
     if (!commandName) {
       const commands = Array.from(interaction.client.commands.values());
       const categories = [
-        ...new Set(commands.map((cmd) => cmd.category || "未分類")),
+        ...new Set(commands.map((cmd: any) => cmd.category || "未分類")),
       ];
 
       const embed = new EmbedBuilder()
@@ -206,14 +209,14 @@ export const helpCommand = {
         }
       });
 
-      const selectOptions = categories.map((cat) => {
+      const selectOptions = categories.map((cat: string) => {
         const parts = cat.split("|");
         const label = parts[1]?.trim() || cat;
         const emojiMatch = parts[0]
           ?.trim()
           .match(/<a?:\w+:(\d+)>|(\p{Emoji})/u);
 
-        const option = {
+        const option: { label: string; value: string; description: string; emoji?: string } = {
           label: label.substring(0, 100),
           value: cat.substring(0, 100),
           description: (
@@ -234,7 +237,7 @@ export const helpCommand = {
         .setPlaceholder("選擇一個指令類別...")
         .addOptions(selectOptions);
 
-      const row = new ActionRowBuilder().addComponents(selectMenu);
+      const row = new ActionRowBuilder<StringSelectMenuBuilder>().addComponents(selectMenu);
 
       return interaction
         .editReply({ embeds: [embed], components: [row] })
@@ -264,7 +267,7 @@ export const helpCommand = {
     let usageOptions = "";
     if (dataJSON.options) {
       usageOptions = dataJSON.options
-        .map((opt) => {
+        .map((opt: any) => {
           if (
             opt.type === ApplicationCommandOptionType.Subcommand ||
             opt.type === ApplicationCommandOptionType.SubcommandGroup
