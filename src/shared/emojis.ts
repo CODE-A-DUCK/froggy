@@ -28,7 +28,6 @@ export const EMOJIS = {
   headphoneline: "<:headphoneline:1510533870645153792>",
   homeline: "<:homeline:1511690531049177158>",
   hourglassline: "<:hourglassline:1510533872285253662>",
-  homeline: "<:homeline:1510525361702699048>",
   hoi_anime: "<:hoi_anime:1510586144067424366>",
   infinityline: "<:infinityline:1510533874059444326>",
   infocardline: "<:infocardline:1511694746723287141>",

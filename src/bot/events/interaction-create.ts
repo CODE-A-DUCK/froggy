@@ -1,4 +1,4 @@
-import { Events, MessageFlags, EmbedBuilder, Interaction, GuildMember } from "discord.js";
+import { Events, MessageFlags, EmbedBuilder, Interaction } from "discord.js";
 
 import { ContainerFactory } from "../../player/ui/container-factory.js";
 import {
@@ -17,15 +17,15 @@ export const interactionCreateEvent = {
   name: Events.InteractionCreate,
   async execute(interaction: Interaction, context: any) {
     try {
-      if (
-        interaction.isChatInputCommand() ||
-        interaction.isAutocomplete()
-      ) {
+      if (interaction.isChatInputCommand() || interaction.isAutocomplete()) {
         await handleInteraction(interaction, context);
       } else if (interaction.isButton()) {
         const handled = await handleButtonInteraction(interaction, context);
         if (!handled) await handleInteraction(interaction, context);
-      } else if (interaction.isStringSelectMenu() || (interaction as any).values) {
+      } else if (
+        interaction.isStringSelectMenu() ||
+        (interaction as any).values
+      ) {
         await handleInteraction(interaction, context);
       } else if (interaction.isModalSubmit()) {
         await handleModalInteraction(interaction, context);
@@ -87,43 +87,49 @@ const handleModalInteraction = async (interaction: any, context: any) => {
       });
 
       if (removed.length === 0) {
-        return interaction.editReply({
+        return interaction
+          .editReply({
+            components: [
+              ContainerFactory.buildReply(
+                "warning",
+                `${EMOJIS.errorwarningline} | 找不到要移除的歌曲，請確認隊列編號是否仍然有效。`,
+                interaction.user,
+              ),
+            ],
+            flags: [MessageFlags.IsComponentsV2],
+          })
+          .catch(() => null);
+      }
+
+      await interaction
+        .editReply({
           components: [
             ContainerFactory.buildReply(
-              "warning",
-              `${EMOJIS.errorwarningline} | 找不到要移除的歌曲，請確認隊列編號是否仍然有效。`,
+              "success",
+              [
+                `${EMOJIS.checkdoubleline} | 已成功從隊列中移除 ${removed.length} 首歌曲：`,
+                removed.map((track: any) => `- ${track.title}`).join("\n"),
+              ].join("\n"),
               interaction.user,
             ),
           ],
           flags: [MessageFlags.IsComponentsV2],
-        }).catch(() => null);
-      }
-
-      await interaction.editReply({
-        components: [
-          ContainerFactory.buildReply(
-            "success",
-            [
-              `${EMOJIS.checkdoubleline} | 已成功從隊列中移除 ${removed.length} 首歌曲：`,
-              removed.map((track: any) => `- ${track.title}`).join("\n"),
-            ].join("\n"),
-            interaction.user,
-          ),
-        ],
-        flags: [MessageFlags.IsComponentsV2],
-      }).catch(() => null);
+        })
+        .catch(() => null);
     } catch (err) {
       console.error("[Modal] Remove error:", err);
-      await interaction.editReply({
-        components: [
-          ContainerFactory.buildReply(
-            "error",
-            `${EMOJIS.errorwarningline} | 移除歌曲時發生錯誤。`,
-            interaction.user,
-          ),
-        ],
-        flags: [MessageFlags.IsComponentsV2],
-      }).catch(() => null);
+      await interaction
+        .editReply({
+          components: [
+            ContainerFactory.buildReply(
+              "error",
+              `${EMOJIS.errorwarningline} | 移除歌曲時發生錯誤。`,
+              interaction.user,
+            ),
+          ],
+          flags: [MessageFlags.IsComponentsV2],
+        })
+        .catch(() => null);
     }
   }
 };
@@ -179,7 +185,10 @@ const handleButtonInteraction = async (interaction: any, context: any) => {
       return true;
     }
 
-    if (!member.voice.channel || member.voice.channel.id !== botVoiceChannel.id) {
+    if (
+      !member.voice.channel ||
+      member.voice.channel.id !== botVoiceChannel.id
+    ) {
       replyError(
         interaction,
         `${EMOJIS.errorwarningline} | 你必須跟我進入同一個頻道 <#${botVoiceChannel.id}> 才能控制我！`,
