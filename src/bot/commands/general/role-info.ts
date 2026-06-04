@@ -17,7 +17,6 @@ export const roleinfoCommand = {
     ),
 
   async execute(interaction: ChatInputCommandInteraction) {
-    await interaction.deferReply();
 
     try {
       const role = interaction.options.getRole("身份組") as Role | null;

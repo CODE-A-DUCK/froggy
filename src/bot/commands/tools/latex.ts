@@ -58,7 +58,6 @@ export const latexCommand = {
     ),
 
   async execute(interaction) {
-    await interaction.deferReply();
     const rawLatex = interaction.options.getString("公式");
     const rawColor = interaction.options.getString("顏色");
 

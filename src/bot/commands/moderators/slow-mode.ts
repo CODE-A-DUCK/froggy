@@ -36,8 +36,6 @@ export const slowmodeCommand = {
     ),
 
   async execute(interaction: ChatInputCommandInteraction) {
-    await interaction.deferReply();
-
     try {
       const member = interaction.member as GuildMember;
       if (!member || !member.permissions.has(PermissionFlagsBits.ManageChannels)) {

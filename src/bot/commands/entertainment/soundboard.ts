@@ -80,7 +80,6 @@ export const soundboardCommand = {
       });
     }
 
-    await interaction.deferReply();
 
     const validation = await validateVoiceState(interaction, {
       requireBotInVC: false,

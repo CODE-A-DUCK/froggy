@@ -13,7 +13,6 @@ export const skipCommand = {
   async execute(interaction, context) {
     const validation = await validateVoiceState(interaction);
     if (!validation) return;
-    await interaction.deferReply();
 
     const session = context.guildPlayerManager.getSession(interaction.guildId);
     if (!session?.currentTrack) {

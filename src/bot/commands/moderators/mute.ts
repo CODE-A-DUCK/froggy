@@ -30,8 +30,6 @@ export const muteCommand = {
     ),
 
   async execute(interaction: ChatInputCommandInteraction) {
-    await interaction.deferReply();
-
     try {
       const member = interaction.member as GuildMember;
       if (

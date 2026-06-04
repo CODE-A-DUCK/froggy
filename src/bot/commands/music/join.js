@@ -17,7 +17,6 @@ export const joinCommand = {
       requireController: false,
     });
     if (!validation) return;
-    await interaction.deferReply();
     const { guild, userVoiceChannel } = validation;
     try {
       await context.guildPlayerManager.dispatch({

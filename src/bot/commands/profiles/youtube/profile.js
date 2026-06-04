@@ -27,7 +27,6 @@ export const youtubeCommand = {
     ),
 
   async execute(interaction) {
-    await interaction.deferReply();
 
     if (!YOUTUBE_API_KEY) {
       return interaction.editReply(

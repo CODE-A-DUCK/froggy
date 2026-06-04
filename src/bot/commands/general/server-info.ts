@@ -10,8 +10,6 @@ export const serverinfo = {
     .setDescription("查看當前伺服器資訊"),
 
   async execute(interaction: ChatInputCommandInteraction) {
-    await interaction.deferReply();
-
     try {
       const guild = interaction.guild;
 

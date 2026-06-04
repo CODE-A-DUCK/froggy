@@ -16,6 +16,7 @@ const SEARCH_COOLDOWN_MS = 5000;
 export const searchCommand = {
   name: "search",
   category: `${EMOJIS.music2line} | 音樂`,
+  ephemeral: true,
   data: new SlashCommandBuilder()
     .setName("search")
     .setDescription("搜尋歌曲，從結果中選擇後播放")
@@ -26,8 +27,8 @@ export const searchCommand = {
   async execute(interaction) {
     if (!checkCooldown(interaction.user.id, "search", SEARCH_COOLDOWN_MS)) {
       const ms = getRemainingCooldown(interaction.user.id, "search");
-      return interaction.reply({
-        flags: [MessageFlags.Ephemeral, MessageFlags.IsComponentsV2],
+      return interaction.editReply({
+        flags: [MessageFlags.IsComponentsV2],
         components: [
           ContainerFactory.buildReply(
             "warning",
@@ -39,8 +40,6 @@ export const searchCommand = {
     }
 
     const query = interaction.options.getString("內容", true).trim();
-
-    await interaction.deferReply({ flags: [MessageFlags.Ephemeral] });
 
     let results;
     try {

@@ -10,7 +10,6 @@ export const randomEmojiCommand = {
     .setDescription("隨機的表情符號"),
 
   async execute(interaction: ChatInputCommandInteraction) {
-    await interaction.deferReply();
 
     const emojiList = [
       "<:5_bk:1509376327508299976>",

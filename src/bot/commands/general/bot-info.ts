@@ -36,7 +36,6 @@ export const botinfoCommand = {
     .setName("botinfo")
     .setDescription("查看我的信息"),
   async execute(interaction: ChatInputCommandInteraction) {
-    await interaction.deferReply();
     const { client } = interaction;
     if (!client.user || !interaction.guild || !interaction.guild.members.me) {
       await interaction.editReply("無法取得機器人資訊。");

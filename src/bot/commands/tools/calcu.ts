@@ -18,7 +18,6 @@ export const calcuCommand = {
     ),
 
   async execute(interaction) {
-    await interaction.deferReply();
     const input = interaction.options.getString("公式");
 
     if (!input || input.length > MAX_EXPR_LENGTH) {

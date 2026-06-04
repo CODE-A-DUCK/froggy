@@ -179,7 +179,6 @@ export const helpCommand = {
 
   async execute(interaction: ChatInputCommandInteraction) {
     // 設置為 ephemeral，這樣 editReply 也會是僅個人可見
-    await interaction.deferReply().catch(() => {});
     const commandName = interaction.options.getString("指令名稱");
 
     // 无参数：显示分类列表并提供下拉菜单
