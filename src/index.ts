@@ -11,11 +11,17 @@ import { config } from "./config.js";
 import { MusicManager } from "./player/MusicManager.js";
 import { UIHandler } from "./player/ui/ui-handler.js";
 
+declare module "discord.js" {
+  interface Client {
+    commands: Collection<string, any>;
+  }
+}
+
 const client = new Client({
   intents: [GatewayIntentBits.Guilds, GatewayIntentBits.GuildVoiceStates, GatewayIntentBits.GuildMessages],
 });
 
-client.commands = new Collection(commands.map((c) => [c.name, c]));
+client.commands = new Collection(commands.map((c: any) => [c.name, c]));
 
 const guildPlayerManager = new MusicManager({ client });
 
@@ -41,7 +47,7 @@ client.on("shardError", (error, id) =>
 );
 
 let isShuttingDown = false;
-function shutdown(signal) {
+function shutdown(signal: string) {
   if (isShuttingDown) return;
   isShuttingDown = true;
   console.info(`[Main] Received ${signal}, shutting down...`);

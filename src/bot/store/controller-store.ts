@@ -1,27 +1,24 @@
 class ControllerStore {
-  /** @type {Map<string, Set<string>>} guildId -> Set of userIds */
-  #owners = new Map();
-  /** @type {Map<string, string>} guildId -> messageId */
-  #messages = new Map();
-  /** @type {Map<string, object>} guildId -> current track object */
-  #tracks = new Map();
+  #owners = new Map<string, Set<string>>();
+  #messages = new Map<string, string>();
+  #tracks = new Map<string, any>();
 
-  getOwner(guildId) {
+  getOwner(guildId: string): string | null {
     const owners = this.#owners.get(guildId);
     if (!owners || owners.size === 0) return null;
     return Array.from(owners)[0];
   }
 
-  getOwners(guildId) {
+  getOwners(guildId: string): Set<string> {
     return this.#owners.get(guildId) ?? new Set();
   }
 
-  isOwner(guildId, userId) {
+  isOwner(guildId: string, userId: string): boolean {
     const owners = this.#owners.get(guildId);
     return owners ? owners.has(userId) : false;
   }
 
-  claimOwner(guildId, userId) {
+  claimOwner(guildId: string, userId: string): boolean {
     let owners = this.#owners.get(guildId);
     if (!owners) {
       owners = new Set();
@@ -31,7 +28,7 @@ class ControllerStore {
     return true;
   }
 
-  setOwner(guildId, userId) {
+  setOwner(guildId: string, userId: string): void {
     let owners = this.#owners.get(guildId);
     if (!owners) {
       owners = new Set();
@@ -40,31 +37,31 @@ class ControllerStore {
     owners.add(userId);
   }
 
-  clearOwner(guildId) {
+  clearOwner(guildId: string): void {
     this.#owners.delete(guildId);
   }
 
-  getMessageId(guildId) {
+  getMessageId(guildId: string): string | null {
     return this.#messages.get(guildId) ?? null;
   }
 
-  setMessageId(guildId, id) {
+  setMessageId(guildId: string, id: string): void {
     this.#messages.set(guildId, id);
   }
 
-  clearMessageId(guildId) {
+  clearMessageId(guildId: string): void {
     this.#messages.delete(guildId);
   }
 
-  getCurrentTrack(guildId) {
+  getCurrentTrack(guildId: string): any | null {
     return this.#tracks.get(guildId) ?? null;
   }
 
-  setCurrentTrack(guildId, track) {
+  setCurrentTrack(guildId: string, track: any): void {
     this.#tracks.set(guildId, track);
   }
 
-  clearCurrentTrack(guildId) {
+  clearCurrentTrack(guildId: string): void {
     this.#tracks.delete(guildId);
   }
 }

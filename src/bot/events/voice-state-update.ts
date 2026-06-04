@@ -1,8 +1,8 @@
-import { Events } from "discord.js";
+import { Events, VoiceState } from "discord.js";
 
 export const voiceStateUpdateEvent = {
   name: Events.VoiceStateUpdate,
-  async execute(oldState, newState, context) {
+  async execute(oldState: VoiceState, newState: VoiceState, context: any) {
     const { guildPlayerManager } = context;
     const guildId = newState.guild.id || oldState.guild.id;
     const session = guildPlayerManager.getSession(guildId);

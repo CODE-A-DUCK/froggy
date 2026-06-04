@@ -1,4 +1,4 @@
-import { Events, MessageFlags, EmbedBuilder } from "discord.js";
+import { Events, MessageFlags, EmbedBuilder, Interaction, GuildMember } from "discord.js";
 
 import { ContainerFactory } from "../../player/ui/container-factory.js";
 import {
@@ -15,7 +15,7 @@ import { controllerStore } from "../store/controller-store.js";
 
 export const interactionCreateEvent = {
   name: Events.InteractionCreate,
-  async execute(interaction, context) {
+  async execute(interaction: Interaction, context: any) {
     try {
       if (
         interaction.isChatInputCommand() ||
@@ -34,7 +34,7 @@ export const interactionCreateEvent = {
   },
 };
 
-const replyError = (interaction, description) =>
+const replyError = (interaction: any, description: string) =>
   interaction
     .followUp({
       embeds: [
@@ -44,7 +44,7 @@ const replyError = (interaction, description) =>
     })
     .catch(() => null);
 
-const handleModalInteraction = async (interaction, context) => {
+const handleModalInteraction = async (interaction: any, context: any) => {
   if (interaction.customId === "MusicSearchModal") {
     await handleMusicSearchModal(interaction, context);
     return;
@@ -57,8 +57,8 @@ const handleModalInteraction = async (interaction, context) => {
     const selectedIndices = [
       ...new Set(
         selectedValues
-          .map((v) => parseInt(v, 10))
-          .filter((v) => Number.isInteger(v)),
+          .map((v: string) => parseInt(v, 10))
+          .filter((v: number) => Number.isInteger(v)),
       ),
     ];
 
@@ -101,7 +101,7 @@ const handleModalInteraction = async (interaction, context) => {
             "success",
             [
               `${EMOJIS.checkdoubleline} | 已成功從隊列中移除 ${removed.length} 首歌曲：`,
-              removed.map((track) => `- ${track.title}`).join("\n"),
+              removed.map((track: any) => `- ${track.title}`).join("\n"),
             ].join("\n"),
             interaction.user,
           ),
@@ -124,7 +124,7 @@ const handleModalInteraction = async (interaction, context) => {
   }
 };
 
-const handleButtonInteraction = async (interaction, context) => {
+const handleButtonInteraction = async (interaction: any, context: any) => {
   try {
     const { guildId, member, channelId } = interaction;
 
@@ -195,7 +195,7 @@ const handleButtonInteraction = async (interaction, context) => {
   }
 };
 
-function buildDetailsEmbed(event) {
+function buildDetailsEmbed(event: any) {
   return new EmbedBuilder()
     .setTitle("歌曲詳情")
     .setDescription(
@@ -232,7 +232,7 @@ function buildDetailsEmbed(event) {
     );
 }
 
-function parseMusicControl(customId) {
+function parseMusicControl(customId: string) {
   if (customId.startsWith("MusicButtonControl")) {
     const action = customId.replace("MusicButtonControl", "").toLowerCase();
     return { action: action.startsWith("loop") ? "loop" : action };
