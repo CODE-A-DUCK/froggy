@@ -6,10 +6,10 @@ import {
   getRemainingCooldown,
 } from "../../../player/utils/cooldown.js";
 import { formatUserFacingError } from "../../../player/utils/error-formatter.js";
+import { validateVoiceState } from "../../../player/utils/voice-guard.js";
 import { searchTracks } from "../../../player/youtube.js";
 import { EMOJIS } from "../../../shared/emojis.js";
 import { validatePlayUrl } from "../../security/sanitize-query.js";
-import { validateVoiceState } from "../../../player/utils/voice-guard.js";
 
 const SEARCH_COOLDOWN_MS = 5000;
 
@@ -103,7 +103,7 @@ export async function handleMusicSearchModal(interaction, context) {
   if (!validation) return;
 
   const { guildId, channelId } = interaction;
-  const { guild, userVoiceChannel, botVoiceChannel } = validation;
+  const { userVoiceChannel, botVoiceChannel } = validation;
 
   const { controllerStore: cs } = context;
   let ownerId = cs.getOwner(guildId);

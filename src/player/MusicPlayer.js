@@ -1,12 +1,12 @@
 import { EventEmitter } from "node:events";
 
-import { 
-  createAudioPlayer, 
-  createAudioResource, 
-  AudioPlayerStatus, 
-  joinVoiceChannel, 
-  VoiceConnectionStatus, 
-  entersState 
+import {
+  createAudioPlayer,
+  createAudioResource,
+  AudioPlayerStatus,
+  joinVoiceChannel,
+  VoiceConnectionStatus,
+  entersState
 } from "@discordjs/voice";
 
 import { getTrackMetadata, createAudioStream } from "./youtube.js";
@@ -80,15 +80,15 @@ export class MusicPlayer extends EventEmitter {
 
       this.#cleanupStream();
       this.activeStreamCleanup = cleanup;
-      
+
       const resource = createAudioResource(stream, { inputType });
       this.player.play(resource);
-      
-      this.emit("trackStarted", { 
-        ...this.currentTrack, 
-        guild_id: this.guildId, 
+
+      this.emit("trackStarted", {
+        ...this.currentTrack,
+        guild_id: this.guildId,
         loop_state: this.loopMode,
-        is_paused: false 
+        is_paused: false
       });
     } catch (err) {
       console.error("[MusicPlayer] Start playback failed:", err);
@@ -106,7 +106,7 @@ export class MusicPlayer extends EventEmitter {
     }
 
     this.#cleanupStream();
-    
+
     if (this.currentTrack) {
       this.currentTrack.interaction_token = "";
     }
@@ -137,8 +137,8 @@ export class MusicPlayer extends EventEmitter {
     this.currentTrack = null;
     this.player.stop();
     this.#cleanupStream();
-    this.emit("trackStopped", { 
-      guild_id: this.guildId, 
+    this.emit("trackStopped", {
+      guild_id: this.guildId,
       text_channel_id: options.textChannelId || this.textChannelId,
       interaction_token: options.interactionToken,
       controller_user_id: options.controllerUserId
@@ -211,8 +211,7 @@ export class MusicPlayer extends EventEmitter {
     } catch (error) {
       if (this.connection) this.connection.destroy();
       this.connection = null;
-      throw new Error("無法連接到語音頻道 (連線逾時)");
-    }
+      throw new Error("無法連接到語音頻道 (連線逾時)");    }
   }
 
   #cleanupStream() {
@@ -228,7 +227,7 @@ export class MusicPlayer extends EventEmitter {
   updateVoicePresence() {
     const guild = this.client.guilds.cache.get(this.guildId);
     if (!guild) return;
-    
+
     const botMember = guild.members.me;
     if (!botMember || !botMember.voice.channel) {
       this.#clearAutoLeaveTimer();
@@ -264,6 +263,21 @@ export class MusicPlayer extends EventEmitter {
     if (this.connection) {
       this.connection.destroy();
       this.connection = null;
+    } else {
+      // Ghost Connection 爲了預防機器人重啓後，記憶體被清空，導致無法使用 music 指令。
+      const guild = this.client.guilds.cache.get(this.guildId);
+      if (guild && guild.members.me?.voice.channelId) {
+        try {
+          const ghostConnection = joinVoiceChannel({
+            guildId: this.guildId,
+            channelId: guild.members.me.voice.channelId,
+            adapterCreator: guild.voiceAdapterCreator,
+          });
+          ghostConnection.destroy();
+        } catch (err) {
+          console.error("[MusicPlayer] Failed to destroy ghost connection:", err);
+        }
+      }
     }
   }
 }
