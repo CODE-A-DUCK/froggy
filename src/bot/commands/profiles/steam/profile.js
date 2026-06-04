@@ -10,9 +10,11 @@ import ffmpeg from "fluent-ffmpeg";
 
 import { EMOJIS } from "../../../../shared/emojis.js";
 
-
 const __dirname = dirname(fileURLToPath(import.meta.url));
-const defaultBgPath = join(__dirname, "../../../../../assets/images/default-bg.png");
+const defaultBgPath = join(
+  __dirname,
+  "../../../../../assets/images/default-bg.png",
+);
 const STEAM_KEY = process.env.STEAM_API_KEY;
 
 // ffmpeg 路徑
@@ -109,7 +111,7 @@ async function getSteamProfileBackground(steam64, existingHtml = null) {
 
 export const steamCommand = {
   name: "steam",
-  category: "<:gameline:1510524519494848512> | 檔案查詢",
+  category: `${EMOJIS.infocardline} | 主頁查詢`,
   data: new SlashCommandBuilder()
     .setName("steam")
     .setDescription("查詢 Steam 玩家檔案")
@@ -534,8 +536,7 @@ export const steamCommand = {
     } catch (error) {
       console.error("[Command:Steam] Error:", error);
       await interaction.editReply({
-        content:
-          `${EMOJIS.errorwarningline} | 該玩家已將其 Steam 賬戶設為私密，或暫時無法取得資料`,
+        content: `${EMOJIS.errorwarningline} | 該玩家已將其 Steam 賬戶設為私密，或暫時無法取得資料`,
       });
     }
   },

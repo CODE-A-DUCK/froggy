@@ -2,38 +2,32 @@ import { readdirSync } from "node:fs";
 import { join, dirname } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 
-import { REST, Routes, Collection } from "discord.js";
+import { REST, Routes } from "discord.js";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
 async function loadCommands(dir = __dirname) {
-  const files = readdirSync(dir, { withFileTypes: true });
-  const loaded = [];
-  for (const file of files) {
-    const filePath = join(dir, file.name);
-    if (file.isDirectory()) {
-      loaded.push(...(await loadCommands(filePath)));
-    } else if (
-      file.name.endsWith(".js") &&
-      !["index.js", "deploy.js", "clear.js"].includes(file.name)
-    ) {
-      const mod = await import(pathToFileURL(filePath).href);
-      const command = Object.values(mod).find(
-        (v) => v && typeof v === "object" && "name" in v && "data" in v,
+  const commands = [];
+  const entries = readdirSync(dir, { withFileTypes: true });
+
+  for (const entry of entries) {
+    const fullPath = join(dir, entry.name);
+    if (entry.isDirectory()) {
+      commands.push(...(await loadCommands(fullPath)));
+    } else if (entry.name.endsWith(".js") && entry.name !== "index.js") {
+      const module = await import(pathToFileURL(fullPath).href);
+      // We look for exported objects that have 'data' and 'execute'
+      const command = Object.values(module).find(
+        (val) => val && typeof val === "object" && val.data && val.execute,
       );
       if (command) {
-        if (!command.category) {
-          const cat = dir.split(/[\\/]/).pop();
-          command.category =
-            cat === "commands" || cat === "general"
-              ? "General"
-              : cat.charAt(0).toUpperCase() + cat.slice(1);
-        }
-        loaded.push(command);
+        // Fallback name if not set
+        if (!command.name && command.data.name) command.name = command.data.name;
+        commands.push(command);
       }
     }
   }
-  return loaded;
+  return commands;
 }
 
 export const commands = await loadCommands();
@@ -49,60 +43,28 @@ export async function registerCommands({ token, applicationId }) {
 
 export async function clearCommands({ token, applicationId }) {
   const rest = new REST({ version: "10" }).setToken(token);
-
-  // Clear global commands
   await rest.put(Routes.applicationCommands(applicationId), { body: [] });
   console.info("[Deploy] Cleared all global commands.");
-
-  // Clear guild commands for all guilds the bot is in
-  try {
-    const guilds = await rest.get(Routes.userGuilds());
-    for (const guild of guilds) {
-      await rest.put(Routes.applicationGuildCommands(applicationId, guild.id), {
-        body: [],
-      });
-      console.info(
-        `[Deploy] Cleared commands for guild: ${guild.name} (${guild.id})`,
-      );
-    }
-  } catch (err) {
-    console.warn(
-      "[Deploy] Failed to fetch or clear guild commands:",
-      err.message,
-    );
-  }
 }
 
 export async function handleInteraction(interaction, context) {
   let commandName = interaction.commandName;
-  if (
-    !commandName &&
-    (interaction.isButton() ||
-      interaction.isStringSelectMenu() ||
-      interaction.isModalSubmit())
-  ) {
-    if (interaction.customId.includes(":"))
-      commandName = interaction.customId.split(":")[0];
+
+  // 如果是組件交互，則嘗試從 customId 中解析指令名稱 (格式: "command:action")
+  if (!commandName && (interaction.isStringSelectMenu() || interaction.isButton())) {
+    commandName = interaction.customId.split(":")[0];
   }
 
   const command = commandsByName.get(commandName);
   if (!command) return;
 
-  if (!interaction.client.commands) {
-    interaction.client.commands = new Collection(
-      commands.map((c) => [c.name, c]),
-    );
-  }
-
   if (interaction.isChatInputCommand()) {
     await command.execute(interaction, context);
-  } else if (interaction.isAutocomplete()) {
-    if (typeof command.autocomplete === "function") {
-      await command.autocomplete(interaction, context);
-    }
-  } else if (interaction.isStringSelectMenu()) {
-    if (typeof command.handleSelectMenu === "function") {
-      await command.handleSelectMenu(interaction, context);
-    }
+  } else if (interaction.isAutocomplete() && typeof command.autocomplete === "function") {
+    await command.autocomplete(interaction, context);
+  } else if (interaction.isStringSelectMenu() && typeof command.handleSelectMenu === "function") {
+    await command.handleSelectMenu(interaction, context);
+  } else if (interaction.isButton() && typeof command.handleButton === "function") {
+    await command.handleButton(interaction, context);
   }
 }

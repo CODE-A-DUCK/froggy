@@ -17,19 +17,28 @@ const html = mathjax.document("", { InputJax: tex, OutputJax: svg });
 
 const MAX_LATEX_LENGTH = 1024;
 const TIMEOUT = 5000;
+const DEFAULT_COLOR = "rgb(92, 184, 255)";
+const HEX_COLOR_REGEX = /^#?[0-9a-fA-F]{3}(?:[0-9a-fA-F]{3})?$/;
 
-function texToSvg(latex, userColor = null) {
+function normalizeColor(input) {
+  if (!input) return null;
+  if (!HEX_COLOR_REGEX.test(input)) return false; // invalid
+  return input.startsWith("#") ? input : `#${input}`;
+}
+
+function stripDelimiters(latex) {
+  const s = latex.trim();
+  if (s.startsWith("\\[") && s.endsWith("\\]")) return s.slice(2, -2).trim();
+  if (s.startsWith("$$") && s.endsWith("$$")) return s.slice(2, -2).trim();
+  return s;
+}
+
+function texToSvg(latex, color) {
   const node = html.convert(latex, { display: true });
   const svgNode =
     adaptor.kind(node) === "svg" ? node : adaptor.firstChild(node);
   if (!svgNode) throw new Error("SVG generation failed");
-
-  const finalColor =
-    userColor ||
-    (adaptor.innerHTML(svgNode).includes('style="')
-      ? "rgb(30, 110, 244)"
-      : "rgb(0, 137, 50)");
-  adaptor.setStyle(svgNode, "color", finalColor);
+  adaptor.setStyle(svgNode, "color", color ?? DEFAULT_COLOR);
   return adaptor.outerHTML(svgNode);
 }
 
@@ -43,28 +52,45 @@ export const latexCommand = {
       o.setName("公式").setDescription("LaTeX 公式").setRequired(true),
     )
     .addStringOption((o) =>
-      o.setName("顏色").setDescription("可自訂顏色（選項）"),
+      o
+        .setName("顏色")
+        .setDescription("自訂顏色，支援 Hex（如 #ff0000 或 ff0000）"),
     ),
 
   async execute(interaction) {
     await interaction.deferReply();
-    const latex = interaction.options.getString("公式");
-    let color = interaction.options.getString("顏色");
+    const rawLatex = interaction.options.getString("公式");
+    const rawColor = interaction.options.getString("顏色");
 
-    if (color && /^[0-9a-fA-F]{3,6}$/.test(color)) color = `#${color}`;
-    if (latex.length > MAX_LATEX_LENGTH)
+    const latex = stripDelimiters(rawLatex);
+
+    if (latex.length > MAX_LATEX_LENGTH) {
       return interaction.editReply(`${EMOJIS.errorwarningline} | 表達式過長。`);
+    }
+
+    const color = normalizeColor(rawColor);
+    if (color === false) {
+      return interaction.editReply(
+        `${EMOJIS.errorwarningline} | 顏色格式無效，請使用 Hex 格式（如 #ff0000 或 ff0000）。`,
+      );
+    }
 
     try {
-      const finalInput = latex.includes("\\\\")
-        ? `\\begin{gather}${latex}\\end{gather}`
-        : latex;
+      const hasEnvironment = /\\begin\{/.test(latex);
+      const finalInput =
+        latex.includes("\\\\") && !hasEnvironment
+          ? `\\begin{gather}${latex}\\end{gather}`
+          : latex;
 
-      const svgString = texToSvg(finalInput, color);
       const buffer = await Promise.race([
-        sharp(Buffer.from(svgString), { density: 300 }).png().toBuffer(),
-        new Promise((_, r) =>
-          setTimeout(() => r(new Error("Timeout")), TIMEOUT),
+        (async () => {
+          const svgString = texToSvg(finalInput, color);
+          return sharp(Buffer.from(svgString), { density: 300 })
+            .png()
+            .toBuffer();
+        })(),
+        new Promise((_, reject) =>
+          setTimeout(() => reject(new Error("Timeout")), TIMEOUT),
         ),
       ]);
 
@@ -72,8 +98,9 @@ export const latexCommand = {
         files: [new AttachmentBuilder(buffer, { name: "latex.png" })],
       });
     } catch (error) {
+      console.error("[Command:Latex] Error:", error);
       await interaction.editReply(
-        `${EMOJIS.errorwarningline} | 失敗: \`${error.message}\``,
+        `${EMOJIS.errorwarningline} | 渲染失敗，請檢查 LaTeX 語法是否正確。`,
       );
     }
   },

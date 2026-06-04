@@ -6,7 +6,7 @@ import { EMOJIS } from "../../../shared/emojis.js";
 
 export const stopCommand = {
   name: "stop",
-  category: ":notes: | 音樂",
+  category: `${EMOJIS.music2line} | 音樂`,
   data: new SlashCommandBuilder()
     .setName("stop")
     .setDescription("停止播放並清空隊列"),

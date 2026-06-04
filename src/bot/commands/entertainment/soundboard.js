@@ -62,7 +62,7 @@ const soundList = [
 
 export const soundboardCommand = {
   name: "soundboard",
-  category: `${EMOJIS.game2line} | 娛樂`,
+  category: `${EMOJIS.gameline} | 娛樂`,
 
   data: new SlashCommandBuilder()
     .setName("soundboard")

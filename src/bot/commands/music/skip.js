@@ -6,7 +6,7 @@ import { EMOJIS } from "../../../shared/emojis.js";
 
 export const skipCommand = {
   name: "skip",
-  category: ":notes: | 音樂",
+  category: `${EMOJIS.music2line} | 音樂`,
   data: new SlashCommandBuilder()
     .setName("skip")
     .setDescription("跳過當前歌曲"),

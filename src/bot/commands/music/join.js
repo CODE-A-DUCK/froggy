@@ -6,7 +6,7 @@ import { EMOJIS } from "../../../shared/emojis.js";
 
 export const joinCommand = {
   name: "join",
-  category: ":notes: | 音樂",
+  category: `${EMOJIS.music2line} | 音樂`,
   data: new SlashCommandBuilder()
     .setName("join")
     .setDescription("讓我加入你的語音頻道"),

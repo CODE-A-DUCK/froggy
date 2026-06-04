@@ -13,7 +13,7 @@ const bgPath = join(__dirname, "../../../../../assets/images/bg_hoi.jpg");
 
 export const hoi4profileCommand = {
   name: "hoi4profile",
-  category: `${EMOJIS.hoi_anime} | 鋼鐵雄心IV`,
+  category: `${EMOJIS.infocardline} | 主頁查詢`,
   data: new SlashCommandBuilder()
     .setName("hoi4profile")
     .setDescription("查詢 Hearts of Iron IV 玩家檔案與成就")

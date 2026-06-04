@@ -9,7 +9,7 @@ import { scheduleUnban } from "../../utils/timed-ban-manager.js";
 
 export const timedbanCommand = {
   name: "timedban",
-  category: `${EMOJIS.adminline} | 版主`,
+  category: `${EMOJIS.shielduserline} | 版主`,
 
   data: new SlashCommandBuilder()
     .setName("timedban")
@@ -42,16 +42,14 @@ export const timedbanCommand = {
       const member = interaction.member;
       if (!member.permissions.has(PermissionFlagsBits.BanMembers)) {
         return interaction.editReply({
-          content:
-            `${EMOJIS.errorwarningline} | 你沒有封鎖成員的權限`,
+          content: `${EMOJIS.errorwarningline} | 你沒有封鎖成員的權限`,
         });
       }
 
       const botMember = interaction.guild.members.me;
       if (!botMember.permissions.has(PermissionFlagsBits.BanMembers)) {
         return interaction.editReply({
-          content:
-            `${EMOJIS.errorwarningline} | 我沒有封鎖成員的權限`,
+          content: `${EMOJIS.errorwarningline} | 我沒有封鎖成員的權限`,
         });
       }
 
@@ -69,8 +67,7 @@ export const timedbanCommand = {
           member.id !== interaction.guild.ownerId
         ) {
           return interaction.editReply({
-            content:
-              `${EMOJIS.errorwarningline} | 目標成員的權限於你相同或高於你，無法執行封鎖程序`,
+            content: `${EMOJIS.errorwarningline} | 目標成員的權限於你相同或高於你，無法執行封鎖程序`,
           });
         }
       }

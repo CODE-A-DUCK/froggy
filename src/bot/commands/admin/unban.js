@@ -6,10 +6,9 @@ import {
 
 import { EMOJIS } from "../../../shared/emojis.js";
 
-
 export const unbanCommand = {
   name: "unban",
-  category: `${EMOJIS.adminline} | 版主`,
+  category: `${EMOJIS.admin} | 管理`,
 
   data: new SlashCommandBuilder()
     .setName("unban")
@@ -31,16 +30,14 @@ export const unbanCommand = {
       const member = interaction.member;
       if (!member.permissions.has(PermissionFlagsBits.BanMembers)) {
         return interaction.editReply({
-          content:
-            `${EMOJIS.errorwarningline} | 你沒有封鎖成員權限`,
+          content: `${EMOJIS.errorwarningline} | 你沒有封鎖成員權限`,
         });
       }
 
       const botMember = interaction.guild.members.me;
       if (!botMember.permissions.has(PermissionFlagsBits.BanMembers)) {
         return interaction.editReply({
-          content:
-            `${EMOJIS.errorwarningline} | 我沒有權限解除封鎖`,
+          content: `${EMOJIS.errorwarningline} | 我沒有權限解除封鎖`,
         });
       }
 
@@ -68,8 +65,7 @@ export const unbanCommand = {
     } catch (error) {
       console.error("[Command:unban] Error:", error);
       await interaction.editReply({
-        content:
-          `${EMOJIS.errorwarningline} | 解除封鎖時發生錯誤，請確認目標成員的 ID 是否正確，並且我是否有足夠的權限`,
+        content: `${EMOJIS.errorwarningline} | 解除封鎖時發生錯誤，請確認目標成員的 ID 是否正確，並且我是否有足夠的權限`,
       });
     }
   },

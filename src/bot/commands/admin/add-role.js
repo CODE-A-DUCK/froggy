@@ -6,10 +6,9 @@ import {
 
 import { EMOJIS } from "../../../shared/emojis.js";
 
-
 export const addroleCommand = {
   name: "addrole",
-  category: `${EMOJIS.adminline} | 版主`,
+  category: `${EMOJIS.admin} | 管理`,
   data: new SlashCommandBuilder()
     .setName("addrole")
     .setDescription("為指定成員添加指定身份組")
@@ -33,16 +32,14 @@ export const addroleCommand = {
         )
       ) {
         return interaction.editReply({
-          content:
-            `${EMOJIS.errorwarningline} | 你沒有管理身份組的權限`,
+          content: `${EMOJIS.errorwarningline} | 你沒有管理身份組的權限`,
         });
       }
 
       const botMember = interaction.guild.members.me;
       if (!botMember.permissions.has(PermissionsBitField.Flags.ManageRoles)) {
         return interaction.editReply({
-          content:
-            `${EMOJIS.errorwarningline} | 我沒有管理身份組的權限`,
+          content: `${EMOJIS.errorwarningline} | 我沒有管理身份組的權限`,
         });
       }
 
@@ -51,8 +48,7 @@ export const addroleCommand = {
 
       if (!targetUser || !targetRole) {
         return interaction.editReply({
-          content:
-            `${EMOJIS.errorwarningline} | 請提供有效的成員和身份組`,
+          content: `${EMOJIS.errorwarningline} | 請提供有效的成員和身份組`,
         });
       }
 
@@ -68,8 +64,7 @@ export const addroleCommand = {
 
       if (targetRole.position >= botMember.roles.highest.position) {
         return interaction.editReply({
-          content:
-            `${EMOJIS.errorwarningline} | 該身份組的權限高於或等於我，無法添加`,
+          content: `${EMOJIS.errorwarningline} | 該身份組的權限高於或等於我，無法添加`,
         });
       }
 
@@ -94,8 +89,7 @@ export const addroleCommand = {
     } catch (error) {
       console.error("[Command:addrole] Error:", error);
       await interaction.editReply({
-        content:
-          `${EMOJIS.errorwarningline} | 添加身份組時發生錯誤`,
+        content: `${EMOJIS.errorwarningline} | 添加身份組時發生錯誤`,
       });
     }
   },

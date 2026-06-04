@@ -5,7 +5,7 @@ import { EMOJIS } from "../../../shared/emojis.js";
 
 export const queueCommand = {
   name: "queue",
-  category: ":notes: | 音樂",
+  category: `${EMOJIS.music2line} | 音樂`,
   data: new SlashCommandBuilder()
     .setName("queue")
     .setDescription("查看當前播放隊列，移除歌曲"),

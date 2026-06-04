@@ -4,11 +4,11 @@ import { ContainerFactory } from "../../../player/ui/container-factory.js";
 import { validateVoiceState } from "../../../player/utils/voice-guard.js";
 import { EMOJIS } from "../../../shared/emojis.js";
 
-export const resendCommand = {
-  name: "resend",
-  category: ":notes: | 音樂",
+export const controllerCommand = {
+  name: "controller",
+  category: `${EMOJIS.music2line} | 音樂`,
   data: new SlashCommandBuilder()
-    .setName("resend")
+    .setName("controller")
     .setDescription("把遙控器找回來"),
   async execute(interaction, context) {
     const validation = await validateVoiceState(interaction);
@@ -32,7 +32,7 @@ export const resendCommand = {
     try {
       await context.guildPlayerManager.dispatch({
         guild_id: interaction.guildId,
-        action: "resend_ui",
+        action: "refresh_controller",
         text_channel_id: interaction.channelId,
       });
       await interaction.editReply({
@@ -46,7 +46,7 @@ export const resendCommand = {
         flags: [MessageFlags.IsComponentsV2],
       });
     } catch (err) {
-      console.error("[Command] Resend error:", err);
+      console.error("[Command] Controller error:", err);
       await interaction.editReply({
         components: [
           ContainerFactory.buildReply(

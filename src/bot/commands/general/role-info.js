@@ -20,7 +20,7 @@ export const roleinfoCommand = {
     await interaction.deferReply();
 
     try {
-      const role = interaction.options.getRole("role");
+      const role = interaction.options.getRole("身份組");
 
       if (!role) {
         return interaction.editReply({

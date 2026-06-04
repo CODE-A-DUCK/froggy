@@ -32,7 +32,7 @@ export class ContainerFactory {
       : (event.title ?? "未知標題");
 
     const textContent = [
-      `### ${EMOJIS.music2line} 正在播放 ${titleLink}`,
+      `### ${EMOJIS.music2line} 正在播放：${titleLink}`,
       // 可能是 Discord 的渲染處理的問題，所以當有
       // 膚色修飾符的 emoji（如 🧔🏿 = 🧔 + 🏿 兩個 Unicode 碼位組合）放在 [文字](url) 的文字部分裡，
       // Discord 的 Markdown parser 會在那個組合 emoji 的地方斷掉，導致整個連結語法解析失敗。
@@ -93,17 +93,26 @@ export class ContainerFactory {
         .setEmoji({ id: "1510539692716855326" }),
     );
 
+    if (event.source_url) {
+      actionRow.addComponents(
+        new ButtonBuilder()
+          .setLabel("| URL")
+          .setStyle(ButtonStyle.Link)
+          .setURL(event.source_url)
+          .setEmoji({ id: "1511693322605826178" })
+      );
+    }
+
     container.addActionRowComponents(actionRow);
 
     // Footer（脚？
-    if (requester) {
-      const timestamp = Math.floor(Date.now() / 1000);
-      container.addTextDisplayComponents(
-        new TextDisplayBuilder().setContent(
-          `-# 由 ${requester.tag} 指定 • <t:${timestamp}:R>`,
-        ),
-      );
-    }
+    const timestamp = Math.floor(Date.now() / 1000);
+    const requesterName = requester ? (requester.tag || requester.username) : "";
+    container.addTextDisplayComponents(
+      new TextDisplayBuilder().setContent(
+        `-# 由 ${requesterName} 指定 • <t:${timestamp}:R>`,
+      ),
+    );
 
     return container;
   }
@@ -177,23 +186,11 @@ export class ContainerFactory {
       warning: `${EMOJIS.LingLong} 音樂中心`,
     };
 
-    const container = new ContainerBuilder().addTextDisplayComponents(
-      new TextDisplayBuilder().setContent(
-        `### ${headers[type] ?? `${EMOJIS.LingLong} 音樂中心`}\n${description}`,
-      ),
+    return this.buildSimpleMessage(
+      headers[type] ?? `${EMOJIS.LingLong} 音樂中心`,
+      description,
+      user
     );
-
-    if (user) {
-      container.addSeparatorComponents(new SeparatorBuilder().setSpacing(1));
-      const timestamp = Math.floor(Date.now() / 1000);
-      container.addTextDisplayComponents(
-        new TextDisplayBuilder().setContent(
-          `-# 由 ${user.tag} 指定 • <t:${timestamp}:R>`,
-        ),
-      );
-    }
-
-    return container;
   }
 
   static buildSimpleMessage(title, description, requester = null) {
@@ -201,15 +198,14 @@ export class ContainerFactory {
       new TextDisplayBuilder().setContent(`### ${title}\n${description}`),
     );
 
-    if (requester) {
-      container.addSeparatorComponents(new SeparatorBuilder().setSpacing(1));
-      const timestamp = Math.floor(Date.now() / 1000);
-      container.addTextDisplayComponents(
-        new TextDisplayBuilder().setContent(
-          `-# 由 ${requester.tag} 指定 • <t:${timestamp}:R>`,
-        ),
-      );
-    }
+    container.addSeparatorComponents(new SeparatorBuilder().setSpacing(1));
+    const timestamp = Math.floor(Date.now() / 1000);
+    const requesterName = requester ? (requester.tag || requester.username || "未知") : "系統";
+    container.addTextDisplayComponents(
+      new TextDisplayBuilder().setContent(
+        `-# 由 ${requesterName} 指定 • <t:${timestamp}:R>`,
+      ),
+    );
 
     return container;
   }

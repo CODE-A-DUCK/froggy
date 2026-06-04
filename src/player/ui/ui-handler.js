@@ -1,30 +1,9 @@
 import { MessageFlags } from "discord.js";
 
 import { EMOJIS } from "../../shared/emojis.js";
+import { formatUserFacingError } from "../utils/error-formatter.js";
 
 import { ContainerFactory } from "./container-factory.js";
-
-function formatUserFacingError(errorMsg) {
-  if (!errorMsg) return "發生未知錯誤";
-  if (errorMsg.includes("FFMPEG_STALLED") || errorMsg.includes("音樂串流卡住"))
-    return "串流處理逾時或無法取得音訊資料，正在嘗試重新啟動...";
-  if (
-    errorMsg.includes("confirm your age") ||
-    errorMsg.includes("age-restricted")
-  )
-    return "此歌曲有年齡限制，無法播放";
-  if (errorMsg.includes("Sign in to confirm your age"))
-    return "此歌曲有年齡限制，無法播放";
-  if (
-    errorMsg.includes("Video unavailable") ||
-    errorMsg.includes("Private video")
-  )
-    return "影片無法使用或已被設為私人";
-  if (errorMsg.includes("copyright claim")) return "影片因版權問題無法使用";
-  if (errorMsg.includes("ffmpeg exited with code"))
-    return "音訊處理程序發生錯誤";
-  return "獲取音訊時發生錯誤，或該連結不支援播放";
-}
 
 export class UIHandler {
   constructor({ client, controllerStore }) {
@@ -51,6 +30,9 @@ export class UIHandler {
     guildPlayerManager.on("trackError", (e) =>
       this.#safe(() => this.#handleTrackError(e)),
     );
+    guildPlayerManager.on("botDisconnect", (e) =>
+      this.#safe(() => this.#handleBotDisconnect(e)),
+    );
   }
 
   #safe(fn) {
@@ -71,10 +53,9 @@ export class UIHandler {
 
       this.controllerStore.setCurrentTrack(event.guild_id, event);
 
-      const requester = event.controller_user_id
-        ? await this.client.users
-          .fetch(event.controller_user_id)
-          .catch(() => null)
+      const requesterId = event.controller_user_id;
+      const requester = requesterId
+        ? (await this.client.users.fetch(requesterId).catch(() => ({ tag: "未知使用者" })))
         : null;
 
       const container = ContainerFactory.buildNowPlaying(
@@ -89,19 +70,10 @@ export class UIHandler {
       );
       if (!targetChannel) return;
 
+      let acknowledged = false;
       let messageId = null;
 
-      // 編輯現有的控制器消息
-      if (!event.force_new) {
-        messageId = await this.#tryEdit(
-          targetChannel,
-          event.guild_id,
-          container,
-        );
-      }
-
-      // 透過 interaction token 編輯
-      if (!messageId && !event.force_new && event.interaction_token) {
+      if (event.interaction_token) {
         const appId = this.client.application?.id ?? this.client.user.id;
         try {
           const res = await fetch(
@@ -117,20 +89,43 @@ export class UIHandler {
               }),
             },
           );
-          if (res.ok) messageId = (await res.json()).id;
+          if (res.ok) {
+            const data = await res.json();
+            messageId = data.id;
+            acknowledged = true;
+          }
         } catch (err) {
-          console.error("[UIHandler] Error in handleTrackPlaying:", err);
+          console.error("[UIHandler] Error in acknowledgment:", err);
         }
       }
 
-      // 發新消息
-      if (!messageId) {
+      if (!acknowledged) {
+        if (event.is_update) {
+          const oldMessageId = this.controllerStore.getMessageId(event.guild_id);
+          if (oldMessageId) {
+            const msg = await targetChannel.messages.fetch(oldMessageId).catch(() => null);
+            if (msg) {
+              await msg.edit({
+                components: [container],
+                flags: [MessageFlags.IsComponentsV2],
+              }).catch(() => null);
+              return; // 如果成功編輯現有遙控器，就不用再發了
+            }
+          }
+        }
+
+        // 始終重新發送遙控器（刪除舊的並發送新的）
         await this.#deletePreviousController(event.guild_id, targetChannel);
         const msg = await targetChannel.send({
           components: [container],
           flags: [MessageFlags.IsComponentsV2],
         });
         messageId = msg.id;
+      } else {
+        // 如果是新歌曲且已透過互動回應，我們需要清除之前的遙控器
+        if (!event.is_update) {
+          await this.#deletePreviousController(event.guild_id, targetChannel);
+        }
       }
 
       if (messageId) {
@@ -150,10 +145,9 @@ export class UIHandler {
       const guild = this.client.guilds.cache.get(event.guild_id);
       if (!guild) return;
 
-      const requester = event.controller_user_id
-        ? await this.client.users
-          .fetch(event.controller_user_id)
-          .catch(() => null)
+      const requesterId = event.controller_user_id;
+      const requester = requesterId
+        ? (await this.client.users.fetch(requesterId).catch(() => ({ tag: "未知使用者" })))
         : null;
 
       const ch = await this.#resolveTextChannel(guild, event.text_channel_id);
@@ -200,9 +194,41 @@ export class UIHandler {
             components: [container],
             flags: [MessageFlags.IsComponentsV2],
           })
-          .catch(() => null);
+          .catch((err) =>
+            console.error("[UIHandler] Error sending stop message:", err),
+          );
     } catch (err) {
       console.error("[UIHandler] Error in handleTrackEnded:", err);
+    }
+  }
+
+  async #handleBotDisconnect(event) {
+    console.info(`[UIHandler] bot_disconnect Guild ${event.guild_id}`);
+    try {
+      const guild = this.client.guilds.cache.get(event.guild_id);
+      if (!guild) return;
+
+      const chId = event.text_channel_id || this.controllerStore.getCurrentTrack(event.guild_id)?.text_channel_id;
+      if (!chId) return;
+
+      const ch = await this.#resolveTextChannel(guild, chId);
+      if (!ch) return;
+
+      await this.#deletePreviousController(event.guild_id, ch);
+      this.controllerStore.clearOwner(event.guild_id);
+      this.controllerStore.clearCurrentTrack(event.guild_id);
+
+      const container = ContainerFactory.buildSimpleMessage(
+        `${EMOJIS.LingLong} 音樂中心`,
+        `${EMOJIS.logoutcircleline} | 由於語音頻道已無其他成員，我已自動離開！`,
+      );
+
+      await ch.send({
+        components: [container],
+        flags: [MessageFlags.IsComponentsV2],
+      }).catch(err => console.error("[UIHandler] Error sending auto-leave message:", err));
+    } catch (err) {
+      console.error("[UIHandler] Error in handleBotDisconnect:", err);
     }
   }
 
@@ -216,10 +242,9 @@ export class UIHandler {
       const guild = this.client.guilds.cache.get(event.guild_id);
       if (!guild) return;
 
-      const requester = event.controller_user_id
-        ? await this.client.users
-          .fetch(event.controller_user_id)
-          .catch(() => null)
+      const requesterId = event.controller_user_id;
+      const requester = requesterId
+        ? (await this.client.users.fetch(requesterId).catch(() => ({ tag: "未知使用者" })))
         : null;
 
       const container = ContainerFactory.buildSimpleMessage(
@@ -229,7 +254,31 @@ export class UIHandler {
       );
 
       const ch = await this.#resolveTextChannel(guild, event.text_channel_id);
-      if (ch)
+
+      let acknowledged = false;
+      if (event.interaction_token) {
+        const appId = this.client.application?.id ?? this.client.user.id;
+        try {
+          const res = await fetch(
+            `https://discord.com/api/v10/webhooks/${appId}/${event.interaction_token}/messages/@original`,
+            {
+              method: "PATCH",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                content: null,
+                embeds: [],
+                components: [container.toJSON()],
+                flags: MessageFlags.IsComponentsV2,
+              }),
+            },
+          );
+          if (res.ok) acknowledged = true;
+        } catch (err) {
+          console.error("[UIHandler] Error in acknowledgment:", err);
+        }
+      }
+
+      if (!acknowledged && ch)
         await ch
           .send({
             components: [container],
@@ -258,12 +307,36 @@ export class UIHandler {
       const safeError = formatUserFacingError(event.error);
       const container = ContainerFactory.buildSimpleMessage(
         "播放錯誤",
-        `${EMOJIS.errorwarningline} | 無法播放此歌曲：\n\`\`\`${safeError}\`\`\``,
+        `${EMOJIS.errorwarningline} | ${safeError}`,
         requester,
       );
 
       const ch = await this.#resolveTextChannel(guild, event.text_channel_id);
-      if (ch)
+
+      let acknowledged = false;
+      if (event.interaction_token) {
+        const appId = this.client.application?.id ?? this.client.user.id;
+        try {
+          const res = await fetch(
+            `https://discord.com/api/v10/webhooks/${appId}/${event.interaction_token}/messages/@original`,
+            {
+              method: "PATCH",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                content: null,
+                embeds: [],
+                components: [container.toJSON()],
+                flags: MessageFlags.IsComponentsV2,
+              }),
+            },
+          );
+          if (res.ok) acknowledged = true;
+        } catch (err) {
+          console.error("[UIHandler] Error in acknowledgment:", err);
+        }
+      }
+
+      if (!acknowledged && ch)
         await ch
           .send({
             components: [container],
@@ -287,25 +360,6 @@ export class UIHandler {
       await msg?.delete().catch(() => null);
     } catch (err) {
       console.error("[UIHandler] Error in #deletePreviousController:", err);
-    }
-  }
-
-  async #tryEdit(channel, guildId, container) {
-    const msgId = this.controllerStore.getMessageId(guildId);
-    if (!msgId) return null;
-    try {
-      const msg = await channel.messages.fetch(msgId);
-      await msg.edit({
-        content: null,
-        embeds: [],
-        components: [container],
-        flags: [MessageFlags.IsComponentsV2],
-      });
-      return msgId;
-    } catch (err) {
-      console.error("[UIHandler] Error in #tryEdit:", err);
-      this.controllerStore.clearMessageId(guildId);
-      return null;
     }
   }
 

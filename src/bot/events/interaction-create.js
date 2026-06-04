@@ -1,5 +1,6 @@
 import { Events, MessageFlags, EmbedBuilder } from "discord.js";
 
+import { ContainerFactory } from "../../player/ui/container-factory.js";
 import {
   shouldOptimisticallyUpdate,
   optimisticallyUpdateController,
@@ -63,9 +64,14 @@ const handleModalInteraction = async (interaction, context) => {
 
     if (selectedIndices.length === 0) {
       return interaction.reply({
-        content:
-          `${EMOJIS.errorwarningline} | 你沒有選擇任何歌曲。`,
-        flags: [MessageFlags.Ephemeral],
+        components: [
+          ContainerFactory.buildReply(
+            "warning",
+            `${EMOJIS.errorwarningline} | 你沒有選擇任何歌曲。`,
+            interaction.user,
+          ),
+        ],
+        flags: [MessageFlags.IsComponentsV2],
       });
     }
 
@@ -78,25 +84,41 @@ const handleModalInteraction = async (interaction, context) => {
 
       if (removed.length === 0) {
         return interaction.reply({
-          content:
-            `${EMOJIS.errorwarningline} | 找不到要移除的歌曲，請確認隊列編號是否仍然有效。`,
-          flags: [MessageFlags.Ephemeral],
+          components: [
+            ContainerFactory.buildReply(
+              "warning",
+              `${EMOJIS.errorwarningline} | 找不到要移除的歌曲，請確認隊列編號是否仍然有效。`,
+              interaction.user,
+            ),
+          ],
+          flags: [MessageFlags.IsComponentsV2],
         });
       }
 
       await interaction.reply({
-        content: [
-          `${EMOJIS.checkdoubleline} | 已成功從隊列中移除 ${removed.length} 首歌曲：`,
-          removed.map((track) => `- ${track.title}`).join("\n"),
-        ].join("\n"),
-        flags: [MessageFlags.Ephemeral],
+        components: [
+          ContainerFactory.buildReply(
+            "success",
+            [
+              `${EMOJIS.checkdoubleline} | 已成功從隊列中移除 ${removed.length} 首歌曲：`,
+              removed.map((track) => `- ${track.title}`).join("\n"),
+            ].join("\n"),
+            interaction.user,
+          ),
+        ],
+        flags: [MessageFlags.IsComponentsV2],
       });
     } catch (err) {
       console.error("[Modal] Remove error:", err);
       await interaction.reply({
-        content:
-          `${EMOJIS.errorwarningline} | 移除歌曲時發生錯誤。`,
-        flags: [MessageFlags.Ephemeral],
+        components: [
+          ContainerFactory.buildReply(
+            "error",
+            `${EMOJIS.errorwarningline} | 移除歌曲時發生錯誤。`,
+            interaction.user,
+          ),
+        ],
+        flags: [MessageFlags.IsComponentsV2],
       });
     }
   }
@@ -110,6 +132,32 @@ const handleButtonInteraction = async (interaction, context) => {
     if (!control?.action) return;
 
     await interaction.deferUpdate().catch(() => null);
+
+    const VALID_BUTTON_ACTIONS = new Set([
+      "stop",
+      "skip",
+      "pause",
+      "resume",
+      "loop",
+      "details",
+      "refresh_controller",
+    ]);
+    if (!VALID_BUTTON_ACTIONS.has(control.action)) return;
+
+    if (control.action === "details") {
+      const track = controllerStore.getCurrentTrack(guildId);
+      if (!track)
+        return replyError(
+          interaction,
+          `${EMOJIS.errorwarningline} | 找不到目前的歌曲資訊。`,
+        );
+      return interaction
+        .followUp({
+          embeds: [buildDetailsEmbed(track)],
+          flags: [MessageFlags.Ephemeral],
+        })
+        .catch(() => null);
+    }
 
     const botMember = await interaction.guild.members
       .fetch(interaction.client.user.id)
@@ -131,32 +179,6 @@ const handleButtonInteraction = async (interaction, context) => {
     const hasOwners = controllerStore.getOwners(guildId).size > 0;
     if (hasOwners && !controllerStore.isOwner(guildId, interaction.user.id))
       return replyError(interaction, CONTROLLER_DENIED_MESSAGE);
-
-    const VALID_BUTTON_ACTIONS = new Set([
-      "stop",
-      "skip",
-      "pause",
-      "resume",
-      "loop",
-      "details",
-      "resend_ui",
-    ]);
-    if (!VALID_BUTTON_ACTIONS.has(control.action)) return;
-
-    if (control.action === "details") {
-      const track = controllerStore.getCurrentTrack(guildId);
-      if (!track)
-        return replyError(
-          interaction,
-          `${EMOJIS.errorwarningline} | 找不到目前的歌曲資訊。`,
-        );
-      return interaction
-        .followUp({
-          embeds: [buildDetailsEmbed(track)],
-          flags: [MessageFlags.Ephemeral],
-        })
-        .catch(() => null);
-    }
 
     const optimisticUpdate = shouldOptimisticallyUpdate(control.action)
       ? optimisticallyUpdateController(interaction, control.action)

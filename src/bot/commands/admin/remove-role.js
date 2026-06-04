@@ -6,10 +6,9 @@ import {
 
 import { EMOJIS } from "../../../shared/emojis.js";
 
-
 export const removeroleCommand = {
   name: "removerole",
-  category: `${EMOJIS.adminline} | 版主`,
+  category: `${EMOJIS.admin} | 管理`,
   data: new SlashCommandBuilder()
     .setName("removerole")
     .setDescription("為指定成員移除身份組")
@@ -49,8 +48,7 @@ export const removeroleCommand = {
 
       if (!targetUser || !targetRole) {
         return interaction.editReply({
-          content:
-            `${EMOJIS.errorwarningline} | 請提供有效的成員和身份組`,
+          content: `${EMOJIS.errorwarningline} | 請提供有效的成員和身份組`,
         });
       }
 
@@ -66,8 +64,7 @@ export const removeroleCommand = {
 
       if (targetRole.position >= botMember.roles.highest.position) {
         return interaction.editReply({
-          content:
-            `${EMOJIS.errorwarningline} | 該身份組的權限高於我，無法移除`,
+          content: `${EMOJIS.errorwarningline} | 該身份組的權限高於我，無法移除`,
         });
       }
 
@@ -90,8 +87,7 @@ export const removeroleCommand = {
     } catch (error) {
       console.error("[Command:removerole] Error:", error);
       await interaction.editReply({
-        content:
-          `${EMOJIS.errorwarningline} | 移除身份組時發生錯誤`,
+        content: `${EMOJIS.errorwarningline} | 移除身份組時發生錯誤`,
       });
     }
   },

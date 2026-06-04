@@ -5,23 +5,16 @@ import {
   checkCooldown,
   getRemainingCooldown,
 } from "../../../player/utils/cooldown.js";
+import { formatUserFacingError } from "../../../player/utils/error-formatter.js";
 import { validateVoiceState } from "../../../player/utils/voice-guard.js";
 import { EMOJIS } from "../../../shared/emojis.js";
+import { validatePlayUrl } from "../../security/sanitize-query.js";
 
 const PLAY_COOLDOWN_MS = 3000;
 
-function isUrl(input) {
-  try {
-    const u = new URL(input);
-    return u.protocol === "http:" || u.protocol === "https:";
-  } catch {
-    return false;
-  }
-}
-
 export const playCommand = {
   name: "play",
-  category: ":notes: | 音樂",
+  category: `${EMOJIS.music2line} | 音樂`,
   data: new SlashCommandBuilder()
     .setName("play")
     .setDescription("透過 YouTube 連結直接播放歌曲（搜尋歌曲請用 /search）")
@@ -47,14 +40,15 @@ export const playCommand = {
       });
     }
 
-    const query = interaction.options.getString("link", true).trim();
+    const query = interaction.options.getString("鏈接", true).trim();
 
-    if (!isUrl(query)) {
+    const urlValidation = validatePlayUrl(query);
+    if (!urlValidation.ok) {
       return interaction.reply({
         components: [
           ContainerFactory.buildReply(
-            "error",
-            `${EMOJIS.errorwarningline} | \`/play\` 只接受 YouTube 連結。\n若要搜尋歌曲，請使用 \`/search\`。`,
+            "warning",
+            `${EMOJIS.errorwarningline} | 請提供有效的 YouTube 連結。搜尋歌曲請使用 \`/search\` 指令。`,
             interaction.user,
           ),
         ],
@@ -63,7 +57,7 @@ export const playCommand = {
     }
 
     const validation = await validateVoiceState(interaction, {
-      requireBotInVC: false,
+      requireBotInVC: true,
       requireController: false,
     });
     if (!validation) return;
@@ -86,7 +80,7 @@ export const playCommand = {
         guild_id: guild.id,
         action: "play",
         channel_id: userVoiceChannel.id,
-        track_url: query,
+        track_url: urlValidation.url,
         interaction_token: interaction.token,
         text_channel_id: interaction.channelId,
         controller_user_id: interaction.user.id,
@@ -94,11 +88,13 @@ export const playCommand = {
     } catch (err) {
       console.error("[Command] Play error:", err);
       cs.clearOwner(guild.id);
+
+      const safeError = formatUserFacingError(err.message);
       await interaction.editReply({
         components: [
-          ContainerFactory.buildReply(
-            "error",
-            `${EMOJIS.errorwarningline} | 執行時發生錯誤，請稍後再試。`,
+          ContainerFactory.buildSimpleMessage(
+            "播放錯誤",
+            `${EMOJIS.errorwarningline} | ${safeError}`,
             interaction.user,
           ),
         ],

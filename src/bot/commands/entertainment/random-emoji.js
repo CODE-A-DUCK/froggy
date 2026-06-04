@@ -1,8 +1,10 @@
 import { SlashCommandBuilder } from "discord.js";
 
+import { EMOJIS } from "../../../shared/emojis.js";
+
 export const randomEmojiCommand = {
   name: "randomemoji",
-  category: "<:game2line:1510524992155025478> | 娛樂",
+  category: `${EMOJIS.gameline} | 娛樂`,
   data: new SlashCommandBuilder()
     .setName("randomemoji")
     .setDescription("隨機的表情符號"),
