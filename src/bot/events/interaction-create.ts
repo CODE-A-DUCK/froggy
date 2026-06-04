@@ -19,12 +19,14 @@ export const interactionCreateEvent = {
     try {
       if (
         interaction.isChatInputCommand() ||
-        interaction.isAutocomplete() ||
-        interaction.isStringSelectMenu()
+        interaction.isAutocomplete()
       ) {
         await handleInteraction(interaction, context);
       } else if (interaction.isButton()) {
-        await handleButtonInteraction(interaction, context);
+        const handled = await handleButtonInteraction(interaction, context);
+        if (!handled) await handleInteraction(interaction, context);
+      } else if (interaction.isStringSelectMenu() || (interaction as any).values) {
+        await handleInteraction(interaction, context);
       } else if (interaction.isModalSubmit()) {
         await handleModalInteraction(interaction, context);
       }
@@ -131,7 +133,7 @@ const handleButtonInteraction = async (interaction: any, context: any) => {
     const { guildId, member, channelId } = interaction;
 
     const control = parseMusicControl(interaction.customId);
-    if (!control?.action) return;
+    if (!control?.action) return false;
 
     await interaction.deferUpdate().catch(() => null);
 
@@ -144,21 +146,24 @@ const handleButtonInteraction = async (interaction: any, context: any) => {
       "details",
       "refresh_controller",
     ]);
-    if (!VALID_BUTTON_ACTIONS.has(control.action)) return;
+    if (!VALID_BUTTON_ACTIONS.has(control.action)) return false;
 
     if (control.action === "details") {
       const track = controllerStore.getCurrentTrack(guildId);
-      if (!track)
-        return replyError(
+      if (!track) {
+        replyError(
           interaction,
           `${EMOJIS.errorwarningline} | 找不到目前的歌曲資訊。`,
         );
-      return interaction
+        return true;
+      }
+      interaction
         .followUp({
           embeds: [buildDetailsEmbed(track)],
           flags: [MessageFlags.Ephemeral],
         })
         .catch(() => null);
+      return true;
     }
 
     const botMember = await interaction.guild.members
@@ -166,21 +171,27 @@ const handleButtonInteraction = async (interaction: any, context: any) => {
       .catch(() => null);
     const botVoiceChannel = botMember?.voice.channel;
 
-    if (!botVoiceChannel)
-      return replyError(
+    if (!botVoiceChannel) {
+      replyError(
         interaction,
         `${EMOJIS.errorwarningline} | 我目前不在語音頻道中，無法執行此操作。`,
       );
+      return true;
+    }
 
-    if (!member.voice.channel || member.voice.channel.id !== botVoiceChannel.id)
-      return replyError(
+    if (!member.voice.channel || member.voice.channel.id !== botVoiceChannel.id) {
+      replyError(
         interaction,
         `${EMOJIS.errorwarningline} | 你必須跟我進入同一個頻道 <#${botVoiceChannel.id}> 才能控制我！`,
       );
+      return true;
+    }
 
     const hasOwners = controllerStore.getOwners(guildId).size > 0;
-    if (hasOwners && !controllerStore.isOwner(guildId, interaction.user.id))
-      return replyError(interaction, CONTROLLER_DENIED_MESSAGE);
+    if (hasOwners && !controllerStore.isOwner(guildId, interaction.user.id)) {
+      replyError(interaction, CONTROLLER_DENIED_MESSAGE);
+      return true;
+    }
 
     const optimisticUpdate = shouldOptimisticallyUpdate(control.action)
       ? optimisticallyUpdateController(interaction, control.action)
@@ -192,8 +203,10 @@ const handleButtonInteraction = async (interaction: any, context: any) => {
       text_channel_id: channelId,
     });
     await optimisticUpdate;
+    return true;
   } catch (error) {
     console.error("[Button] Critical error:", error);
+    return true;
   }
 };
 

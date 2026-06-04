@@ -50,7 +50,7 @@ export async function handleInteraction(interaction: any, context: any) {
   let commandName = interaction.commandName;
 
   // 如果是組件交互，則嘗試從 customId 中解析指令名稱 (格式: "command:action")
-  if (!commandName && (interaction.isStringSelectMenu() || interaction.isButton())) {
+  if (!commandName && interaction.customId) {
     commandName = interaction.customId.split(":")[0];
   }
 
@@ -61,7 +61,7 @@ export async function handleInteraction(interaction: any, context: any) {
     await command.execute(interaction, context);
   } else if (interaction.isAutocomplete() && typeof command.autocomplete === "function") {
     await command.autocomplete(interaction, context);
-  } else if (interaction.isStringSelectMenu() && typeof command.handleSelectMenu === "function") {
+  } else if (typeof command.handleSelectMenu === "function" && (interaction.isStringSelectMenu() || interaction.values)) {
     await command.handleSelectMenu(interaction, context);
   } else if (interaction.isButton() && typeof command.handleButton === "function") {
     await command.handleButton(interaction, context);

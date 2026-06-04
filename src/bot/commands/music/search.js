@@ -40,15 +40,16 @@ export const searchCommand = {
 
     const query = interaction.options.getString("內容", true).trim();
 
-    // Note: Do not deferReply here because we want to show a Modal afterwards
+    await interaction.deferReply({ flags: [MessageFlags.Ephemeral] });
+
     let results;
     try {
       results = await searchTracks(query, 10);
     } catch (err) {
       console.error("[Command] Search error:", err.message);
       const safeError = formatUserFacingError(err.message);
-      return interaction.reply({
-        flags: [MessageFlags.Ephemeral, MessageFlags.IsComponentsV2],
+      return interaction.editReply({
+        flags: [MessageFlags.IsComponentsV2],
         components: [
           ContainerFactory.buildSimpleMessage(
             "搜尋失敗",
@@ -60,8 +61,8 @@ export const searchCommand = {
     }
 
     if (!results.length) {
-      return interaction.reply({
-        flags: [MessageFlags.Ephemeral, MessageFlags.IsComponentsV2],
+      return interaction.editReply({
+        flags: [MessageFlags.IsComponentsV2],
         components: [
           ContainerFactory.buildReply(
             "error",
@@ -72,7 +73,96 @@ export const searchCommand = {
       });
     }
 
-    await interaction.showModal(ContainerFactory.buildSearchModal(results));
+    await interaction.editReply({
+      flags: [MessageFlags.IsComponentsV2],
+      components: [ContainerFactory.buildSearchSelection(results, interaction.user).toJSON()],
+    });
+  },
+
+  async handleSelectMenu(interaction, context) {
+    const selectedValues = interaction.values;
+
+    if (!selectedValues || selectedValues.length === 0) {
+      return interaction.reply({
+        flags: [MessageFlags.Ephemeral, MessageFlags.IsComponentsV2],
+        components: [
+          ContainerFactory.buildReply(
+            "error",
+            `${EMOJIS.errorwarningline} | 你沒有選擇任何歌曲。`,
+            interaction.user,
+          ).toJSON(),
+        ],
+      });
+    }
+
+    await interaction.deferReply({ flags: [MessageFlags.Ephemeral] });
+
+    const validation = await validateVoiceState(interaction, {
+      requireBotInVC: true,
+      requireController: false,
+    });
+    if (!validation) return;
+
+    const { guildId, channelId } = interaction;
+    const { userVoiceChannel, botVoiceChannel } = validation;
+
+    const { controllerStore: cs } = context;
+    let ownerId = cs.getOwner(guildId);
+    if (!botVoiceChannel && ownerId) {
+      cs.clearOwner(guildId);
+      ownerId = null;
+    }
+
+    if (!ownerId) cs.setOwner(guildId, interaction.user.id);
+
+    try {
+      const addedTracks = [];
+      for (const url of selectedValues) {
+        const urlCheck = validatePlayUrl(url);
+        if (!urlCheck.ok) continue;
+
+        const track = await context.guildPlayerManager.dispatch({
+          guild_id: guildId,
+          action: "play",
+          channel_id: userVoiceChannel.id,
+          track_url: url,
+          interaction_token: "",
+          text_channel_id: channelId,
+          controller_user_id: interaction.user.id,
+          silent: true,
+        });
+        if (track) addedTracks.push(track);
+      }
+
+      const trackListText = addedTracks
+        .map((t) => `- **[${t.title}](${t.url})**`)
+        .join("\n");
+
+      await interaction.editReply({
+        flags: [MessageFlags.IsComponentsV2],
+        components: [
+          ContainerFactory.buildReply(
+            "success",
+            `${EMOJIS.playlistaddline} | 已為你加入 ${addedTracks.length} 首歌曲：\n${trackListText}`,
+            interaction.user,
+          ).toJSON(),
+        ],
+      });
+    } catch (err) {
+      cs.clearOwner(guildId);
+      console.error("[Command] Search select error:", err);
+      const safeError = formatUserFacingError(err.message);
+      await interaction.editReply({
+        flags: [MessageFlags.IsComponentsV2],
+        components: [
+          ContainerFactory.buildSimpleMessage(
+            "處理錯誤",
+            `${EMOJIS.errorwarningline} | ${safeError}`,
+            interaction.user,
+          ).toJSON(),
+        ],
+      });
+    }
   },
 };
 

@@ -135,6 +135,45 @@ export class ContainerFactory {
     return modal;
   }
 
+  static buildSearchSelection(results, user) {
+    const container = new ContainerBuilder().addTextDisplayComponents(
+      new TextDisplayBuilder().setContent(`### ${EMOJIS.searchline} 搜尋結果\n請選擇要加入隊列的歌曲（可多選）`),
+    );
+
+    const options = results.slice(0, 10).map((track, index) =>
+      new CheckboxGroupOptionBuilder()
+        .setLabel(`${index + 1}. ${track.title}`.slice(0, 100))
+        .setValue(track.url.slice(0, 100))
+        .setDescription(
+          `${track.duration ? formatDuration(track.duration) : "LIVE"} · ${track.uploader ?? "未知發佈者"}`.slice(
+            0,
+            100,
+          ),
+        ),
+    );
+
+    const checkboxGroup = new CheckboxGroupBuilder()
+      .setCustomId("search:select")
+      .addOptions(...options)
+      .setMinValues(1)
+      .setMaxValues(options.length)
+      .setRequired(true);
+
+    const section = new SectionBuilder().setCheckboxGroupComponent(checkboxGroup);
+    container.addSectionComponents(section);
+
+    container.addSeparatorComponents(new SeparatorBuilder().setSpacing(1));
+    const timestamp = Math.floor(Date.now() / 1000);
+    const requesterName = user ? (user.tag || user.username || "未知") : "系統";
+    container.addTextDisplayComponents(
+      new TextDisplayBuilder().setContent(
+        `-# 由 ${requesterName} 指定 • <t:${timestamp}:R>`,
+      ),
+    );
+
+    return container;
+  }
+
   static buildSearchModal(results) {
     const options = results.slice(0, 10).map((track, index) =>
       new CheckboxGroupOptionBuilder()
