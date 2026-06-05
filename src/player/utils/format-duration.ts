@@ -1,4 +1,4 @@
-export function formatDuration(totalSeconds) {
+export function formatDuration(totalSeconds: number): string {
   if (!Number.isFinite(totalSeconds) || totalSeconds < 0) return "00:00";
   const hours = Math.floor(totalSeconds / 3600);
   const minutes = Math.floor((totalSeconds % 3600) / 60);

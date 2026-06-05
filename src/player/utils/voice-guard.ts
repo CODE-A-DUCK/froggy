@@ -1,12 +1,31 @@
-import { MessageFlags } from "discord.js";
-
+import { MessageFlags, CommandInteraction, MessageComponentInteraction, ModalSubmitInteraction, GuildMember, VoiceBasedChannel, Guild } from "discord.js";
 import { controllerStore } from "../../bot/store/controller-store.js";
 import { EMOJIS } from "../../shared/emojis.js";
 import { ContainerFactory } from "../ui/container-factory.js";
 
 const CONTROLLER_DENIED_MESSAGE = ":lock: | 你不能搶別人的遙控器";
 
-export async function validateVoiceState(interaction, options = {}) {
+export interface VoiceStateValidationOptions {
+  requireBotInVC?: boolean;
+  requireSameVC?: boolean;
+  requireController?: boolean;
+}
+
+export interface VoiceStateValidationResult {
+  guild: Guild;
+  member: GuildMember;
+  userVoiceChannel: VoiceBasedChannel;
+  botMember: GuildMember;
+  botVoiceChannel: VoiceBasedChannel | null;
+  ownerId?: string | null;
+}
+
+type SupportedInteraction = CommandInteraction | MessageComponentInteraction | ModalSubmitInteraction;
+
+export async function validateVoiceState(
+  interaction: SupportedInteraction,
+  options: VoiceStateValidationOptions = {},
+): Promise<VoiceStateValidationResult | null> {
   const {
     requireBotInVC = true,
     requireSameVC = true,
@@ -14,12 +33,12 @@ export async function validateVoiceState(interaction, options = {}) {
   } = options;
 
   const guild = interaction.guild;
-  const reply = async (content) => {
+  const reply = async (content: string) => {
     const payload = {
       components: [
-        ContainerFactory.buildReply("error", content, interaction.user)
+        ContainerFactory.buildReply("error", content, interaction.user as any).toJSON() as any,
       ],
-      flags: [MessageFlags.Ephemeral, MessageFlags.IsComponentsV2]
+      flags: [MessageFlags.Ephemeral, MessageFlags.IsComponentsV2] as any,
     };
     if (interaction.deferred || interaction.replied)
       return interaction
@@ -37,8 +56,7 @@ export async function validateVoiceState(interaction, options = {}) {
     return null;
   }
 
-  // Optimize member fetching: use interaction.member if it's a GuildMember (has .voice), else fetch
-  let member = interaction.member;
+  let member = interaction.member as GuildMember | null;
   if (!member || !member.voice) {
     member = await guild.members.fetch(interaction.user.id);
   }
@@ -85,7 +103,7 @@ export async function validateVoiceState(interaction, options = {}) {
       userVoiceChannel,
       botMember,
       botVoiceChannel,
-      ownerId: Array.from(owners)[0] ?? null, // Retain for backwards compatibility
+      ownerId: Array.from(owners)[0] ?? null,
     };
   }
 
