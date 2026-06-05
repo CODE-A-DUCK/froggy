@@ -11,6 +11,8 @@ import {
   TextDisplayBuilder,
   ThumbnailBuilder,
   SeparatorBuilder,
+  StringSelectMenuBuilder,
+  StringSelectMenuOptionBuilder,
 } from "discord.js";
 
 import { EMOJIS } from "../../shared/emojis.js";
@@ -93,16 +95,6 @@ export class ContainerFactory {
         .setEmoji({ id: "1510539692716855326" }),
     );
 
-    if (event.source_url) {
-      actionRow.addComponents(
-        new ButtonBuilder()
-          .setLabel("| URL")
-          .setStyle(ButtonStyle.Link)
-          .setURL(event.source_url)
-          .setEmoji({ id: "1511693322605826178" })
-      );
-    }
-
     container.addActionRowComponents(actionRow);
 
     // Footer（脚？
@@ -145,7 +137,9 @@ export class ContainerFactory {
     return modal;
   }
 
-  static buildSearchModal(results) {
+
+
+  static buildSearchModal(results, searchId) {
     const options = results.slice(0, 10).map((track, index) =>
       new CheckboxGroupOptionBuilder()
         .setLabel(`${index + 1}. ${track.title}`.slice(0, 100))
@@ -172,7 +166,7 @@ export class ContainerFactory {
 
     const modal = new ModalBuilder()
       .setTitle("搜尋結果")
-      .setCustomId("MusicSearchModal")
+      .setCustomId(`MusicSearchModal:${searchId}`)
       .addLabelComponents(searchLabel);
 
     return modal;

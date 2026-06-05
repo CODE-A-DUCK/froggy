@@ -13,7 +13,6 @@ export const stopCommand = {
   async execute(interaction, context) {
     const validation = await validateVoiceState(interaction);
     if (!validation) return;
-    await interaction.deferReply();
     const { guild } = validation;
 
     const session = context.guildPlayerManager.getSession(guild.id);

@@ -1,0 +1,87 @@
+import {
+  SlashCommandBuilder,
+  EmbedBuilder,
+  PermissionFlagsBits,
+  ChatInputCommandInteraction,
+  GuildMember,
+} from "discord.js";
+
+import { EMOJIS } from "../../../shared/emojis.js";
+
+export const unmuteCommand = {
+  name: "unmute",
+  category: `${EMOJIS.shielduserline} | 版主`,
+
+  data: new SlashCommandBuilder()
+    .setName("unmute")
+    .setDescription("解除目標成員的禁言")
+    .addUserOption((opt) =>
+      opt.setName("user").setDescription("要解除禁言的成員").setRequired(true),
+    )
+    .addStringOption((opt) =>
+      opt.setName("reason").setDescription("原因（可選）").setRequired(false),
+    ),
+
+  async execute(interaction: ChatInputCommandInteraction) {
+    try {
+      const member = interaction.member as GuildMember;
+      if (!member || !member.permissions.has(PermissionFlagsBits.ModerateMembers)) {
+        return interaction.editReply({
+          content: `${EMOJIS.errorwarningline} | 你沒有管理成員的權限`,
+        });
+      }
+
+      const botMember = interaction.guild?.members.me;
+      if (!botMember || !botMember.permissions.has(PermissionFlagsBits.ModerateMembers)) {
+        return interaction.editReply({
+          content: `${EMOJIS.errorwarningline} | 我沒有管理成員的權限`,
+        });
+      }
+
+      const targetUser = interaction.options.getUser("user");
+      if (!targetUser) return interaction.editReply("找不到該成員");
+      const targetMember = await interaction.guild?.members
+        .fetch(targetUser.id)
+        .catch(() => null);
+      if (!targetMember) {
+        return interaction.editReply({
+          content: `${EMOJIS.errorwarningline} | 找不到該成員`,
+        });
+      }
+
+      if (!targetMember.isCommunicationDisabled()) {
+        return interaction.editReply({
+          content: `${EMOJIS.errorwarningline} | 該成員目前並沒有被禁言`,
+        });
+      }
+
+      if (
+        targetMember.roles.highest.position >= member.roles.highest.position &&
+        member.id !== interaction.guild?.ownerId
+      ) {
+        return interaction.editReply({
+          content: `${EMOJIS.errorwarningline} | 該成員的權限高於或等於你，無法解除其禁言`,
+        });
+      }
+
+      const reason = interaction.options.getString("reason") || "無原因";
+
+      await targetMember.timeout(null, reason);
+
+      const embed = new EmbedBuilder()
+        .setTitle("禁言解除成功")
+        .setDescription(`已解除 ${targetUser.tag} 的禁言`)
+        .setColor(0x57f287)
+        .setFooter({
+          text: `由 ${interaction.user.tag} 執行 | 原因：${reason}`,
+        });
+
+      await interaction.editReply({ embeds: [embed] });
+    } catch (error) {
+      console.error("[Command:unmute] Error:", error);
+      await interaction.editReply({
+        content: `${EMOJIS.errorwarningline} | 解除禁言時發生錯誤`,
+      });
+    }
+  },
+};

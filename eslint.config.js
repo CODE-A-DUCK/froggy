@@ -1,9 +1,11 @@
 import js from "@eslint/js";
 import globals from "globals";
 import importPlugin from "eslint-plugin-import";
+import tseslint from "typescript-eslint";
 
-export default [
+export default tseslint.config(
   js.configs.recommended,
+  ...tseslint.configs.recommended,
   {
     languageOptions: {
       ecmaVersion: "latest",
@@ -18,7 +20,9 @@ export default [
     },
     rules: {
       "no-console": "off",
-      "no-unused-vars": ["warn", { "argsIgnorePattern": "^_", "varsIgnorePattern": "^_" }],
+      "no-unused-vars": "off",
+      "@typescript-eslint/no-unused-vars": ["warn", { "argsIgnorePattern": "^_", "varsIgnorePattern": "^_" }],
+      "@typescript-eslint/no-explicit-any": "off",
       "import/no-unresolved": "off",
       "import/named": "error",
       "import/default": "error",
@@ -37,6 +41,6 @@ export default [
     },
   },
   {
-    ignores: ["node_modules/", "assets/", "db/"],
+    ignores: ["node_modules/", "assets/", "db/", "dist/"],
   },
-];
+);

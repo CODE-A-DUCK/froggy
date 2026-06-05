@@ -7,13 +7,13 @@ import { EMOJIS } from "../../../shared/emojis.js";
 export const controllerCommand = {
   name: "controller",
   category: `${EMOJIS.music2line} | 音樂`,
+  ephemeral: true,
   data: new SlashCommandBuilder()
     .setName("controller")
     .setDescription("把遙控器找回來"),
   async execute(interaction, context) {
     const validation = await validateVoiceState(interaction);
     if (!validation) return;
-    await interaction.deferReply({ flags: [MessageFlags.Ephemeral] });
 
     const session = context.guildPlayerManager.getSession(interaction.guildId);
     if (!session?.currentTrack) {

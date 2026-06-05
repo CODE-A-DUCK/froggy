@@ -25,7 +25,6 @@ export const hoi4profileCommand = {
     ),
 
   async execute(interaction) {
-    await interaction.deferReply();
     if (!STEAM_KEY)
       return interaction.editReply(
         "我似乎尚未設定 Steam API Key，請聯絡開發者",

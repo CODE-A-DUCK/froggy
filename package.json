@@ -4,10 +4,10 @@
   "description": "一個可能會有很多功能的 Discord 機器人。",
   "type": "module",
   "scripts": {
-    "start": "node src/index.js",
-    "dev": "node --watch src/index.js",
-    "deploy": "node deploy/deploy.js",
-    "clear": "node deploy/clear.js",
+    "start": "tsx src/index.ts",
+    "dev": "tsx watch src/index.ts",
+    "deploy": "tsx deploy/deploy.ts",
+    "clear": "tsx deploy/clear.ts",
     "lint": "eslint src deploy",
     "lint:fix": "eslint src deploy --fix"
   },
@@ -30,9 +30,13 @@
   },
   "devDependencies": {
     "@eslint/js": "^9.39.4",
+    "@types/node": "^25.9.1",
     "eslint": "^9.39.4",
     "eslint-plugin-import": "^2.32.0",
     "globals": "^17.6.0",
+    "tsx": "^4.22.4",
+    "typescript": "^6.0.3",
+    "typescript-eslint": "^8.60.1",
     "uuid": "^14.0.0"
   }
 }

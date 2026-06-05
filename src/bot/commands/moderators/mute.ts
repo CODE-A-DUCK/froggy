@@ -1,0 +1,109 @@
+import {
+  SlashCommandBuilder,
+  EmbedBuilder,
+  PermissionsBitField,
+  ChatInputCommandInteraction,
+  GuildMember,
+} from "discord.js";
+
+import { EMOJIS } from "../../../shared/emojis.js";
+
+export const muteCommand = {
+  name: "mute",
+  category: `${EMOJIS.shielduserline} | 版主`,
+  data: new SlashCommandBuilder()
+    .setName("mute")
+    .setDescription("禁言指定成員一段時間，期間無法發送消息")
+    .addUserOption((opt) =>
+      opt.setName("成員").setDescription("選擇要禁言的成員").setRequired(true),
+    )
+    .addIntegerOption((opt) =>
+      opt
+        .setName("分鐘")
+        .setDescription("禁言時長（分鐘，1~40320）")
+        .setRequired(true)
+        .setMinValue(1)
+        .setMaxValue(40320),
+    )
+    .addStringOption((opt) =>
+      opt.setName("原因").setDescription("禁言原因（可選）").setRequired(false),
+    ),
+
+  async execute(interaction: ChatInputCommandInteraction) {
+    try {
+      const member = interaction.member as GuildMember;
+      if (
+        !member ||
+        !member.permissions.has(
+          PermissionsBitField.Flags.ModerateMembers,
+        )
+      ) {
+        return interaction.editReply({
+          content: `${EMOJIS.errorwarningline} | 你沒有禁言成員的權限`,
+        });
+      }
+
+      const botMember = interaction.guild?.members.me;
+      if (
+        !botMember || !botMember.permissions.has(PermissionsBitField.Flags.ModerateMembers)
+      ) {
+        return interaction.editReply({
+          content: `${EMOJIS.errorwarningline} | 我沒有禁言成員的權限`,
+        });
+      }
+
+      const targetUser = interaction.options.getUser("成員");
+      if (!targetUser) return interaction.editReply("找不到該成員");
+      const minutes = interaction.options.getInteger("分鐘") || 1;
+      const reason = interaction.options.getString("原因") || "未提供原因";
+
+      const targetMember = await interaction.guild?.members
+        .fetch(targetUser.id)
+        .catch(() => null);
+      if (!targetMember) {
+        return interaction.editReply({
+          content: `${EMOJIS.errorwarningline} | 找不到該成員`,
+        });
+      }
+
+      if (
+        targetMember.roles.highest.position >=
+          member.roles.highest.position &&
+        interaction.user.id !== interaction.guild?.ownerId
+      ) {
+        return interaction.editReply({
+          content: `${EMOJIS.errorwarningline} | 你無法禁言權限高於或等於你的成員`,
+        });
+      }
+
+      if (
+        targetMember.roles.highest.position >= botMember.roles.highest.position
+      ) {
+        return interaction.editReply({
+          content: `${EMOJIS.errorwarningline} | 我無法禁言該成員，該成員權限高於或等於我`,
+        });
+      }
+
+      const durationMs = minutes * 60 * 1000;
+
+      await targetMember.timeout(durationMs, reason);
+
+      const embed = new EmbedBuilder()
+        .setTitle("成員已被禁言")
+        .setDescription(
+          `**${targetUser.tag}** 已被禁言 **${minutes} 分鐘**\n\n**原因：** ${reason}`,
+        )
+        .setColor(0x9b59b6)
+        .setThumbnail(targetUser.displayAvatarURL())
+        .setFooter({ text: `由 ${interaction.user.tag} 執行` })
+        .setTimestamp();
+
+      await interaction.editReply({ embeds: [embed] });
+    } catch (error) {
+      console.error("[Command:mute] Error:", error);
+      await interaction.editReply({
+        content: `${EMOJIS.errorwarningline} | 禁言目標成員時發生錯誤`,
+      });
+    }
+  },
+};

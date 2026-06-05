@@ -28,7 +28,7 @@ export const playCommand = {
   async execute(interaction, context) {
     if (!checkCooldown(interaction.user.id, "play", PLAY_COOLDOWN_MS)) {
       const ms = getRemainingCooldown(interaction.user.id, "play");
-      return interaction.reply({
+      return interaction.editReply({
         components: [
           ContainerFactory.buildReply(
             "warning",
@@ -36,7 +36,7 @@ export const playCommand = {
             interaction.user,
           ),
         ],
-        flags: [MessageFlags.Ephemeral, MessageFlags.IsComponentsV2],
+        flags: [MessageFlags.IsComponentsV2],
       });
     }
 
@@ -44,7 +44,7 @@ export const playCommand = {
 
     const urlValidation = validatePlayUrl(query);
     if (!urlValidation.ok) {
-      return interaction.reply({
+      return interaction.editReply({
         components: [
           ContainerFactory.buildReply(
             "warning",
@@ -52,7 +52,7 @@ export const playCommand = {
             interaction.user,
           ),
         ],
-        flags: [MessageFlags.Ephemeral, MessageFlags.IsComponentsV2],
+        flags: [MessageFlags.IsComponentsV2],
       });
     }
 
@@ -61,8 +61,6 @@ export const playCommand = {
       requireController: false,
     });
     if (!validation) return;
-
-    await interaction.deferReply();
 
     const { guild, userVoiceChannel, botVoiceChannel } = validation;
     const { guildPlayerManager, controllerStore: cs } = context;

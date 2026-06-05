@@ -15,7 +15,6 @@ export const leaveCommand = {
       requireSameVC: true,
     });
     if (!validation) return;
-    await interaction.deferReply();
     const { guild, botVoiceChannel } = validation;
     const { guildPlayerManager, controllerStore: cs } = context;
     try {
