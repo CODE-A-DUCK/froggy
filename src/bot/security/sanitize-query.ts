@@ -11,11 +11,7 @@ const ALLOWED_HOSTS = new Set([
   "music.youtube.com",
 ]);
 
-/**
- * 在將 URL 傳遞給 yt-dlp（/play 指令使用）之前對其進行驗證。
- * @param {string} input
- * @returns {{ ok: true, url: string } | { ok: false, reason: string }}
- */
+
 export function validatePlayUrl(input: any): { ok: true; url: string } | { ok: false; reason: string } {
   if (typeof input !== "string")
     return { ok: false, reason: "Input must be a string" };
@@ -36,11 +32,7 @@ export function validatePlayUrl(input: any): { ok: true; url: string } | { ok: f
   return { ok: true, url: url.href };
 }
 
-/**
- * 在將搜尋關鍵字傳遞給 yt-dlp（由 /search 指令使用）之前，先對其進行驗證。
- * @param {string} input
- * @returns {{ ok: true, query: string } | { ok: false, reason: string }}
- */
+
 export function validateSearchQuery(input: any): { ok: true; query: string } | { ok: false; reason: string } {
   if (typeof input !== "string")
     return { ok: false, reason: "Query must be a string" };

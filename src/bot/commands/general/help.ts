@@ -12,11 +12,7 @@ import {
 
 import { EMOJIS } from "../../../shared/emojis.js";
 
-/**
- * 将选项类型映射为易读的中文
- * @param {number} type
- * @returns {string}
- */
+
 function getOptionTypeName(type: number): string {
   const types: Record<number, string> = {
     [ApplicationCommandOptionType.String]: "文字",
@@ -32,11 +28,7 @@ function getOptionTypeName(type: number): string {
   return types[type] || "未知";
 }
 
-/**
- * 格式化单个选项的详细说明
- * @param {Object} option
- * @returns {string}
- */
+
 function formatOptionDetail(option: any): string {
   const wrap = option.required ? ["<", ">"] : ["[", "]"];
   let detail = `**${wrap[0]}${option.name}${wrap[1]}**：${option.description || "无描述"}`;
@@ -62,12 +54,7 @@ function formatOptionDetail(option: any): string {
   return detail;
 }
 
-/**
- * 递归处理子命令
- * @param {Array} options
- * @param {number} indent
- * @returns {string}
- */
+
 function formatOptionsRecursively(options: any[], indent = 0): string {
   if (!options || options.length === 0) return "无参数";
   const lines = [];
@@ -123,7 +110,7 @@ export const helpCommand = {
     const focusedValue = interaction.options.getFocused().toLowerCase();
     const commands = interaction.client.commands;
     if (!commands) {
-      return interaction.respond([]).catch(() => {});
+      return interaction.respond([]).catch(() => { });
     }
 
     const choices = commands
@@ -131,7 +118,7 @@ export const helpCommand = {
       .map((cmd: any) => ({ name: cmd.name, value: cmd.name }))
       .slice(0, 25);
 
-    await interaction.respond(choices).catch(() => {});
+    await interaction.respond(choices).catch(() => { });
   },
 
   async handleSelectMenu(interaction: StringSelectMenuInteraction) {
@@ -241,7 +228,7 @@ export const helpCommand = {
 
       return interaction
         .editReply({ embeds: [embed], components: [row] })
-        .catch(() => {});
+        .catch(() => { });
     }
 
     // 有参数：显示具体命令详情
@@ -254,7 +241,7 @@ export const helpCommand = {
           embeds: [],
           components: [],
         })
-        .catch(() => {});
+        .catch(() => { });
     }
 
     const dataJSON = command.data.toJSON();
@@ -297,6 +284,6 @@ export const helpCommand = {
 
     await interaction
       .editReply({ embeds: [embed], components: [] })
-      .catch(() => {});
+      .catch(() => { });
   },
 };
