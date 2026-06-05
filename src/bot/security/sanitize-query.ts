@@ -16,7 +16,7 @@ const ALLOWED_HOSTS = new Set([
  * @param {string} input
  * @returns {{ ok: true, url: string } | { ok: false, reason: string }}
  */
-export function validatePlayUrl(input) {
+export function validatePlayUrl(input: any): { ok: true; url: string } | { ok: false; reason: string } {
   if (typeof input !== "string")
     return { ok: false, reason: "Input must be a string" };
 
@@ -41,7 +41,7 @@ export function validatePlayUrl(input) {
  * @param {string} input
  * @returns {{ ok: true, query: string } | { ok: false, reason: string }}
  */
-export function validateSearchQuery(input) {
+export function validateSearchQuery(input: any): { ok: true; query: string } | { ok: false; reason: string } {
   if (typeof input !== "string")
     return { ok: false, reason: "Query must be a string" };
 

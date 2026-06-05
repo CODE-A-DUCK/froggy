@@ -1,24 +1,32 @@
 import { writeFileSync, readFileSync, existsSync } from "node:fs";
 import { join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
+import { Client } from "discord.js";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const dataPath = join(__dirname, "../../../db/timedBans.json");
 
 if (!existsSync(dataPath)) writeFileSync(dataPath, "[]", "utf8");
 
-let timedBans = JSON.parse(readFileSync(dataPath, "utf8"));
+interface TimedBan {
+  guildId: string;
+  userId: string;
+  unbanAt: number;
+  reason?: string;
+}
+
+let timedBans: TimedBan[] = JSON.parse(readFileSync(dataPath, "utf8"));
 
 function save() {
   writeFileSync(dataPath, JSON.stringify(timedBans, null, 2), "utf8");
 }
 
-export function scheduleUnban(guildId, userId, unbanAt, reason = "") {
+export function scheduleUnban(guildId: string, userId: string, unbanAt: number, reason: string = "") {
   timedBans.push({ guildId, userId, unbanAt, reason });
   save();
 }
 
-export function startAutoUnban(client) {
+export function startAutoUnban(client: Client) {
   setInterval(async () => {
     const now = Date.now();
     const toUnban = timedBans.filter((b) => b.unbanAt <= now);
