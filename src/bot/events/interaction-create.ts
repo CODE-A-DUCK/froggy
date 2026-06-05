@@ -10,7 +10,7 @@ import { formatUploadDate } from "../../player/utils/format-upload-date.js";
 import { CONTROLLER_DENIED_MESSAGE } from "../../player/utils/voice-guard.js";
 import { EMOJIS } from "../../shared/emojis.js";
 import { handleInteraction } from "../commands/index.js";
-import { handleMusicSearchModal } from "../commands/music/search.js";
+import { searchCommand } from "../commands/music/search.js";
 import { controllerStore } from "../store/controller-store.js";
 
 export const interactionCreateEvent = {
@@ -47,9 +47,8 @@ const replyError = (interaction: any, description: string) =>
     .catch(() => null);
 
 const handleModalInteraction = async (interaction: any, context: any) => {
-  if (interaction.customId === "MusicSearchModal") {
-    await handleMusicSearchModal(interaction, context);
-    return;
+  if (interaction.customId.startsWith("MusicSearchModal:")) {
+    return searchCommand.handleSearchModalSubmit(interaction, context);
   }
 
   if (interaction.customId === "MusicQueueRemoveModal") {

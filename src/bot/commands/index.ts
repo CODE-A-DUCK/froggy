@@ -2,7 +2,7 @@ import { readdirSync } from "node:fs";
 import { join, dirname } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 
-import { REST, Routes, Interaction } from "discord.js";
+import { REST, Routes, Interaction, MessageFlags } from "discord.js";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
@@ -47,6 +47,7 @@ export async function clearCommands({ token, applicationId }: { token: string; a
 }
 
 export async function handleInteraction(interaction: any, context: any) {
+  const start = Date.now();
   let commandName = interaction.commandName;
 
   // 如果是組件交互，則嘗試從 customId 中解析指令名稱 (格式: "command:action")
@@ -63,7 +64,12 @@ export async function handleInteraction(interaction: any, context: any) {
       const deferOptions = command.ephemeral ? { flags: [MessageFlags.Ephemeral] } : {};
       await interaction.deferReply(deferOptions).catch(() => null);
     }
+    const mid = Date.now();
     await command.execute(interaction, context);
+    const end = Date.now();
+    if (end - start > 2500) {
+      console.warn(`[Interaction] Slow command execution: /${commandName} took ${end - start}ms (defer took ${mid - start}ms)`);
+    }
   } else if (interaction.isAutocomplete() && typeof command.autocomplete === "function") {
     await command.autocomplete(interaction, context);
   } else if (typeof command.handleSelectMenu === "function" && (interaction.isStringSelectMenu() || interaction.values)) {

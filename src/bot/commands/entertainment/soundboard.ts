@@ -67,6 +67,7 @@ const soundList = [
 export const soundboardCommand = {
   name: "soundboard",
   category: `${EMOJIS.gameline} | 娛樂`,
+  ephemeral: true,
 
   data: new SlashCommandBuilder()
     .setName("soundboard")
@@ -74,9 +75,8 @@ export const soundboardCommand = {
 
   async execute(interaction: ChatInputCommandInteraction, context: any) {
     if (interaction.guild && context.controllerStore.getOwner(interaction.guild.id)) {
-      return interaction.reply({
+      return interaction.editReply({
         content: `${EMOJIS.errorwarningline} | 音樂播放中，無法使用音效面板`,
-        ephemeral: true,
       });
     }
 

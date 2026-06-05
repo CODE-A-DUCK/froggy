@@ -108,6 +108,7 @@ const CATEGORY_DESCRIPTIONS: Record<string, string> = {
 export const helpCommand = {
   name: "help",
   category: `${EMOJIS.homeline} | 基本`,
+  ephemeral: true,
   data: new SlashCommandBuilder()
     .setName("help")
     .setDescription("這應該是說明書")
