@@ -1,4 +1,4 @@
-import { SlashCommandBuilder, MessageFlags } from "discord.js";
+import { SlashCommandBuilder, MessageFlags, ChatInputCommandInteraction } from "discord.js";
 
 import { ContainerFactory } from "../../../player/ui/container-factory.js";
 import { validateVoiceState } from "../../../player/utils/voice-guard.js";
@@ -11,7 +11,7 @@ export const controllerCommand = {
   data: new SlashCommandBuilder()
     .setName("controller")
     .setDescription("把遙控器找回來"),
-  async execute(interaction, context) {
+  async execute(interaction: ChatInputCommandInteraction, context: any) {
     const validation = await validateVoiceState(interaction);
     if (!validation) return;
 
@@ -22,10 +22,10 @@ export const controllerCommand = {
           ContainerFactory.buildReply(
             "info",
             `${EMOJIS.playlistline} | 列隊裏沒有任何歌曲。`,
-            interaction.user,
+            interaction.user as any,
           ),
         ],
-        flags: [MessageFlags.IsComponentsV2],
+        flags: [MessageFlags.IsComponentsV2 as any],
       });
     }
 
@@ -40,10 +40,10 @@ export const controllerCommand = {
           ContainerFactory.buildReply(
             "success",
             `${EMOJIS.remotecontrol2line} | 已重新發送遙控器。`,
-            interaction.user,
+            interaction.user as any,
           ),
         ],
-        flags: [MessageFlags.IsComponentsV2],
+        flags: [MessageFlags.IsComponentsV2 as any],
       });
     } catch (err) {
       console.error("[Command] Controller error:", err);
@@ -52,10 +52,10 @@ export const controllerCommand = {
           ContainerFactory.buildReply(
             "error",
             `${EMOJIS.errorwarningline} | 執行時發生錯誤，請稍後再試。`,
-            interaction.user,
+            interaction.user as any,
           ),
         ],
-        flags: [MessageFlags.IsComponentsV2],
+        flags: [MessageFlags.IsComponentsV2 as any],
       });
     }
   },

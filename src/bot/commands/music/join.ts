@@ -1,4 +1,4 @@
-import { SlashCommandBuilder, MessageFlags } from "discord.js";
+import { SlashCommandBuilder, MessageFlags, ChatInputCommandInteraction } from "discord.js";
 
 import { ContainerFactory } from "../../../player/ui/container-factory.js";
 import { validateVoiceState } from "../../../player/utils/voice-guard.js";
@@ -10,7 +10,7 @@ export const joinCommand = {
   data: new SlashCommandBuilder()
     .setName("join")
     .setDescription("讓我加入你的語音頻道"),
-  async execute(interaction, context) {
+  async execute(interaction: ChatInputCommandInteraction, context: any) {
     const validation = await validateVoiceState(interaction, {
       requireBotInVC: false,
       requireSameVC: false,
@@ -30,10 +30,10 @@ export const joinCommand = {
           ContainerFactory.buildReply(
             "success",
             `${EMOJIS.headphoneline} | 我已加入語音頻道：\`${userVoiceChannel.name}\``,
-            interaction.user,
+            interaction.user as any,
           ),
         ],
-        flags: [MessageFlags.IsComponentsV2],
+        flags: [MessageFlags.IsComponentsV2 as any],
       });
     } catch (err) {
       console.error("[Command] Join error:", err);
@@ -42,10 +42,10 @@ export const joinCommand = {
           ContainerFactory.buildReply(
             "error",
             `${EMOJIS.errorwarningline} | 執行時發生錯誤，請稍後再試。`,
-            interaction.user,
+            interaction.user as any,
           ),
         ],
-        flags: [MessageFlags.IsComponentsV2],
+        flags: [MessageFlags.IsComponentsV2 as any],
       });
     }
   },

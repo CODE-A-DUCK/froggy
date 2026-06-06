@@ -1,4 +1,4 @@
-import { SlashCommandBuilder, MessageFlags } from "discord.js";
+import { SlashCommandBuilder, MessageFlags, ChatInputCommandInteraction } from "discord.js";
 
 import { ContainerFactory } from "../../../player/ui/container-factory.js";
 import { validateVoiceState } from "../../../player/utils/voice-guard.js";
@@ -10,7 +10,7 @@ export const leaveCommand = {
   data: new SlashCommandBuilder()
     .setName("leave")
     .setDescription("讓我離開語音頻道"),
-  async execute(interaction, context) {
+  async execute(interaction: ChatInputCommandInteraction, context: any) {
     const validation = await validateVoiceState(interaction, {
       requireSameVC: true,
     });
@@ -28,7 +28,7 @@ export const leaveCommand = {
       if (msgId) {
         const track = guildPlayerManager.getSession(guild.id)?.currentTrack;
         const chId = track?.text_channel_id ?? interaction.channelId;
-        const ch = await guild.channels.fetch(chId).catch(() => null);
+        const ch: any = await guild.channels.fetch(chId).catch(() => null);
         const msg = await ch?.messages.fetch(msgId).catch(() => null);
         await msg?.delete().catch(() => null);
         cs.clearMessageId(guild.id);
@@ -39,11 +39,11 @@ export const leaveCommand = {
         components: [
           ContainerFactory.buildReply(
             "success",
-            `${EMOJIS.logoutcircleline} | 我已離開語音頻道：\`${botVoiceChannel.name}\``,
-            interaction.user,
+            `${EMOJIS.logoutcircleline} | 我已離開語音頻道：\`${botVoiceChannel?.name ?? "語音頻道"}\``,
+            interaction.user as any,
           ),
         ],
-        flags: [MessageFlags.IsComponentsV2],
+        flags: [MessageFlags.IsComponentsV2 as any],
       });
     } catch (err) {
       console.error("[Command] Leave error:", err);
@@ -52,10 +52,10 @@ export const leaveCommand = {
           ContainerFactory.buildReply(
             "error",
             `${EMOJIS.errorwarningline} | 執行時發生錯誤，請稍後再試。`,
-            interaction.user,
+            interaction.user as any,
           ),
         ],
-        flags: [MessageFlags.IsComponentsV2],
+        flags: [MessageFlags.IsComponentsV2 as any],
       });
     }
   },

@@ -1,4 +1,4 @@
-import { SlashCommandBuilder, MessageFlags } from "discord.js";
+import { SlashCommandBuilder, MessageFlags, ChatInputCommandInteraction } from "discord.js";
 
 import { ContainerFactory } from "../../../player/ui/container-factory.js";
 import {
@@ -25,7 +25,7 @@ export const playCommand = {
         .setRequired(true),
     ),
 
-  async execute(interaction, context) {
+  async execute(interaction: ChatInputCommandInteraction, context: any) {
     if (!checkCooldown(interaction.user.id, "play", PLAY_COOLDOWN_MS)) {
       const ms = getRemainingCooldown(interaction.user.id, "play");
       return interaction.editReply({
@@ -33,10 +33,10 @@ export const playCommand = {
           ContainerFactory.buildReply(
             "warning",
             `${EMOJIS.hourglassline} | 請等待 ${(ms / 1000).toFixed(1)} 秒後再使用。`,
-            interaction.user,
+            interaction.user as any,
           ),
         ],
-        flags: [MessageFlags.IsComponentsV2],
+        flags: [MessageFlags.IsComponentsV2 as any],
       });
     }
 
@@ -49,10 +49,10 @@ export const playCommand = {
           ContainerFactory.buildReply(
             "warning",
             `${EMOJIS.errorwarningline} | 請提供有效的 YouTube 連結。搜尋歌曲請使用 \`/search\` 指令。`,
-            interaction.user,
+            interaction.user as any,
           ),
         ],
-        flags: [MessageFlags.IsComponentsV2],
+        flags: [MessageFlags.IsComponentsV2 as any],
       });
     }
 
@@ -83,20 +83,20 @@ export const playCommand = {
         text_channel_id: interaction.channelId,
         controller_user_id: interaction.user.id,
       });
-    } catch (err) {
+    } catch (err: any) {
       console.error("[Command] Play error:", err);
       cs.clearOwner(guild.id);
 
-      const safeError = formatUserFacingError(err.message);
+      const safeError = formatUserFacingError(err?.message);
       await interaction.editReply({
         components: [
           ContainerFactory.buildSimpleMessage(
             "播放錯誤",
             `${EMOJIS.errorwarningline} | ${safeError}`,
-            interaction.user,
+            interaction.user as any,
           ),
         ],
-        flags: [MessageFlags.IsComponentsV2],
+        flags: [MessageFlags.IsComponentsV2 as any],
       });
     }
   },

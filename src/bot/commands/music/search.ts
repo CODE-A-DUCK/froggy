@@ -1,5 +1,6 @@
 import { randomUUID } from "node:crypto";
-import { SlashCommandBuilder, MessageFlags } from "discord.js";
+
+import { SlashCommandBuilder, MessageFlags, ChatInputCommandInteraction, ModalSubmitInteraction } from "discord.js";
 
 import { ContainerFactory } from "../../../player/ui/container-factory.js";
 import {
@@ -14,7 +15,7 @@ import { validatePlayUrl } from "../../security/sanitize-query.js";
 
 const SEARCH_COOLDOWN_MS = 5000;
 
-export const searchCache = new Map();
+export const searchCache = new Map<string, any>();
 
 export const searchCommand = {
   name: "search",
@@ -28,50 +29,50 @@ export const searchCommand = {
       o.setName("內容").setDescription("歌曲名稱或關鍵字").setRequired(true),
     ),
 
-  async execute(interaction) {
+  async execute(interaction: ChatInputCommandInteraction) {
     if (!checkCooldown(interaction.user.id, "search", SEARCH_COOLDOWN_MS)) {
       const ms = getRemainingCooldown(interaction.user.id, "search");
       return interaction.reply({
-        flags: [MessageFlags.Ephemeral, MessageFlags.IsComponentsV2],
+        flags: [MessageFlags.Ephemeral, MessageFlags.IsComponentsV2 as any],
         components: [
           ContainerFactory.buildReply(
             "warning",
             `${EMOJIS.hourglassline} | 請等待 ${(ms / 1000).toFixed(1)} 秒後再搜尋。`,
-            interaction.user,
-          ).toJSON(),
+            interaction.user as any,
+          ).toJSON() as any,
         ],
       });
     }
 
     const query = interaction.options.getString("內容", true).trim();
 
-    let results;
+    let results: any[] | undefined;
     try {
       results = await searchTracks(query, 10);
-    } catch (err) {
+    } catch (err: any) {
       console.error("[Command] Search error:", err.message);
       const safeError = formatUserFacingError(err.message);
       return interaction.reply({
-        flags: [MessageFlags.Ephemeral, MessageFlags.IsComponentsV2],
+        flags: [MessageFlags.Ephemeral, MessageFlags.IsComponentsV2 as any],
         components: [
           ContainerFactory.buildSimpleMessage(
             "搜尋失敗",
             `${EMOJIS.errorwarningline} | ${safeError}`,
-            interaction.user,
-          ).toJSON(),
+            interaction.user as any,
+          ).toJSON() as any,
         ],
       });
     }
 
-    if (!results.length) {
+    if (!results || !results.length) {
       return interaction.reply({
-        flags: [MessageFlags.Ephemeral, MessageFlags.IsComponentsV2],
+        flags: [MessageFlags.Ephemeral, MessageFlags.IsComponentsV2 as any],
         components: [
           ContainerFactory.buildReply(
             "error",
             `${EMOJIS.errorwarningline} | 找不到結果，請換個關鍵字試試。`,
-            interaction.user,
-          ).toJSON(),
+            interaction.user as any,
+          ).toJSON() as any,
         ],
       });
     }
@@ -83,18 +84,18 @@ export const searchCommand = {
     await interaction.showModal(ContainerFactory.buildSearchModal(results, searchId));
   },
 
-  async handleSearchModalSubmit(interaction, context) {
-    const selectedValues = interaction.fields.getCheckboxGroup("MusicSearchCheckboxes");
+  async handleSearchModalSubmit(interaction: ModalSubmitInteraction, context: any) {
+    const selectedValues = (interaction.fields as any).getCheckboxGroup("MusicSearchCheckboxes");
 
     if (!selectedValues || selectedValues.length === 0) {
       return interaction.reply({
-        flags: [MessageFlags.Ephemeral, MessageFlags.IsComponentsV2],
+        flags: [MessageFlags.Ephemeral, MessageFlags.IsComponentsV2 as any],
         components: [
           ContainerFactory.buildReply(
             "error",
             `${EMOJIS.errorwarningline} | 你沒有選擇任何歌曲。`,
-            interaction.user,
-          ).toJSON(),
+            interaction.user as any,
+          ).toJSON() as any,
         ],
       });
     }
@@ -108,6 +109,7 @@ export const searchCommand = {
     if (!validation) return;
 
     const { guildId, channelId } = interaction;
+    if (!guildId || !channelId) return;
     const { userVoiceChannel, botVoiceChannel } = validation;
 
     const { controllerStore: cs } = context;
@@ -120,7 +122,7 @@ export const searchCommand = {
     if (!ownerId) cs.setOwner(guildId, interaction.user.id);
 
     try {
-      const addedTracks = [];
+      const addedTracks: any[] = [];
       for (const url of selectedValues) {
         const urlCheck = validatePlayUrl(url);
         if (!urlCheck.ok) continue;
@@ -143,27 +145,27 @@ export const searchCommand = {
         .join("\n");
 
       await interaction.editReply({
-        flags: [MessageFlags.IsComponentsV2],
+        flags: [MessageFlags.IsComponentsV2 as any],
         components: [
           ContainerFactory.buildReply(
             "success",
             `${EMOJIS.playlistaddline} | 已為你加入 ${addedTracks.length} 首歌曲：\n${trackListText}`,
-            interaction.user,
-          ).toJSON(),
+            interaction.user as any,
+          ).toJSON() as any,
         ],
       });
-    } catch (err) {
+    } catch (err: any) {
       cs.clearOwner(guildId);
       console.error("[Command] Search select error:", err);
-      const safeError = formatUserFacingError(err.message);
+      const safeError = formatUserFacingError(err?.message);
       await interaction.editReply({
-        flags: [MessageFlags.IsComponentsV2],
+        flags: [MessageFlags.IsComponentsV2 as any],
         components: [
           ContainerFactory.buildSimpleMessage(
             "處理錯誤",
             `${EMOJIS.errorwarningline} | ${safeError}`,
-            interaction.user,
-          ).toJSON(),
+            interaction.user as any,
+          ).toJSON() as any,
         ],
       });
     }
