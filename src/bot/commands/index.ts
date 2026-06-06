@@ -59,10 +59,14 @@ export async function handleInteraction(interaction: any, context: any) {
   if (!command) return;
 
   if (interaction.isChatInputCommand()) {
-    // Early defer to avoid timeouts, unless the command handles its own response (e.g. Modals)
     if (command.defer !== false) {
       const deferOptions = command.ephemeral ? { flags: [MessageFlags.Ephemeral] } : {};
-      await interaction.deferReply(deferOptions).catch(() => null);
+      try {
+        await interaction.deferReply(deferOptions);
+      } catch (err) {
+        console.warn(`[Interaction] Failed to defer reply for /${commandName}. Aborting execution.`, err);
+        return;
+      }
     }
     const mid = Date.now();
     await command.execute(interaction, context);

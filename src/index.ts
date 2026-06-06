@@ -47,10 +47,19 @@ client.on("shardError", (error, id) =>
 );
 
 let isShuttingDown = false;
-function shutdown(signal: string) {
+async function shutdown(signal: string) {
   if (isShuttingDown) return;
   isShuttingDown = true;
   console.info(`[Main] Received ${signal}, shutting down...`);
+
+  try {
+    console.info("[Main] Cleaning up voice connections...");
+    guildPlayerManager.destroyAll();
+    await new Promise(resolve => setTimeout(resolve, 1500));
+  } catch (err) {
+    console.error("[Main] Error during graceful shutdown:", err);
+  }
+
   client.destroy();
   process.exit(0);
 }

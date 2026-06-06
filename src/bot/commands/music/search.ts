@@ -1,6 +1,6 @@
 import { randomUUID } from "node:crypto";
 
-import { SlashCommandBuilder, MessageFlags, ChatInputCommandInteraction, ModalSubmitInteraction } from "discord.js";
+import { SlashCommandBuilder, MessageFlags, ChatInputCommandInteraction, StringSelectMenuInteraction } from "discord.js";
 
 import { ContainerFactory } from "../../../player/ui/container-factory.js";
 import {
@@ -21,7 +21,7 @@ export const searchCommand = {
   name: "search",
   category: `${EMOJIS.music2line} | 音樂`,
   ephemeral: true,
-  defer: false,
+  defer: true,
   data: new SlashCommandBuilder()
     .setName("search")
     .setDescription("搜尋歌曲，從結果中選擇後播放")
@@ -32,8 +32,8 @@ export const searchCommand = {
   async execute(interaction: ChatInputCommandInteraction) {
     if (!checkCooldown(interaction.user.id, "search", SEARCH_COOLDOWN_MS)) {
       const ms = getRemainingCooldown(interaction.user.id, "search");
-      return interaction.reply({
-        flags: [MessageFlags.Ephemeral, MessageFlags.IsComponentsV2 as any],
+      return interaction.editReply({
+        flags: [MessageFlags.IsComponentsV2 as any],
         components: [
           ContainerFactory.buildReply(
             "warning",
@@ -52,8 +52,8 @@ export const searchCommand = {
     } catch (err: any) {
       console.error("[Command] Search error:", err.message);
       const safeError = formatUserFacingError(err.message);
-      return interaction.reply({
-        flags: [MessageFlags.Ephemeral, MessageFlags.IsComponentsV2 as any],
+      return interaction.editReply({
+        flags: [MessageFlags.IsComponentsV2 as any],
         components: [
           ContainerFactory.buildSimpleMessage(
             "搜尋失敗",
@@ -65,8 +65,8 @@ export const searchCommand = {
     }
 
     if (!results || !results.length) {
-      return interaction.reply({
-        flags: [MessageFlags.Ephemeral, MessageFlags.IsComponentsV2 as any],
+      return interaction.editReply({
+        flags: [MessageFlags.IsComponentsV2 as any],
         components: [
           ContainerFactory.buildReply(
             "error",
@@ -81,11 +81,17 @@ export const searchCommand = {
     searchCache.set(searchId, results);
     setTimeout(() => searchCache.delete(searchId), 15 * 60 * 1000);
 
-    await interaction.showModal(ContainerFactory.buildSearchModal(results, searchId));
+    await interaction.editReply({
+      flags: [MessageFlags.IsComponentsV2 as any],
+      components: [
+        ContainerFactory.buildSearchSelectMenu(results, searchId).toJSON() as any
+      ]
+    });
   },
 
-  async handleSearchModalSubmit(interaction: ModalSubmitInteraction, context: any) {
-    const selectedValues = (interaction.fields as any).getCheckboxGroup("MusicSearchCheckboxes");
+  handleSelectMenu: async (interaction: StringSelectMenuInteraction, context: any) => {
+    if (!interaction.customId.startsWith("search:select:")) return;
+    const selectedValues = interaction.values;
 
     if (!selectedValues || selectedValues.length === 0) {
       return interaction.reply({
@@ -100,7 +106,7 @@ export const searchCommand = {
       });
     }
 
-    await interaction.deferReply();
+    await interaction.deferReply().catch(() => null);
 
     const validation = await validateVoiceState(interaction, {
       requireBotInVC: true,

@@ -14,7 +14,7 @@ let activeProcesses = 0;
 /**
  * 核心進程啟動器，處理併發限制與超時。
  */
-async function spawnProcess(command, args) {
+async function spawnProcess(command: string, args: string[]): Promise<string> {
   if (activeProcesses >= MAX_CONCURRENT) {
     throw new Error("伺服器繁忙中，請稍後再試。");
   }
@@ -25,8 +25,8 @@ async function spawnProcess(command, args) {
       stdio: ["ignore", "pipe", "pipe"],
       shell: false,
     });
-    const stdoutChunks = [];
-    const stderrLines = [];
+    const stdoutChunks: Buffer[] = [];
+    const stderrLines: string[] = [];
     let isDone = false;
 
     const timeout = setTimeout(() => {
@@ -71,7 +71,7 @@ async function spawnProcess(command, args) {
 /**
  * 影片元數據
  */
-export async function getTrackMetadata(query) {
+export async function getTrackMetadata(query: string): Promise<any> {
   const trimmed = query.trim();
   const isUrl = (() => {
     try {
@@ -85,7 +85,7 @@ export async function getTrackMetadata(query) {
     }
   })();
 
-  let resolvedQuery;
+  let resolvedQuery: string;
   if (isUrl) {
     const check = validatePlayUrl(trimmed);
     if (!check.ok) throw new Error(check.reason);
@@ -126,10 +126,11 @@ export async function getTrackMetadata(query) {
 /**
  * 搜尋歌曲。
  */
-export async function searchTracks(query, count = 5) {
+export async function searchTracks(query: string, count: number | string = 5): Promise<any[]> {
   const check = validateSearchQuery(query);
   if (!check.ok) throw new Error(check.reason);
-  const safeCount = Math.max(1, Math.min(25, parseInt(count, 10) || 5));
+  const parsedCount = typeof count === "string" ? parseInt(count, 10) : count;
+  const safeCount = Math.max(1, Math.min(25, parsedCount || 5));
 
   const args = [
     "--no-playlist",
@@ -166,7 +167,7 @@ export async function searchTracks(query, count = 5) {
 /**
  * 建立串流。
  */
-export async function createAudioStream(url) {
+export async function createAudioStream(url: string): Promise<{ stream: any; inputType: StreamType; cleanup: () => void }> {
   // stream 前驗證 URL
   const check = validatePlayUrl(url);
   if (!check.ok) throw new Error(check.reason);
@@ -188,7 +189,7 @@ export async function createAudioStream(url) {
 
   let producedAudio = false;
   let cleanedUp = false;
-  let ffmpeg = null;
+  let ffmpeg: any = null;
 
   const cleanup = () => {
     if (cleanedUp) return;
@@ -203,6 +204,10 @@ export async function createAudioStream(url) {
   }, 15_000);
 
   ytDlp.on("close", () => clearTimeout(stallTimeout));
+  ytDlp.on("error", (err) => {
+    console.error("[createAudioStream] yt-dlp process error:", err);
+    cleanup();
+  });
 
   try {
     const { stream: probedStream, type } = await demuxProbe(ytDlp.stdout);
@@ -216,10 +221,13 @@ export async function createAudioStream(url) {
       };
     }
 
-    if (!ffmpegPath) throw new Error("找不到 ffmpeg 執行檔來進行轉碼");
+    const resolvedPath = typeof ffmpegPath === "string" ? ffmpegPath : (ffmpegPath as any);
+    if (!resolvedPath || typeof resolvedPath !== "string") {
+      throw new Error("找不到 ffmpeg 執行檔來進行轉碼");
+    }
 
     ffmpeg = spawn(
-      ffmpegPath,
+      resolvedPath,
       [
         "-hide_banner",
         "-loglevel",
@@ -238,8 +246,13 @@ export async function createAudioStream(url) {
       { stdio: ["pipe", "pipe", "pipe"], shell: false },
     );
 
+    ffmpeg.on("error", (err: any) => {
+      console.error("[createAudioStream] ffmpeg process error:", err);
+      cleanup();
+    });
+
     probedStream.pipe(ffmpeg.stdin);
-    ffmpeg.stdin.on("error", (err) => {
+    ffmpeg.stdin.on("error", (err: any) => {
       if (err.code !== "EPIPE")
         console.error("[createAudioStream] stdin error:", err);
     });
@@ -256,6 +269,7 @@ export async function createAudioStream(url) {
       cleanup,
     };
   } catch (error) {
+    clearTimeout(stallTimeout);
     cleanup();
     throw error;
   }

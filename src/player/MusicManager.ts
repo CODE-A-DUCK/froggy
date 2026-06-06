@@ -1,33 +1,38 @@
 import { EventEmitter } from "node:events";
 
+import { Client } from "discord.js";
+
 import { MusicPlayer } from "./MusicPlayer.js";
 
 export class MusicManager extends EventEmitter {
-  constructor({ client }) {
+  private client: Client;
+  private players: Map<string, MusicPlayer>;
+
+  constructor({ client }: { client: Client }) {
     super();
     this.client = client;
     this.players = new Map();
   }
 
-  getOrCreatePlayer(guildId) {
-    if (this.players.has(guildId)) return this.players.get(guildId);
+  getOrCreatePlayer(guildId: string): MusicPlayer {
+    if (this.players.has(guildId)) return this.players.get(guildId)!;
 
     const player = new MusicPlayer(guildId, this.client);
-    this.#bindEvents(player);
+    this.bindEvents(player);
     this.players.set(guildId, player);
     return player;
   }
 
-  getPlayer(guildId) {
+  getPlayer(guildId: string): MusicPlayer | null {
     return this.players.get(guildId) || null;
   }
 
   // Alias for backward compatibility with older event handlers
-  getSession(guildId) {
+  getSession(guildId: string): MusicPlayer | null {
     return this.getPlayer(guildId);
   }
 
-  async getQueue(guildId) {
+  async getQueue(guildId: string): Promise<{ current: any | null; queue: any[]; length: number }> {
     const player = this.players.get(guildId);
     if (!player) return { current: null, queue: [], length: 0 };
     return {
@@ -37,7 +42,7 @@ export class MusicManager extends EventEmitter {
     };
   }
 
-  #bindEvents(player) {
+  private bindEvents(player: MusicPlayer): void {
     const events = ["trackStarted", "sessionUpdated", "trackQueued", "queueFinished", "trackStopped", "trackError", "botDisconnect"];
     for (const event of events) {
       player.on(event, (data) => this.emit(event, data));
@@ -50,7 +55,7 @@ export class MusicManager extends EventEmitter {
   /**
    * 簡化的 dispatch 方法，相容舊有的呼叫方式
    */
-  async dispatch(task) {
+  async dispatch(task: any): Promise<any> {
     const player = this.getOrCreatePlayer(task.guild_id);
 
     switch (task.action) {
@@ -90,5 +95,16 @@ export class MusicManager extends EventEmitter {
     default:
       console.warn(`[MusicManager] 未知的操作: ${task.action}`);
     }
+  }
+
+  destroyAll(): void {
+    for (const player of this.players.values()) {
+      try {
+        player.destroy();
+      } catch (err) {
+        console.error(`[MusicManager] Failed to destroy player for guild ${player.guildId}:`, err);
+      }
+    }
+    this.players.clear();
   }
 }

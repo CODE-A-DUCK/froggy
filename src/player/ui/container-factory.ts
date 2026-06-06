@@ -28,7 +28,7 @@ export class ContainerFactory {
   /**
    * 正在播放的 Container
    */
-  static buildNowPlaying(event, requester) {
+  static buildNowPlaying(event: any, requester: any): ContainerBuilder {
     const titleLink = event.source_url
       ? `[${event.title ?? "未知標題"}](${event.source_url})`
       : (event.title ?? "未知標題");
@@ -64,7 +64,7 @@ export class ContainerFactory {
     container.addSeparatorComponents(new SeparatorBuilder().setSpacing(1));
 
     // 按鈕 ActionRow
-    const actionRow = new ActionRowBuilder().addComponents(
+    const actionRow = new ActionRowBuilder<ButtonBuilder>().addComponents(
       new ButtonBuilder()
         .setCustomId(
           event.is_paused
@@ -97,7 +97,7 @@ export class ContainerFactory {
 
     container.addActionRowComponents(actionRow);
 
-    // Footer（脚？
+    // Footer
     const timestamp = Math.floor(Date.now() / 1000);
     const requesterName = requester ? (requester.tag || requester.username) : "";
     container.addTextDisplayComponents(
@@ -109,7 +109,7 @@ export class ContainerFactory {
     return container;
   }
 
-  static buildRemoveQueueModal(queue) {
+  static buildRemoveQueueModal(queue: any[]): ModalBuilder {
     const options = queue.slice(0, 10).map((track, index) =>
       new CheckboxGroupOptionBuilder()
         .setLabel(track.title.slice(0, 100))
@@ -137,11 +137,9 @@ export class ContainerFactory {
     return modal;
   }
 
-
-
-  static buildSearchModal(results, searchId) {
+  static buildSearchSelectMenu(results: any[], searchId: string): ContainerBuilder {
     const options = results.slice(0, 10).map((track, index) =>
-      new CheckboxGroupOptionBuilder()
+      new StringSelectMenuOptionBuilder()
         .setLabel(`${index + 1}. ${track.title}`.slice(0, 100))
         .setValue(track.url.slice(0, 100))
         .setDescription(
@@ -152,28 +150,26 @@ export class ContainerFactory {
         ),
     );
 
-    const checkboxGroup = new CheckboxGroupBuilder()
-      .setCustomId("MusicSearchCheckboxes")
+    const selectMenu = new StringSelectMenuBuilder()
+      .setCustomId(`search:select:${searchId}`)
+      .setPlaceholder("請點此選擇要加入隊列的歌曲 (可多選)")
       .addOptions(...options)
       .setMinValues(1)
-      .setMaxValues(options.length)
-      .setRequired(true);
+      .setMaxValues(options.length);
 
-    const searchLabel = new LabelBuilder()
-      .setLabel("搜尋結果")
-      .setDescription("請選擇要加入隊列的歌曲")
-      .setCheckboxGroupComponent(checkboxGroup);
+    const actionRow = new ActionRowBuilder<StringSelectMenuBuilder>().addComponents(selectMenu);
 
-    const modal = new ModalBuilder()
-      .setTitle("搜尋結果")
-      .setCustomId(`MusicSearchModal:${searchId}`)
-      .addLabelComponents(searchLabel);
+    const container = new ContainerBuilder()
+      .addTextDisplayComponents(
+        new TextDisplayBuilder().setContent(`### 🔍 搜尋結果\n請從下方選單選擇要加入隊列的歌曲：`)
+      )
+      .addActionRowComponents(actionRow);
 
-    return modal;
+    return container;
   }
 
-  static buildReply(type, description, user = null) {
-    const headers = {
+  static buildReply(type: string, description: string, user: any = null): ContainerBuilder {
+    const headers: Record<string, string> = {
       success: `${EMOJIS.LingLong} 音樂中心`,
       error: `${EMOJIS.LingLong} 音樂中心`,
       info: `${EMOJIS.LingLong} 音樂中心`,
@@ -187,7 +183,7 @@ export class ContainerFactory {
     );
   }
 
-  static buildSimpleMessage(title, description, requester = null) {
+  static buildSimpleMessage(title: string, description: string, requester: any = null): ContainerBuilder {
     const container = new ContainerBuilder().addTextDisplayComponents(
       new TextDisplayBuilder().setContent(`### ${title}\n${description}`),
     );

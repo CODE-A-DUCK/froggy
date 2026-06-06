@@ -1,4 +1,4 @@
-import { MessageFlags } from "discord.js";
+import { MessageFlags, ButtonInteraction } from "discord.js";
 
 import { EMOJIS } from "../../shared/emojis.js";
 
@@ -6,25 +6,25 @@ const LOOP_SEQUENCE = {
   關閉: "重播一次",
   重播一次: "單曲循環",
   單曲循環: "關閉",
-};
+} as const;
 
-export function shouldOptimisticallyUpdate(action) {
+export function shouldOptimisticallyUpdate(action: string): boolean {
   return action === "pause" || action === "resume" || action === "loop";
 }
 
-export async function optimisticallyUpdateController(interaction, action) {
+export async function optimisticallyUpdateController(interaction: ButtonInteraction, action: string): Promise<void> {
   const components = interaction.message?.components?.map((c) => c.toJSON());
   if (!components?.length) return;
   await interaction.message
     .edit({
       components: applyOptimisticState(components, action),
-      flags: MessageFlags.IsComponentsV2,
+      flags: MessageFlags.IsComponentsV2 as any,
     })
     .catch(() => null);
 }
 
-function applyOptimisticState(components, action) {
-  const visit = (c) => {
+function applyOptimisticState(components: any[], action: string): any[] {
+  const visit = (c: any): any => {
     if (!c || typeof c !== "object") return c;
     if (Array.isArray(c.components)) c.components = c.components.map(visit);
     if (typeof c.content === "string")
@@ -43,15 +43,15 @@ function applyOptimisticState(components, action) {
         style: 1,
       });
     else if (id === "MusicButtonControlLoop" && action === "loop") {
-      const current = `${c.label}`.split("：").pop()?.trim();
-      c.label = `循環：${LOOP_SEQUENCE[current] ?? "關閉"}`;
+      const current = `${c.label}`.split("：").pop()?.trim() as keyof typeof LOOP_SEQUENCE | undefined;
+      c.label = `循環：${(current && LOOP_SEQUENCE[current]) ?? "關閉"}`;
     }
     return c;
   };
   return components.map(visit);
 }
 
-function updateContent(content, action) {
+function updateContent(content: string, action: string): string {
   if (action === "pause")
     return content
       .replace(
@@ -68,8 +68,8 @@ function updateContent(content, action) {
       .replace("**狀態**：暫停", "**狀態**：播放中");
   if (action === "loop")
     return content.replace(/\*\*循環\*\*：[^・\n]+/, (m) => {
-      const current = m.split("：").pop()?.trim();
-      return `**循環**：${LOOP_SEQUENCE[current] ?? "關閉"}`;
+      const current = m.split("：").pop()?.trim() as keyof typeof LOOP_SEQUENCE | undefined;
+      return `**循環**：${(current && LOOP_SEQUENCE[current]) ?? "關閉"}`;
     });
   return content;
 }
