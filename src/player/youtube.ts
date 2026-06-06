@@ -72,7 +72,22 @@ async function spawnProcess(command: string, args: string[]): Promise<string> {
 /**
  * 影片元數據
  */
-export async function getTrackMetadata(query: string): Promise<any> {
+export interface TrackMetadata {
+  title: string;
+  url: string;
+  duration?: number;
+  thumbnail?: string;
+  uploader?: string;
+  view_count?: number;
+  like_count?: number;
+  upload_date?: string;
+  requested_at?: string;
+  interaction_token?: string;
+  controller_user_id?: string | null;
+  text_channel_id?: string | null;
+}
+
+export async function getTrackMetadata(query: string): Promise<TrackMetadata> {
   const trimmed = query.trim();
   const isUrl = (() => {
     try {
@@ -104,7 +119,7 @@ export async function getTrackMetadata(query: string): Promise<any> {
     "--flat-playlist",
     "--playlist-items",
     "1",
-    isUrl ? resolvedQuery : `ytsearch1:${resolvedQuery}`,
+    isUrl ? resolvedQuery : `ytmsearch1:${resolvedQuery}`,
   ];
 
   const stdout = await spawnProcess("yt-dlp", args);
@@ -127,7 +142,7 @@ export async function getTrackMetadata(query: string): Promise<any> {
 /**
  * 搜尋歌曲。
  */
-export async function searchTracks(query: string, count: number | string = 5): Promise<any[]> {
+export async function searchTracks(query: string, count: number | string = 5): Promise<TrackMetadata[]> {
   const check = validateSearchQuery(query);
   if (!check.ok) throw new Error(check.reason);
   const parsedCount = typeof count === "string" ? parseInt(count, 10) : count;
@@ -138,7 +153,7 @@ export async function searchTracks(query: string, count: number | string = 5): P
     "--no-warnings",
     "--dump-json",
     "--flat-playlist",
-    `ytsearch${safeCount}:${check.query}`,
+    `ytmsearch${safeCount}:${check.query}`,
   ];
 
   const stdout = await spawnProcess("yt-dlp", args);
@@ -153,7 +168,7 @@ export async function searchTracks(query: string, count: number | string = 5): P
         return null;
       }
     })
-    .filter((d) => d !== null)
+    .filter((d) => d !== null && (d.webpage_url || d.original_url || d.url))
     .map((d) => {
       return {
         title: d.title,

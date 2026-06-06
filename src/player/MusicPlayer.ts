@@ -12,13 +12,13 @@ import {
 } from "@discordjs/voice";
 import { Client } from "discord.js";
 
-import { getTrackMetadata, createAudioStream } from "./youtube.js";
+import { getTrackMetadata, createAudioStream, TrackMetadata } from "./youtube.js";
 
 export class MusicPlayer extends EventEmitter {
   public guildId: string;
   public client: Client;
-  public queue: any[];
-  public currentTrack: any | null;
+  public queue: TrackMetadata[];
+  public currentTrack: TrackMetadata | null;
   public connection: VoiceConnection | null;
   public player: AudioPlayer;
   public loopMode: number; // 0: off, 1: replay once, 2: loop track
@@ -139,8 +139,10 @@ export class MusicPlayer extends EventEmitter {
 
     // 下一首
     if (this.queue.length > 0) {
-      this.currentTrack = this.queue.shift();
-      this.currentTrack.interaction_token = "";
+      this.currentTrack = this.queue.shift() ?? null;
+      if (this.currentTrack) {
+        this.currentTrack.interaction_token = "";
+      }
       this.startPlayback();
     } else {
       this.currentTrack = null;
