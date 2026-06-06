@@ -1,4 +1,5 @@
 import { spawn } from "node:child_process";
+import { PassThrough } from "node:stream";
 
 import { StreamType, demuxProbe } from "@discordjs/voice";
 import ffmpegPath from "ffmpeg-static";
@@ -213,9 +214,11 @@ export async function createAudioStream(url: string): Promise<{ stream: any; inp
     const { stream: probedStream, type } = await demuxProbe(ytDlp.stdout);
 
     if (type === StreamType.WebmOpus || type === StreamType.OggOpus) {
-      probedStream.on("data", () => { producedAudio = true; });
+      const bufferStream = new PassThrough({ highWaterMark: 1024 * 1024 * 10 }); // 10MB buffer
+      probedStream.pipe(bufferStream);
+      bufferStream.on("data", () => { producedAudio = true; });
       return {
-        stream: probedStream,
+        stream: bufferStream,
         inputType: type,
         cleanup,
       };
@@ -257,14 +260,16 @@ export async function createAudioStream(url: string): Promise<{ stream: any; inp
         console.error("[createAudioStream] stdin error:", err);
     });
 
-    ffmpeg.stdout.on("data", () => {
+    const bufferStream = new PassThrough({ highWaterMark: 1024 * 1024 * 10 }); // 10MB buffer
+    ffmpeg.stdout.pipe(bufferStream);
+    bufferStream.on("data", () => {
       producedAudio = true;
     });
 
     ffmpeg.on("close", () => clearTimeout(stallTimeout));
 
     return {
-      stream: ffmpeg.stdout,
+      stream: bufferStream,
       inputType: StreamType.Raw,
       cleanup,
     };
