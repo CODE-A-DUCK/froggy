@@ -12,11 +12,11 @@ export const controllerCommand = {
     .setName("controller")
     .setDescription("把遙控器找回來"),
   async execute(interaction: ChatInputCommandInteraction, context: any) {
-    const validation = await validateVoiceState(interaction);
+    const validation = await validateVoiceState(interaction, { requireController: true });
     if (!validation) return;
 
-    const session = context.guildPlayerManager.getSession(interaction.guildId);
-    if (!session?.currentTrack) {
+    const currentTrack = context.controllerStore.getCurrentTrack(interaction.guildId);
+    if (!currentTrack) {
       return interaction.editReply({
         components: [
           ContainerFactory.buildReply(
@@ -30,10 +30,10 @@ export const controllerCommand = {
     }
 
     try {
-      await context.guildPlayerManager.dispatch({
+      context.ipcClient.emit("TRACK_STARTED", {
         guild_id: interaction.guildId,
-        action: "refresh_controller",
         text_channel_id: interaction.channelId,
+        ...currentTrack,
       });
       await interaction.editReply({
         components: [

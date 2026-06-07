@@ -11,12 +11,12 @@ export const stopCommand = {
     .setName("stop")
     .setDescription("停止播放並清空隊列"),
   async execute(interaction: ChatInputCommandInteraction, context: any) {
-    const validation = await validateVoiceState(interaction);
+    const validation = await validateVoiceState(interaction, { requireController: true });
     if (!validation) return;
     const { guild } = validation;
 
-    const session = context.guildPlayerManager.getSession(guild.id);
-    if (!session?.currentTrack) {
+    const currentTrack = context.controllerStore.getCurrentTrack(guild.id);
+    if (!currentTrack) {
       return interaction.editReply({
         components: [
           ContainerFactory.buildReply(
@@ -30,12 +30,10 @@ export const stopCommand = {
     }
 
     try {
-      await context.guildPlayerManager.dispatch({
+      await context.ipcClient.sendRequest("STOP", {
         guild_id: guild.id,
-        action: "stop",
         text_channel_id: interaction.channelId,
         controller_user_id: interaction.user.id,
-        interaction_token: interaction.token,
       });
       context.controllerStore.clearOwner(guild.id);
     } catch (err) {

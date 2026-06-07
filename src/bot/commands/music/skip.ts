@@ -11,11 +11,11 @@ export const skipCommand = {
     .setName("skip")
     .setDescription("跳過當前歌曲"),
   async execute(interaction: ChatInputCommandInteraction, context: any) {
-    const validation = await validateVoiceState(interaction);
+    const validation = await validateVoiceState(interaction, { requireController: true });
     if (!validation) return;
 
-    const session = context.guildPlayerManager.getSession(interaction.guildId!);
-    if (!session?.currentTrack) {
+    const currentTrack = context.controllerStore.getCurrentTrack(interaction.guildId!);
+    if (!currentTrack) {
       return interaction.editReply({
         components: [
           ContainerFactory.buildReply(
@@ -29,9 +29,8 @@ export const skipCommand = {
     }
 
     try {
-      await context.guildPlayerManager.dispatch({
+      await context.ipcClient.sendRequest("SKIP", {
         guild_id: interaction.guildId!,
-        action: "skip",
       });
       await interaction.editReply({
         components: [

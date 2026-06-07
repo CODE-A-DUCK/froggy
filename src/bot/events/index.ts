@@ -11,13 +11,18 @@ export async function registerEvents(client: Client, context: any) {
     (f) => f.match(/\.(js|ts)$/) && !f.startsWith("index"),
   );
 
-  for (const file of files) {
+  const promises = files.map(async (file) => {
     const fullPath = join(__dirname, file);
     const module = await import(pathToFileURL(fullPath).href);
     const event: any = Object.values(module).find(
       (val: any) => val && typeof val === "object" && val.name && val.execute,
     );
+    return event;
+  });
 
+  const events = await Promise.all(promises);
+
+  for (const event of events) {
     if (event) {
       const listener = (...args: any[]) => {
         // Execute the event handler, passing any provided context

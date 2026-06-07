@@ -127,11 +127,23 @@ export const handleButtonInteraction = async (interaction: ButtonInteraction, co
       ? optimisticallyUpdateController(interaction, control.action)
       : Promise.resolve();
 
-    await context.guildPlayerManager.dispatch({
-      guild_id: guildId,
-      action: control.action,
-      text_channel_id: channelId,
-    });
+    const ACTION_TO_OPCODE: Record<string, string> = {
+      stop: "STOP",
+      skip: "SKIP",
+      pause: "PAUSE",
+      resume: "RESUME",
+      loop: "LOOP",
+      refresh_controller: "SYNC_STATE",
+    };
+
+    const opcode = ACTION_TO_OPCODE[control.action];
+    if (opcode && context.ipcClient) {
+      await context.ipcClient.sendRequest(opcode, {
+        guild_id: guildId,
+        text_channel_id: channelId,
+      }).catch((err: any) => console.error(`[Button] IPC ${opcode} failed:`, err));
+    }
+
     await optimisticUpdate;
     return true;
   } catch (error) {

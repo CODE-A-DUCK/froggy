@@ -1,4 +1,4 @@
-import { readFileSync } from "node:fs";
+import { readFile } from "node:fs/promises";
 import { join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -14,7 +14,7 @@ import { EMOJIS } from "../../../shared/emojis.js";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const packagePath = join(__dirname, "../../../../package.json");
-const { version, description } = JSON.parse(readFileSync(packagePath, "utf8"));
+let packageData: { version: string; description: string } | null = null;
 
 function getReadableTime(ms: number) {
   const s = Math.floor((ms / 1000) % 60);
@@ -41,6 +41,11 @@ export const botinfoCommand = {
       await interaction.editReply("無法取得機器人資訊。");
       return;
     }
+
+    if (!packageData) {
+      packageData = JSON.parse(await readFile(packagePath, "utf8"));
+    }
+    const { version, description } = packageData!;
 
     const embed = new EmbedBuilder()
       .setAuthor({

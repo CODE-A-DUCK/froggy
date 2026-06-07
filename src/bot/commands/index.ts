@@ -7,26 +7,26 @@ import { REST, Routes, Interaction, MessageFlags } from "discord.js";
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
 async function loadCommands(dir = __dirname): Promise<any[]> {
-  const commands: any[] = [];
   const entries = readdirSync(dir, { withFileTypes: true });
-
-  for (const entry of entries) {
+  const promises = entries.map(async (entry) => {
     const fullPath = join(dir, entry.name);
     if (entry.isDirectory()) {
-      commands.push(...(await loadCommands(fullPath)));
+      return await loadCommands(fullPath);
     } else if (entry.name.match(/\.(js|ts)$/) && !entry.name.startsWith("index")) {
       const module = await import(pathToFileURL(fullPath).href);
       const command: any = Object.values(module).find(
         (val: any) => val && typeof val === "object" && val.data && val.execute,
       );
       if (command) {
-        // Fallback name if not set
         if (!command.name && command.data.name) command.name = command.data.name;
-        commands.push(command);
+        return [command];
       }
     }
-  }
-  return commands;
+    return [];
+  });
+
+  const results = await Promise.all(promises);
+  return results.flat();
 }
 
 export const commands = await loadCommands();

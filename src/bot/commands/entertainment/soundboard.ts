@@ -16,7 +16,7 @@ import {
   ChatInputCommandInteraction,
   StringSelectMenuInteraction,
   GuildMember,
-  Embed,
+  MessageFlags,
 } from "discord.js";
 
 import { validateVoiceState } from "../../../player/utils/voice-guard.js";
@@ -149,7 +149,7 @@ export const soundboardCommand = {
     if (interaction.guild && context.controllerStore.getOwner(interaction.guild.id)) {
       return interaction.reply({
         content: `${EMOJIS.errorwarningline} | 音樂播放中，無法使用音效面板`,
-        ephemeral: true,
+        flags: [MessageFlags.Ephemeral],
       });
     }
 
@@ -164,7 +164,7 @@ export const soundboardCommand = {
       if (value === "random") {
         const randomSound =
           soundList[Math.floor(Math.random() * soundList.length)];
-        await this.playSound(interaction, randomSound, embed);
+        await this.playSound(interaction, randomSound, EmbedBuilder.from(embed as any));
       } else if (value === "leave") {
         const connection = interaction.guild ? getVoiceConnection(interaction.guild.id) : null;
         if (connection) {
@@ -180,7 +180,7 @@ export const soundboardCommand = {
     }
   },
 
-  async playSound(interaction: StringSelectMenuInteraction, soundName: string, currentEmbed: Embed | null = null) {
+  async playSound(interaction: StringSelectMenuInteraction, soundName: string, currentEmbed: EmbedBuilder | null = null) {
     const soundPath = join(soundsDir, `${soundName}.mp3`);
 
     try {
@@ -211,7 +211,7 @@ export const soundboardCommand = {
       console.error("[Soundboard] Error:", error);
       await interaction.followUp({
         content: `${EMOJIS.errorwarningline} | 播放失敗`,
-        ephemeral: true,
+        flags: [MessageFlags.Ephemeral],
       });
     }
   },

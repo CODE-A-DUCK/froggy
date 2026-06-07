@@ -1,12 +1,8 @@
 import { MessageFlags, ModalSubmitInteraction } from "discord.js";
 import { ContainerFactory } from "../../player/ui/container-factory.js";
 import { EMOJIS } from "../../shared/emojis.js";
-import { searchCommand } from "../commands/music/search.js";
 
 export const handleModalInteraction = async (interaction: ModalSubmitInteraction, context: any) => {
-  if (interaction.customId.startsWith("MusicSearchModal:")) {
-    return searchCommand.handleSearchModalSubmit(interaction, context);
-  }
 
   if (interaction.customId === "MusicQueueRemoveModal") {
     const selectedValues = interaction.fields.getCheckboxGroup("MusicQueueRemoveCheckboxes");
@@ -32,13 +28,23 @@ export const handleModalInteraction = async (interaction: ModalSubmitInteraction
     }
 
     try {
+      const { controllerStore } = context;
+      const owners = controllerStore.getOwners(interaction.guildId);
+      if (owners.size > 0 && !owners.has(interaction.user.id)) {
+        return interaction.reply({
+          components: [ContainerFactory.buildReply("error", ":lock: | 你不能搶別人的遙控器", interaction.user as any)],
+          flags: [MessageFlags.Ephemeral, MessageFlags.IsComponentsV2 as any],
+        }).catch(() => null);
+      }
+
       await interaction.deferReply().catch(() => null);
 
-      const removed = await context.guildPlayerManager.dispatch({
+      const response = await context.ipcClient.sendRequest("REMOVE", {
         guild_id: interaction.guildId,
-        action: "remove",
         indices: selectedIndices,
-      });
+      }).catch(() => null);
+      
+      const removed = response?.d ?? [];
 
       if (removed.length === 0) {
         return interaction

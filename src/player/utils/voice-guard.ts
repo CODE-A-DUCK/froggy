@@ -56,11 +56,13 @@ export async function validateVoiceState(
     return null;
   }
 
-  let member = interaction.member as GuildMember | null;
-  if (!member || !member.voice) {
-    member = await guild.members.fetch(interaction.user.id);
+  let member = (interaction.member instanceof GuildMember
+    ? interaction.member
+    : guild.members.cache.get(interaction.user.id)) ?? null;
+  if (!member?.voice) {
+    member = await guild.members.fetch(interaction.user.id).catch(() => null);
   }
-  const userVoiceChannel = member.voice?.channel;
+  const userVoiceChannel = member?.voice?.channel ?? null;
 
   if (!userVoiceChannel) {
     await reply(
@@ -69,8 +71,8 @@ export async function validateVoiceState(
     return null;
   }
 
-  const botMember = guild.members.me || await guild.members.fetch(interaction.client.user.id);
-  const botVoiceChannel = botMember.voice?.channel;
+  const botMember = guild.members.me ?? guild.members.cache.get(interaction.client.user!.id) ?? await guild.members.fetch(interaction.client.user!.id).catch(() => null);
+  const botVoiceChannel = botMember?.voice?.channel ?? null;
 
   if (requireBotInVC && !botVoiceChannel) {
     await reply(
@@ -99,15 +101,15 @@ export async function validateVoiceState(
     }
     return {
       guild,
-      member,
+      member: member!,
       userVoiceChannel,
-      botMember,
+      botMember: botMember!,
       botVoiceChannel,
       ownerId: Array.from(owners)[0] ?? null,
     };
   }
 
-  return { guild, member, userVoiceChannel, botMember, botVoiceChannel };
+  return { guild, member: member!, userVoiceChannel, botMember: botMember!, botVoiceChannel };
 }
 
 export { CONTROLLER_DENIED_MESSAGE };

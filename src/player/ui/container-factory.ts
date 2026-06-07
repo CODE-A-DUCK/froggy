@@ -99,10 +99,10 @@ export class ContainerFactory {
 
     // Footer
     const timestamp = Math.floor(Date.now() / 1000);
-    const requesterName = requester ? (requester.tag || requester.username) : "";
+    const requesterName = requester?.tag || requester?.username || "";
     container.addTextDisplayComponents(
       new TextDisplayBuilder().setContent(
-        `-# 由 ${requesterName} 指定 • <t:${timestamp}:R>`,
+        requesterName ? `-# 由 ${requesterName} 指定 • <t:${timestamp}:R>` : `-# <t:${timestamp}:R>`
       ),
     );
 
@@ -190,10 +190,11 @@ export class ContainerFactory {
 
     container.addSeparatorComponents(new SeparatorBuilder().setSpacing(1));
     const timestamp = Math.floor(Date.now() / 1000);
-    const requesterName = requester ? (requester.tag || requester.username || "未知") : "系統";
+    const requesterName = requester?.tag || requester?.username || "";
+    
     container.addTextDisplayComponents(
       new TextDisplayBuilder().setContent(
-        `-# 由 ${requesterName} 指定 • <t:${timestamp}:R>`,
+        requesterName ? `-# 由 ${requesterName} 指定 • <t:${timestamp}:R>` : `-# <t:${timestamp}:R>`
       ),
     );
 

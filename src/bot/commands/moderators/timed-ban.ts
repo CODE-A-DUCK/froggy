@@ -90,7 +90,7 @@ export const timedbanCommand = {
 
       // auto unban
       if (interaction.guild) {
-        scheduleUnban(interaction.guild.id, targetUser.id, unbanAt, reason);
+        await scheduleUnban(interaction.guild.id, targetUser.id, unbanAt, reason);
       }
 
       const embed = new EmbedBuilder()

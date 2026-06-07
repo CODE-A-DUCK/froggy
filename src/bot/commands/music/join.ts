@@ -19,12 +19,7 @@ export const joinCommand = {
     if (!validation) return;
     const { guild, userVoiceChannel } = validation;
     try {
-      await context.guildPlayerManager.dispatch({
-        guild_id: guild.id,
-        action: "join",
-        channel_id: userVoiceChannel.id,
-        text_channel_id: interaction.channelId,
-      });
+      await context.voiceGateway.connectToChannel(guild.id, userVoiceChannel.id);
       await interaction.editReply({
         components: [
           ContainerFactory.buildReply(

@@ -6,6 +6,8 @@ import { handleModalInteraction } from "../handlers/modal-handler.js";
 export const interactionCreateEvent = {
   name: Events.InteractionCreate,
   async execute(interaction: Interaction, context: any) {
+    if (Date.now() - interaction.createdTimestamp > 2000) return;
+
     try {
       if (interaction.isChatInputCommand() || interaction.isAutocomplete()) {
         await handleInteraction(interaction, context);
