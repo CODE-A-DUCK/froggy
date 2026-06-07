@@ -145,25 +145,7 @@ presence(client);
 setupGoResponse(client);
 startAutoUnban(client);
 
-client.on("shardReady", (id) => console.info(`[Shard ${id}] Ready`));
-client.on("shardReconnecting", (id) =>
-  console.info(`[Shard ${id}] Reconnecting...`),
-);
-client.on("shardDisconnect", (event, id) =>
-  console.warn(`[Shard ${id}] Disconnected (code: ${event.code})`),
-);
-client.on("shardError", (error, id) =>
-  console.error(`[Shard ${id}] Error:`, error.message),
-);
 
 
-process.on("uncaughtException", (err) => {
-  console.error("[Main] Uncaught exception (continuing):", err);
-});
-process.on("unhandledRejection", (reason) => {
-  console.error("[Main] Unhandled rejection:", reason);
-});
 
-console.info("[Main] Connecting to Discord Gateway...");
 await client.login(config.token);
-

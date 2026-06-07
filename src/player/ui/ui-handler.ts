@@ -100,7 +100,6 @@ export class UIHandler {
   }
 
   private async handleTrackPlaying(event: any): Promise<void> {
-    console.info(`[UIHandler] track_playing Guild ${event.guild_id}: ${event.title}`);
     const guild = this.client.guilds.cache.get(event.guild_id);
     if (!guild) return;
 
@@ -138,7 +137,6 @@ export class UIHandler {
   }
 
   private async handleTrackEnded(event: any, stopped: boolean): Promise<void> {
-    console.info(`[UIHandler] ${stopped ? "track_stopped" : "track_finished"} Guild ${event.guild_id}`);
     const guild = this.client.guilds.cache.get(event.guild_id);
     if (!guild) return;
 
@@ -162,7 +160,6 @@ export class UIHandler {
   }
 
   private async handleBotDisconnect(event: any): Promise<void> {
-    console.info(`[UIHandler] bot_disconnect Guild ${event.guild_id}`);
     const guild = this.client.guilds.cache.get(event.guild_id);
     if (!guild) return;
 
