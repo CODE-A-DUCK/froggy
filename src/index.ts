@@ -1,4 +1,5 @@
 import { Client, Collection, GatewayIntentBits, Options } from "discord.js";
+import { Shoukaku, Connectors } from "shoukaku";
 
 import { commands } from "./bot/commands/index.js";
 import { setupGoResponse } from "./bot/events/go-response.js";
@@ -8,7 +9,6 @@ import { controllerStore } from "./bot/store/controller-store.js";
 import { startAutoUnban } from "./bot/utils/timed-ban-manager.js";
 import { config } from "./config.js";
 import { UIHandler } from "./player/ui/ui-handler.js";
-import { ControlPlaneClient } from "./bot/ws-client.js";
 import { VoiceGatewayManager } from "./bot/voice-gateway.js";
 import { nodeStateStore } from "./bot/store/node-state-store.js";
 
@@ -28,37 +28,106 @@ const client = new Client({
 
 client.commands = new Collection(commands.map((c: any) => [c.name, c]));
 
-const ipcClient = new ControlPlaneClient(process.env.AUDIO_NODE_URL || "ws://127.0.0.1:8080");
-ipcClient.connect();
+const shoukaku = new Shoukaku(new Connectors.DiscordJS(client), [{
+  name: "main",
+  url: `${config.lavalinkHost}:${config.lavalinkPort}`,
+  auth: config.lavalinkPassword,
+}], {
+  reconnectTries: 20,
+  reconnectInterval: 3000,
+});
 
-const voiceGateway = new VoiceGatewayManager(client, ipcClient);
+shoukaku.on("error", (_, error) => console.error("[Shoukaku] Error:", error));
+
+const voiceGateway = new VoiceGatewayManager(client, shoukaku);
 const uiHandler = new UIHandler({ client, controllerStore, voiceGateway });
-uiHandler.attach(ipcClient);
-ipcClient.on("STATE_UPDATE", (data: any) => {
-  if (data?.guild_id && data?.state) {
-    nodeStateStore.set(data.guild_id, data.state);
+
+voiceGateway.on("trackStart", async (player, track) => {
+  if (!track) return;
+  const guildId = player.guildId;
+  const info = track.info || track;
+  const identifier = info.identifier;
+
+  let extraStats = { views: null as string | null, likes: null as string | null, date: null as string | null };
+  if (identifier && (info.uri?.includes("youtube.com") || info.uri?.includes("youtu.be"))) {
+    // Dynamically import to avoid top-level issues if any
+    const { getYouTubeStats } = await import("./player/utils/youtube-stats.js");
+    extraStats = await getYouTubeStats(identifier);
+  }
+
+  const event = {
+    guild_id: guildId,
+    title: info.title,
+    source_url: info.uri,
+    uploader: info.author || info.uploader,
+    duration: Math.floor((info.length || info.duration || 0) / 1000),
+    thumbnail: info.artworkUrl,
+    views: extraStats.views,
+    likes: extraStats.likes,
+    upload_date: extraStats.date,
+    is_paused: player.paused,
+    loop_state: player.repeatMode === "off" ? 0 : player.repeatMode === "track" ? 1 : 2,
+    controller_user_id: player.controllerUserId,
+    interaction_token: player.interactionToken,
+    text_channel_id: player.textChannelId,
+    is_update: false,
+  };
+  nodeStateStore.set(guildId, "PLAYING");
+  uiHandler.onTrackPlaying(event);
+});
+
+voiceGateway.on("trackEnd", (player, track, payload) => {
+  const guildId = player.guildId;
+  const event = {
+    guild_id: guildId,
+    controller_user_id: player.controllerUserId,
+    interaction_token: player.interactionToken,
+    text_channel_id: player.textChannelId,
+  };
+  if (payload.reason === "replaced") return;
+  if (payload.reason === "stopped") {
+    uiHandler.onTrackEnded(event, true);
   }
 });
 
-ipcClient.on("NEED_VOICE_CONNECT", async (data: any) => {
-  const { guild_id, url, options } = data;
-  console.log(`[ControlPlane] Audio Node requested voice reconnect for Guild ${guild_id}`);
-  try {
-    const guild = client.guilds.cache.get(guild_id);
-    const voiceState = guild?.voiceStates.cache.get(client.user!.id);
-    if (!voiceState?.channelId) {
-      console.warn(`[ControlPlane] Bot is not in a voice channel for guild ${guild_id}, cannot auto-reconnect.`);
-      return;
-    }
-    await voiceGateway.connectToChannel(guild_id, voiceState.channelId);
-    await ipcClient.sendRequest("PLAY", { guild_id, url, ...options });
-    console.log(`[ControlPlane] Auto-reconnect + PLAY succeeded for Guild ${guild_id}`);
-  } catch (err) {
-    console.error(`[ControlPlane] Auto-reconnect failed for Guild ${guild_id}:`, err);
-  }
+voiceGateway.on("queueEnd", (player) => {
+  const guildId = player.guildId;
+  const event = {
+    guild_id: guildId,
+    controller_user_id: player.controllerUserId,
+    interaction_token: player.interactionToken,
+    text_channel_id: player.textChannelId,
+  };
+  nodeStateStore.set(guildId, "IDLE");
+  uiHandler.onTrackEnded(event, false);
 });
 
-const context = { controllerStore, ipcClient, voiceGateway, nodeStateStore };
+voiceGateway.on("trackError", (player, track, payload) => {
+  const guildId = player.guildId;
+  const event = {
+    guild_id: guildId,
+    error: payload.exception?.message || "Unknown error",
+    controller_user_id: player.controllerUserId,
+    interaction_token: player.interactionToken,
+    text_channel_id: player.textChannelId,
+  };
+  uiHandler.onTrackError(event);
+});
+
+voiceGateway.on("playerDisconnect", (player) => {
+  const guildId = player.guildId;
+  const event = {
+    guild_id: guildId,
+    text_channel_id: player.textChannelId,
+  };
+  nodeStateStore.set(guildId, "OFFLINE");
+  uiHandler.onBotDisconnect(event);
+  controllerStore.clearOwner(guildId);
+  controllerStore.clearMessageId(guildId);
+  controllerStore.clearCurrentTrack(guildId);
+});
+
+const context = { controllerStore, shoukaku, voiceGateway, nodeStateStore };
 
 registerEvents(client, context);
 presence(client);
@@ -86,3 +155,4 @@ process.on("unhandledRejection", (reason) => {
 
 console.info("[Main] Connecting to Discord Gateway...");
 await client.login(config.token);
+

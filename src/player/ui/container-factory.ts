@@ -20,7 +20,7 @@ import { formatDuration } from "../utils/format-duration.js";
 
 const LOOP_CONFIG = [
   { label: "關閉", emoji: "1510533896960479266" },
-  { label: "重播一次", emoji: "1510533898872946809" },
+  { label: "循環一次", emoji: "1510533898872946809" },
   { label: "單曲循環", emoji: "1510533874059444326" },
 ];
 
@@ -29,17 +29,15 @@ export class ContainerFactory {
    * 正在播放的 Container
    */
   static buildNowPlaying(event: any, requester: any): ContainerBuilder {
-    const titleLink = event.source_url
-      ? `[${event.title ?? "未知標題"}](${event.source_url})`
-      : (event.title ?? "未知標題");
+    const titleText = event.title ?? "未知標題";
 
     const textContent = [
-      `### ${EMOJIS.music2line} 正在播放：${titleLink}`,
-      // 可能是 Discord 的渲染處理的問題，所以當有
-      // 膚色修飾符的 emoji（如 🧔🏿 = 🧔 + 🏿 兩個 Unicode 碼位組合）放在 [文字](url) 的文字部分裡，
-      // Discord 的 Markdown parser 會在那個組合 emoji 的地方斷掉，導致整個連結語法解析失敗。
+      `### ${EMOJIS.music2line}：${titleText}`,
       `**發佈者**：${event.uploader ?? "未知"}`,
       `**時長**：${event.duration ? formatDuration(event.duration) : "LIVE"}`,
+      ...(event.upload_date ? [`**發佈日期**：${event.upload_date}`] : []),
+      ...(event.views ? [`**觀看次數**：${event.views}`] : []),
+      ...(event.likes ? [`**喜歡次數**：${event.likes}`] : []),
       `**狀態**：${event.is_paused ? "暫停中" : "播放中"}`,
       `**循環**：${LOOP_CONFIG[event.loop_state]?.label ?? "關閉"}`,
     ].join("\n");
@@ -88,12 +86,17 @@ export class ContainerFactory {
         .setEmoji({
           id: LOOP_CONFIG[event.loop_state]?.emoji ?? LOOP_CONFIG[0].emoji,
         }),
-      new ButtonBuilder()
-        .setCustomId("MusicButtonControlDetails")
-        .setLabel("| 詳情")
-        .setStyle(ButtonStyle.Secondary)
-        .setEmoji({ id: "1510539692716855326" }),
     );
+
+    if (event.source_url) {
+      actionRow.addComponents(
+        new ButtonBuilder()
+          .setLabel("| 連結")
+          .setStyle(ButtonStyle.Link)
+          .setURL(event.source_url)
+          .setEmoji({ id: "1511693322605826178" })
+      );
+    }
 
     container.addActionRowComponents(actionRow);
 
@@ -110,12 +113,13 @@ export class ContainerFactory {
   }
 
   static buildRemoveQueueModal(queue: any[]): ModalBuilder {
-    const options = queue.slice(0, 10).map((track, index) =>
-      new CheckboxGroupOptionBuilder()
-        .setLabel(track.title.slice(0, 100))
+    const options = queue.slice(0, 10).map((track, index) => {
+      const info = track.info || track;
+      return new CheckboxGroupOptionBuilder()
+        .setLabel(info.title.slice(0, 100))
         .setValue(index.toString())
-        .setDescription((track.uploader ?? "未知發佈者").slice(0, 100)),
-    );
+        .setDescription((info.author ?? info.uploader ?? "未知發佈者").slice(0, 100));
+    });
 
     const checkboxGroup = new CheckboxGroupBuilder()
       .setCustomId("MusicQueueRemoveCheckboxes")
@@ -138,17 +142,19 @@ export class ContainerFactory {
   }
 
   static buildSearchSelectMenu(results: any[], searchId: string): ContainerBuilder {
-    const options = results.slice(0, 10).map((track, index) =>
-      new StringSelectMenuOptionBuilder()
-        .setLabel(`${index + 1}. ${track.title}`.slice(0, 100))
-        .setValue(track.url.slice(0, 100))
+    const options = results.slice(0, 10).map((track, index) => {
+      const info = track?.info || track || {};
+      const durationStr = info.length ? formatDuration(Math.floor(info.length / 1000)) : (info.duration ? formatDuration(info.duration) : "LIVE");
+      return new StringSelectMenuOptionBuilder()
+        .setLabel(`${index + 1}. ${info.title || "未知歌曲"}`.slice(0, 100))
+        .setValue((info.uri || info.identifier || info.url || "unknown").slice(0, 100))
         .setDescription(
-          `${track.duration ? formatDuration(track.duration) : "LIVE"} · ${track.uploader ?? "未知發佈者"}`.slice(
+          `${durationStr} · ${info.author ?? info.uploader ?? "未知發佈者"}`.slice(
             0,
             100,
           ),
-        ),
-    );
+        );
+    });
 
     const selectMenu = new StringSelectMenuBuilder()
       .setCustomId(`search:select:${searchId}`)
@@ -191,7 +197,7 @@ export class ContainerFactory {
     container.addSeparatorComponents(new SeparatorBuilder().setSpacing(1));
     const timestamp = Math.floor(Date.now() / 1000);
     const requesterName = requester?.tag || requester?.username || "";
-    
+
     container.addTextDisplayComponents(
       new TextDisplayBuilder().setContent(
         requesterName ? `-# 由 ${requesterName} 指定 • <t:${timestamp}:R>` : `-# <t:${timestamp}:R>`

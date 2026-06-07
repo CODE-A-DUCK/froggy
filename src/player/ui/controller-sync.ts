@@ -1,15 +1,15 @@
 import { MessageFlags, ButtonInteraction } from "discord.js";
 
 const LOOP_SEQUENCE = {
-  關閉: "重播一次",
-  重播一次: "單曲循環",
-  單曲循環: "關閉",
+  "關閉": "循環一次",
+  "循環一次": "單曲循環",
+  "單曲循環": "關閉",
 } as const;
 
 const LOOP_EMOJIS = {
-  關閉: "1510533896960479266",
-  重播一次: "1510533898872946809",
-  單曲循環: "1510533874059444326",
+  "關閉": "1510533896960479266",
+  "循環一次": "1510533898872946809",
+  "單曲循環": "1510533874059444326",
 } as const;
 
 export function shouldOptimisticallyUpdate(action: string): boolean {
@@ -19,8 +19,8 @@ export function shouldOptimisticallyUpdate(action: string): boolean {
 export async function optimisticallyUpdateController(interaction: ButtonInteraction, action: string): Promise<void> {
   const components = interaction.message?.components?.map((c) => c.toJSON());
   if (!components?.length) return;
-  await interaction.message
-    .edit({
+  await interaction
+    .editReply({
       components: applyOptimisticState(components, action),
       flags: MessageFlags.IsComponentsV2 as any,
     })

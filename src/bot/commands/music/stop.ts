@@ -30,12 +30,25 @@ export const stopCommand = {
     }
 
     try {
-      await context.ipcClient.sendRequest("STOP", {
-        guild_id: guild.id,
-        text_channel_id: interaction.channelId,
-        controller_user_id: interaction.user.id,
-      });
+      const player = context.voiceGateway.getPlayer(guild.id);
+      if (player) {
+        player.textChannelId = interaction.channelId;
+        player.controllerUserId = interaction.user.id;
+        player.interactionToken = interaction.token;
+        await player.stopPlaying(true);
+      }
       context.controllerStore.clearOwner(guild.id);
+      
+      await interaction.editReply({
+        components: [
+          ContainerFactory.buildReply(
+            "success",
+            `${EMOJIS.stopcircleline} | 已停止播放並清空列隊。`,
+            interaction.user as any,
+          ),
+        ],
+        flags: [MessageFlags.IsComponentsV2 as any],
+      });
     } catch (err) {
       console.error("[Command] Stop error:", err);
       await interaction.editReply({

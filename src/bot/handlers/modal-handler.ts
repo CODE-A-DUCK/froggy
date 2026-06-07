@@ -39,12 +39,18 @@ export const handleModalInteraction = async (interaction: ModalSubmitInteraction
 
       await interaction.deferReply().catch(() => null);
 
-      const response = await context.ipcClient.sendRequest("REMOVE", {
-        guild_id: interaction.guildId,
-        indices: selectedIndices,
-      }).catch(() => null);
+      const player = context.voiceGateway.getPlayer(interaction.guildId);
+      const removed: any[] = [];
       
-      const removed = response?.d ?? [];
+      if (player) {
+        // Remove from highest index first to avoid shifting issues
+        const sortedIndices = [...selectedIndices].sort((a, b) => b - a);
+        for (const index of sortedIndices) {
+          if (index >= 0 && index < player.queue.length) {
+            removed.push(player.queue.splice(index, 1)[0].info);
+          }
+        }
+      }
 
       if (removed.length === 0) {
         return interaction

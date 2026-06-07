@@ -14,11 +14,14 @@ export const leaveCommand = {
     const validation = await validateVoiceState(interaction, { requireSameVC: true, requireController: true });
     if (!validation) return;
     const { guild, botVoiceChannel } = validation;
-    const { ipcClient, voiceGateway } = context;
+    const { voiceGateway } = context;
 
     try {
-      await ipcClient.sendRequest("STOP", { guild_id: guild.id }).catch(() => null);
-      voiceGateway.disconnectFromChannel(guild.id);
+      const player = voiceGateway.getPlayer(guild.id);
+      if (player) {
+        await player.stopPlaying(true).catch(() => null);
+      }
+      await voiceGateway.disconnectFromChannel(guild.id);
 
       await interaction.editReply({
         components: [

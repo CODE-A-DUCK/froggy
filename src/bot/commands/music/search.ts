@@ -38,8 +38,20 @@ export const searchCommand = {
 
     let results: any[] | undefined;
     try {
-      const res = await context.ipcClient.sendRequest("SEARCH", { query, count: 10 });
-      results = res.data?.results ?? res.results;
+      const node = context.shoukaku.options.nodeResolver(context.shoukaku.nodes);
+      if (!node) throw new Error("No available Lavalink nodes");
+
+      const res = await node.rest.resolve(`ytsearch:${query}`);
+      if (!res || res.loadType === "empty" || res.loadType === "error") {
+         throw new Error("No tracks found");
+      }
+      
+      if (res.loadType === "search" || res.loadType === "playlist") {
+        // limit to 10
+        results = res.data.length ? res.data.slice(0, 10) : res.data.tracks.slice(0, 10);
+      } else if (res.loadType === "track") {
+        results = [res.data];
+      }
     } catch (err: any) {
       console.error("[Command] Search error:", err.message);
       return interaction.editReply({
@@ -80,7 +92,7 @@ export const searchCommand = {
     if (!deferred) return;
 
     const validation = await validateVoiceState(interaction, {
-      requireBotInVC: true,
+      requireBotInVC: false,
       requireController: false,
     });
     if (!validation) return;
@@ -88,15 +100,20 @@ export const searchCommand = {
     const { guildId, channelId } = interaction;
     if (!guildId || !channelId) return;
     const { userVoiceChannel, botVoiceChannel } = validation;
-    const { controllerStore: cs, ipcClient, voiceGateway } = context;
+    const { controllerStore: cs, voiceGateway } = context;
 
     if (!botVoiceChannel) cs.clearOwner(guildId);
     if (!cs.getOwner(guildId)) cs.setOwner(guildId, interaction.user.id);
 
     try {
-      if (!nodeStateStore.isConnected(guildId)) {
-        await voiceGateway.connectToChannel(guildId, userVoiceChannel.id);
+      let player = voiceGateway.getPlayer(guildId);
+      if (!player) {
+        player = await voiceGateway.connectToChannel(guildId, userVoiceChannel.id);
       }
+
+      player.textChannelId = channelId;
+      player.controllerUserId = interaction.user.id;
+      player.interactionToken = "";
 
       let count = 0;
       let addedTitles: string[] = [];
@@ -107,18 +124,16 @@ export const searchCommand = {
         const urlCheck = validatePlayUrl(url);
         if (!urlCheck.ok) continue;
 
-        const track = results.find((r: any) => (r.webpage_url || r.url || r.original_url) === url || r.url === url);
-        addedTitles.push(`**[${track ? track.title : "未知歌曲"}](${url})**`);
-
-        await ipcClient.sendRequest("PLAY", {
-          guild_id: guildId,
-          url,
-          text_channel_id: channelId,
-          controller_user_id: interaction.user.id,
-          interaction_token: "",
-          silent: true,
-        });
-        count++;
+        const track = results.find((r: any) => (r.info?.uri || r.info?.identifier) === url || r.info?.uri === url);
+        if (track) {
+          addedTitles.push(`**[${track.info.title}](${url})**`);
+          player.queue.push(track);
+          count++;
+        }
+      }
+      
+      if (!player.currentTrack && !player.paused && count > 0) {
+        await player.play();
       }
 
       const titleStr = addedTitles.length > 0 ? `\n\n${addedTitles.map(t => `• ${t}`).join("\n")}` : "";

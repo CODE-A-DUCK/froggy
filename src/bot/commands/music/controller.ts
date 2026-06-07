@@ -30,11 +30,11 @@ export const controllerCommand = {
     }
 
     try {
-      context.ipcClient.emit("TRACK_STARTED", {
-        guild_id: interaction.guildId,
-        text_channel_id: interaction.channelId,
-        ...currentTrack,
-      });
+      const player = context.voiceGateway.getPlayer(interaction.guildId);
+      if (player) {
+        player.textChannelId = interaction.channelId;
+        context.voiceGateway.emit("trackStart", player, player.currentTrack);
+      }
       await interaction.editReply({
         components: [
           ContainerFactory.buildReply(

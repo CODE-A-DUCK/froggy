@@ -81,25 +81,9 @@ export const handleButtonInteraction = async (interaction: ButtonInteraction, co
       "pause",
       "resume",
       "loop",
-      "details",
       "refresh_controller",
     ]);
     if (!VALID_BUTTON_ACTIONS.has(control.action)) return false;
-
-    if (control.action === "details") {
-      const track = controllerStore.getCurrentTrack(guildId);
-      if (!track) {
-        replyError(interaction, `${EMOJIS.errorwarningline} | 找不到目前的歌曲資訊。`);
-        return true;
-      }
-      interaction
-        .followUp({
-          embeds: [buildDetailsEmbed(track)],
-          flags: [MessageFlags.Ephemeral],
-        })
-        .catch(() => null);
-      return true;
-    }
 
     const botMember = interaction.guild.members.me || await interaction.guild.members.fetch(interaction.client.user.id).catch(() => null);
     const botVoiceChannel = botMember?.voice.channel;
@@ -127,21 +111,24 @@ export const handleButtonInteraction = async (interaction: ButtonInteraction, co
       ? optimisticallyUpdateController(interaction, control.action)
       : Promise.resolve();
 
-    const ACTION_TO_OPCODE: Record<string, string> = {
-      stop: "STOP",
-      skip: "SKIP",
-      pause: "PAUSE",
-      resume: "RESUME",
-      loop: "LOOP",
-      refresh_controller: "SYNC_STATE",
-    };
-
-    const opcode = ACTION_TO_OPCODE[control.action];
-    if (opcode && context.ipcClient) {
-      await context.ipcClient.sendRequest(opcode, {
-        guild_id: guildId,
-        text_channel_id: channelId,
-      }).catch((err: any) => console.error(`[Button] IPC ${opcode} failed:`, err));
+    const player = context.voiceGateway.getPlayer(guildId);
+    if (player) {
+      if (control.action === "stop") {
+        await player.stopPlaying(true);
+      } else if (control.action === "skip") {
+        await player.skip();
+      } else if (control.action === "pause") {
+        await player.shoukakuPlayer.setPaused(true);
+      } else if (control.action === "resume") {
+        await player.shoukakuPlayer.setPaused(false);
+      } else if (control.action === "loop") {
+        const modes: ("off" | "track" | "queue")[] = ["off", "track", "queue"];
+        const currentIndex = modes.indexOf(player.repeatMode);
+        player.repeatMode = modes[(currentIndex + 1) % modes.length];
+        // Relies purely on optimisticallyUpdateController (interaction.editReply)
+      } else if (control.action === "refresh_controller") {
+        context.voiceGateway.emit("trackStart", player, player.currentTrack);
+      }
     }
 
     await optimisticUpdate;

@@ -29,9 +29,13 @@ export const skipCommand = {
     }
 
     try {
-      await context.ipcClient.sendRequest("SKIP", {
-        guild_id: interaction.guildId!,
-      });
+      const player = context.voiceGateway.getPlayer(interaction.guildId!);
+      if (player) {
+        player.textChannelId = interaction.channelId;
+        player.controllerUserId = interaction.user.id;
+        player.interactionToken = interaction.token;
+        await player.skip();
+      }
       await interaction.editReply({
         components: [
           ContainerFactory.buildReply(

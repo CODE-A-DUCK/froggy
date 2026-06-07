@@ -5,10 +5,9 @@ const emptyChannelTimeouts = new Map<string, NodeJS.Timeout>();
 export const voiceStateUpdateEvent = {
   name: Events.VoiceStateUpdate,
   async execute(oldState: VoiceState, newState: VoiceState, context: any) {
-    const { ipcClient, voiceGateway, nodeStateStore } = context;
+    const { lavalink, voiceGateway, nodeStateStore } = context;
     const guildId = newState.guild.id || oldState.guild.id;
 
-    // 機器人有加入才管
     if (!nodeStateStore.isConnected(guildId)) return;
 
     const botMember =
@@ -30,19 +29,21 @@ export const voiceStateUpdateEvent = {
             console.log(`[AutoLeave] No one in channel, 3 minute leave countdown started (Guild: ${guildId})`);
             const timeout = setTimeout(async () => {
               emptyChannelTimeouts.delete(guildId);
-              // 因为遇到了机器人断开连接然后重新连接的情况，所以需要重新检查
               const latestChannel = await newState.guild.channels.fetch(botChannelId).catch(() => null);
               if (latestChannel && latestChannel.isVoiceBased() && latestChannel.members.filter(m => !m.user.bot).size === 0) {
                 console.log(`[AutoLeave] No one in channel for 3 minutes, automatically leaving (Guild: ${guildId})`);
-                await ipcClient.sendRequest("STOP", { guild_id: guildId }).catch(() => null);
+                const player = lavalink.getPlayer(guildId);
+                if (player) {
+                  await player.stopPlaying(true).catch(() => null);
+                  await player.destroy("Disconnected").catch(() => null);
+                }
                 voiceGateway.disconnectFromChannel(guildId);
                 context.controllerStore?.clearOwner(guildId);
               }
-            }, 3 * 60 * 1000); // 经典 3 分钟
+            }, 3 * 60 * 1000);
             emptyChannelTimeouts.set(guildId, timeout);
           }
         } else {
-          // 有人加入頻道，取消離開倒數
           const existingTimeout = emptyChannelTimeouts.get(guildId);
           if (existingTimeout) {
             clearTimeout(existingTimeout);

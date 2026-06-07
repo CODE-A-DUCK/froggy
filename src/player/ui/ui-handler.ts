@@ -3,7 +3,6 @@ import { Client, MessageFlags, TextBasedChannel, Guild } from "discord.js";
 import { ControllerStore } from "../../bot/store/controller-store.js";
 import { EMOJIS } from "../../shared/emojis.js";
 import { formatUserFacingError } from "../utils/error-formatter.js";
-import { ControlPlaneClient } from "../../bot/ws-client.js";
 
 import { ContainerFactory } from "./container-factory.js";
 
@@ -21,7 +20,7 @@ export class UIHandler {
 
   private safe(guildId: string, fn: () => Promise<void>): void {
     const previous = this.guildLocks.get(guildId) || Promise.resolve();
-    const next = previous.then(() => 
+    const next = previous.then(() =>
       fn().catch((err) =>
         console.error(`[UIHandler] Unhandled error in event handler for guild ${guildId}:`, err),
       )
@@ -29,15 +28,20 @@ export class UIHandler {
     this.guildLocks.set(guildId, next);
   }
 
-  attach(ipcClient: ControlPlaneClient): void {
-    ipcClient.on("TRACK_STARTED", (e: any) => this.safe(e.guild_id, () => this.handleTrackPlaying(e)));
-    ipcClient.on("SESSION_UPDATED", (e: any) => this.safe(e.guild_id, () => this.handleTrackPlaying(e)));
-    ipcClient.on("TRACK_QUEUED", (e: any) => this.safe(e.guild_id, () => this.handleTrackAdded(e)));
-    ipcClient.on("QUEUE_FINISHED", (e: any) => this.safe(e.guild_id, () => this.handleTrackEnded(e, false)));
-    ipcClient.on("TRACK_STOPPED", (e: any) => this.safe(e.guild_id, () => this.handleTrackEnded(e, true)));
-    ipcClient.on("ERROR", (e: any) => this.safe(e.guild_id, () => this.handleTrackError(e)));
-    ipcClient.on("BOT_DISCONNECT", (e: any) => this.safe(e.guild_id, () => this.handleBotDisconnect(e)));
-    ipcClient.on("LOOP_CHANGED", (e: any) => this.safe(e.guild_id, () => this.handleLoopChanged(e)));
+  public onTrackPlaying(event: any): void {
+    this.safe(event.guild_id, () => this.handleTrackPlaying(event));
+  }
+
+  public onTrackEnded(event: any, stopped: boolean): void {
+    this.safe(event.guild_id, () => this.handleTrackEnded(event, stopped));
+  }
+
+  public onTrackError(event: any): void {
+    this.safe(event.guild_id, () => this.handleTrackError(event));
+  }
+
+  public onBotDisconnect(event: any): void {
+    this.safe(event.guild_id, () => this.handleBotDisconnect(event));
   }
 
   private async getRequester(userId?: string) {
@@ -84,7 +88,7 @@ export class UIHandler {
     }
     const priority = ["music", "bot", "general", "chat"];
     const channels = guild.channels.cache.size > 0 ? guild.channels.cache : await guild.channels.fetch() as any;
-    
+
     return Array.from(channels.values())
       .filter((c: any) => c && (c.type === 0 || c.type === 5) && c.permissionsFor(this.client.user!)?.has("SendMessages"))
       .sort((a: any, b: any) => {
@@ -140,7 +144,7 @@ export class UIHandler {
 
     const requester = await this.getRequester(event.controller_user_id);
     const ch = await this.resolveTextChannel(guild, event.text_channel_id);
-    
+
     await this.deletePreviousController(event.guild_id, ch);
     this.controllerStore.clearOwner(event.guild_id);
     this.controllerStore.clearCurrentTrack(event.guild_id);
@@ -178,28 +182,6 @@ export class UIHandler {
     await (ch as any).send({ components: [container as any], flags: [MessageFlags.IsComponentsV2 as any] }).catch(() => null);
   }
 
-  private async handleTrackAdded(event: any): Promise<void> {
-    if (event.silent) return;
-    console.info(`[UIHandler] track_added Guild ${event.guild_id}: ${event.title}`);
-    
-    const guild = this.client.guilds.cache.get(event.guild_id);
-    if (!guild) return;
-
-    const requester = await this.getRequester(event.controller_user_id);
-    const container = ContainerFactory.buildSimpleMessage(
-      `${EMOJIS.playlistaddline} | 已加入隊列`,
-      `**[${event.title}](${event.url})**`,
-      requester,
-    );
-
-    const ch = await this.resolveTextChannel(guild, event.text_channel_id);
-    const updated = await this.updateInteraction(event.interaction_token, [container.toJSON()]);
-
-    if (!updated && ch) {
-      await (ch as any).send({ components: [container as any], flags: [MessageFlags.IsComponentsV2 as any] }).catch(() => null);
-    }
-  }
-
   private async handleTrackError(event: any): Promise<void> {
     console.error(`[UIHandler] track_error Guild ${event.guild_id}: ${event.error}`);
     const guild = this.client.guilds.cache.get(event.guild_id);
@@ -216,29 +198,4 @@ export class UIHandler {
       await (ch as any).send({ components: [container as any], flags: [MessageFlags.IsComponentsV2 as any] }).catch(() => null);
     }
   }
-
-  private async handleLoopChanged(event: any): Promise<void> {
-    const guild = this.client.guilds.cache.get(event.guild_id);
-    if (!guild) return;
-
-    const currentTrack = this.controllerStore.getCurrentTrack(event.guild_id);
-    if (!currentTrack) return;
-    
-    const updatedTrack = { ...currentTrack, loop_state: event.loop_mode };
-    this.controllerStore.setCurrentTrack(event.guild_id, updatedTrack);
-
-    const msgId = this.controllerStore.getMessageId(event.guild_id);
-    if (!msgId) return;
-
-    const textChannel = await this.resolveTextChannel(guild, updatedTrack.text_channel_id);
-    if (!textChannel) return;
-
-    const msg = await (textChannel as any).messages.fetch(msgId).catch(() => null);
-    if (!msg) return;
-
-    const requester = await this.getRequester(updatedTrack.controller_user_id);
-    const container = ContainerFactory.buildNowPlaying(updatedTrack, requester);
-    await msg.edit({ components: [container as any], flags: [MessageFlags.IsComponentsV2 as any] }).catch(() => null);
-  }
-
 }

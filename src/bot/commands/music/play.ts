@@ -6,7 +6,6 @@ import { formatUserFacingError } from "../../../player/utils/error-formatter.js"
 import { validateVoiceState } from "../../../player/utils/voice-guard.js";
 import { EMOJIS } from "../../../shared/emojis.js";
 import { validatePlayUrl } from "../../security/sanitize-query.js";
-import { nodeStateStore } from "../../store/node-state-store.js";
 
 const PLAY_COOLDOWN_MS = 3000;
 
@@ -45,23 +44,53 @@ export const playCommand = {
     if (!validation) return;
 
     const { guild, userVoiceChannel, botVoiceChannel } = validation;
-    const { controllerStore: cs, ipcClient, voiceGateway } = context;
+    const { controllerStore: cs, shoukaku, voiceGateway } = context;
 
     if (!botVoiceChannel) cs.clearOwner(guild.id);
     if (!cs.getOwner(guild.id)) cs.setOwner(guild.id, interaction.user.id);
 
     try {
-      if (!nodeStateStore.isConnected(guild.id)) {
-        await voiceGateway.connectToChannel(guild.id, userVoiceChannel.id);
+      let currentPlayer = voiceGateway.getPlayer(guild.id);
+      if (!currentPlayer) {
+        currentPlayer = await voiceGateway.connectToChannel(guild.id, userVoiceChannel.id);
       }
 
-      await ipcClient.sendRequest("PLAY", {
-        guild_id: guild.id,
-        url: urlValidation.url,
-        text_channel_id: interaction.channelId,
-        controller_user_id: interaction.user.id,
-        interaction_token: interaction.token,
-      });
+      currentPlayer.textChannelId = interaction.channelId;
+      currentPlayer.interactionToken = interaction.token;
+      currentPlayer.controllerUserId = interaction.user.id;
+
+      const node = shoukaku.options.nodeResolver(shoukaku.nodes);
+      if (!node) throw new Error("No available Lavalink nodes");
+
+      const result = await node.rest.resolve(urlValidation.url);
+      if (!result || result.loadType === "empty" || result.loadType === "error") {
+        throw new Error("No tracks found or error occurred");
+      }
+
+      if (result.loadType === "playlist") {
+        for (const track of result.data.tracks) {
+          currentPlayer.queue.push(track);
+        }
+        if (!currentPlayer.currentTrack && !currentPlayer.paused) {
+          await currentPlayer.play();
+        }
+        await interaction.editReply({
+          flags: [MessageFlags.IsComponentsV2 as any],
+          components: [ContainerFactory.buildReply("success", `${EMOJIS.playlistaddline} | 已將播放清單加入隊列！`, interaction.user as any).toJSON() as any],
+        });
+      } else if (result.loadType === "track" || result.loadType === "search") {
+        const track = result.loadType === "search" ? result.data[0] : result.data;
+        currentPlayer.queue.push(track);
+        if (!currentPlayer.currentTrack && !currentPlayer.paused) {
+          await currentPlayer.play();
+        }
+        
+        const trackInfo = track.info || track;
+        await interaction.editReply({
+          flags: [MessageFlags.IsComponentsV2 as any],
+          components: [ContainerFactory.buildReply("success", `${EMOJIS.playlistaddline} | 已將 **${trackInfo.title || "歌曲"}** 加入隊列！`, interaction.user as any).toJSON() as any],
+        });
+      }
     } catch (err: any) {
       console.error("[Command] Play error:", err);
       cs.clearOwner(guild.id);

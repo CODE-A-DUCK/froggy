@@ -16,9 +16,9 @@ export const queueCommand = {
     if (!validation) return;
 
     try {
-      const stateRes = await context.ipcClient.sendRequest("SYNC_STATE", { guild_id: interaction.guildId }).catch(() => null);
-      const current = stateRes?.track ?? null;
-      const queue = stateRes?.queue ?? [];
+      const player = context.voiceGateway.getPlayer(interaction.guildId);
+      const current = player?.currentTrack ? player.currentTrack.info : null;
+      const queue = player?.queue ? player.queue.map((t: any) => t.info) : [];
 
       if (!current && queue.length === 0) {
         return interaction.reply({
