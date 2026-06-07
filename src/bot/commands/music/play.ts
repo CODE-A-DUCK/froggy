@@ -69,6 +69,8 @@ export const playCommand = {
 
       if (result.loadType === "playlist") {
         for (const track of result.data.tracks) {
+          track.pluginInfo = track.pluginInfo || {};
+          track.pluginInfo.requesterId = interaction.user.id;
           currentPlayer.queue.push(track);
         }
         if (!currentPlayer.currentTrack && !currentPlayer.paused) {
@@ -80,6 +82,8 @@ export const playCommand = {
         });
       } else if (result.loadType === "track" || result.loadType === "search") {
         const track = result.loadType === "search" ? result.data[0] : result.data;
+        track.pluginInfo = track.pluginInfo || {};
+        track.pluginInfo.requesterId = interaction.user.id;
         currentPlayer.queue.push(track);
         if (!currentPlayer.currentTrack && !currentPlayer.paused) {
           await currentPlayer.play();

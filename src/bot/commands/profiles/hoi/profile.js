@@ -178,7 +178,7 @@ export const hoi4profileCommand = {
         ctx.fillRect(rightX, rightY + 195, 340 * progress, 14);
       }
 
-      // Footer
+      // 頁尾
       ctx.fillStyle = "#475569";
       ctx.font = "11px 'Microsoft YaHei'";
       ctx.fillText(

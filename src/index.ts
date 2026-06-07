@@ -50,9 +50,20 @@ voiceGateway.on("trackStart", async (player, track) => {
 
   let extraStats = { views: null as string | null, likes: null as string | null, date: null as string | null };
   if (identifier && (info.uri?.includes("youtube.com") || info.uri?.includes("youtu.be"))) {
-    // Dynamically import to avoid top-level issues if any
+    // 動態匯入以避免可能的頂層載入問題
     const { getYouTubeStats } = await import("./player/utils/youtube-stats.js");
     extraStats = await getYouTubeStats(identifier);
+  }
+
+  const requesterId = track.pluginInfo?.requesterId || player.controllerUserId;
+
+  if (requesterId && requesterId !== player.controllerUserId) {
+    player.controllerUserId = requesterId;
+  }
+  
+  if (requesterId) {
+    controllerStore.clearOwner(guildId);
+    controllerStore.setOwner(guildId, requesterId);
   }
 
   const event = {
@@ -67,7 +78,7 @@ voiceGateway.on("trackStart", async (player, track) => {
     upload_date: extraStats.date,
     is_paused: player.paused,
     loop_state: player.repeatMode === "off" ? 0 : player.repeatMode === "track" ? 1 : 2,
-    controller_user_id: player.controllerUserId,
+    controller_user_id: requesterId,
     interaction_token: player.interactionToken,
     text_channel_id: player.textChannelId,
     is_update: false,

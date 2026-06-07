@@ -25,7 +25,7 @@ export async function registerEvents(client: Client, context: any) {
   for (const event of events) {
     if (event) {
       const listener = (...args: any[]) => {
-        // Execute the event handler, passing any provided context
+        // 執行事件處理程序，並傳遞任何提供的上下文 (context)
         Promise.resolve(event.execute(...args, context)).catch((err) => {
           console.error(`[Events] Failed to execute ${event.name}:`, err);
         });

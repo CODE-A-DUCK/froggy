@@ -1,7 +1,5 @@
 import { EmbedBuilder, MessageFlags, ButtonInteraction } from "discord.js";
 import { shouldOptimisticallyUpdate, optimisticallyUpdateController } from "../../player/ui/controller-sync.js";
-import { formatDuration } from "../../player/utils/format-duration.js";
-import { formatUploadDate } from "../../player/utils/format-upload-date.js";
 import { CONTROLLER_DENIED_MESSAGE } from "../../player/utils/voice-guard.js";
 import { EMOJIS } from "../../shared/emojis.js";
 import { controllerStore } from "../store/controller-store.js";
@@ -13,41 +11,6 @@ const replyError = (interaction: ButtonInteraction, description: string) =>
       flags: [MessageFlags.Ephemeral],
     })
     .catch(() => null);
-
-function buildDetailsEmbed(event: any) {
-  return new EmbedBuilder()
-    .setTitle("歌曲詳情")
-    .setDescription(`**[${event.title ?? "未知標題"}](${event.source_url ?? event.url})**`)
-    .setColor(0xa16b00)
-    .setThumbnail(event.thumbnail ?? null)
-    .addFields(
-      {
-        name: `${EMOJIS.userline} | 發佈者`,
-        value: event.uploader ?? "未知",
-        inline: true,
-      },
-      {
-        name: `${EMOJIS.timeline} | 時長`,
-        value: event.duration ? formatDuration(event.duration) : "LIVE",
-        inline: true,
-      },
-      {
-        name: `${EMOJIS.calendarline} | 上傳日期`,
-        value: formatUploadDate(event.upload_date) ?? "未知",
-        inline: true,
-      },
-      {
-        name: `${EMOJIS.eyeline} | 觀看次數`,
-        value: event.view_count?.toLocaleString() ?? "未知",
-        inline: true,
-      },
-      {
-        name: `${EMOJIS.thumbupline} | 點讚數量`,
-        value: event.like_count?.toLocaleString() ?? "未知",
-        inline: true,
-      },
-    );
-}
 
 function parseMusicControl(customId: string) {
   if (customId.startsWith("MusicButtonControl")) {
@@ -125,7 +88,7 @@ export const handleButtonInteraction = async (interaction: ButtonInteraction, co
         const modes: ("off" | "track" | "queue")[] = ["off", "track", "queue"];
         const currentIndex = modes.indexOf(player.repeatMode);
         player.repeatMode = modes[(currentIndex + 1) % modes.length];
-        // Relies purely on optimisticallyUpdateController (interaction.editReply)
+        // 單純依賴 optimisticallyUpdateController (interaction.editReply)
       } else if (control.action === "refresh_controller") {
         context.voiceGateway.emit("trackStart", player, player.currentTrack);
       }

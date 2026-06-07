@@ -2,7 +2,7 @@
 
 const MAX_QUERY_LENGTH = 200;
 
-// Allowlist
+// 允許清單
 const ALLOWED_HOSTS = new Set([
   "youtube.com",
   "www.youtube.com",

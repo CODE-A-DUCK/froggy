@@ -216,7 +216,7 @@ export const youtubeCommand = {
         });
       }
 
-      //Footer
+      // 頁尾
       ctx.fillStyle = "#666666";
       ctx.font = "12px 'Microsoft YaHei'";
       ctx.fillText("Froggy DC 機器人 • YouTube 頻道檔案", 70, 695);

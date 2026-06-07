@@ -47,7 +47,7 @@ export const searchCommand = {
       }
       
       if (res.loadType === "search" || res.loadType === "playlist") {
-        // limit to 10
+        // 限制最多 10 筆結果
         results = res.data.length ? res.data.slice(0, 10) : res.data.tracks.slice(0, 10);
       } else if (res.loadType === "track") {
         results = [res.data];
@@ -126,6 +126,8 @@ export const searchCommand = {
 
         const track = results.find((r: any) => (r.info?.uri || r.info?.identifier) === url || r.info?.uri === url);
         if (track) {
+          track.pluginInfo = track.pluginInfo || {};
+          track.pluginInfo.requesterId = interaction.user.id;
           addedTitles.push(`**[${track.info.title}](${url})**`);
           player.queue.push(track);
           count++;

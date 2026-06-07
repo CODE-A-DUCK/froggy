@@ -73,7 +73,7 @@ export const timedbanCommand = {
         }
       }
 
-      // calculating the banning itme, presented as Unix Timestamp in timeBans.json
+      // 計算封鎖時間，以 Unix 時間戳記格式儲存在 timeBans.json 中
       const unbanAt = Date.now() + days * 24 * 60 * 60 * 1000;
       const unbanDate = new Date(unbanAt).toLocaleString("zh-TW", {
         year: "numeric",
@@ -83,12 +83,12 @@ export const timedbanCommand = {
         minute: "2-digit",
       });
 
-      // ban
+      // 執行封鎖
       await interaction.guild?.members.ban(targetUser.id, {
         reason: `${reason}（${days} 天後自動解除）`,
       });
 
-      // auto unban
+      // 排程自動解除封鎖
       if (interaction.guild) {
         await scheduleUnban(interaction.guild.id, targetUser.id, unbanAt, reason);
       }

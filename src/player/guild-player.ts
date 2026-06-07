@@ -19,7 +19,7 @@ export class GuildPlayer extends EventEmitter {
     this.guildId = guildId;
     this.shoukakuPlayer = player;
 
-    // Apply "Studio" EQ for richer sound and 95% volume to prevent clipping
+    // 套用「錄音室」等化器以獲得更豐富的音效，並將音量設為 95% 以防止破音
     this.shoukakuPlayer.setGlobalVolume(95);
     this.shoukakuPlayer.setEqualizer([
       { band: 0, gain: 0.15 },
@@ -45,17 +45,16 @@ export class GuildPlayer extends EventEmitter {
 
     this.shoukakuPlayer.on("end", (data) => {
       if (data.reason === "replaced") return;
-      if (data.reason === "stopped") {
-        this.emit("trackEnd", this, this.currentTrack, data);
-        return;
-      }
-      // Handle auto skip / queue progression
+      
       const previousTrack = this.currentTrack;
 
-      if (this.repeatMode === "track" && previousTrack) {
+      // 如果歌曲正常結束且開啟了單曲循環，則重複播放。
+      // 如果 data.reason === "stopped"，表示使用者手動跳過，則中斷循環並播放下一首。
+      if (this.repeatMode === "track" && previousTrack && data.reason !== "stopped") {
         this.play(previousTrack);
       } else {
-        if (this.repeatMode === "queue" && previousTrack) {
+        // 只有在不是手動停止/跳過的情況下才推入隊列
+        if (this.repeatMode === "queue" && previousTrack && data.reason !== "stopped") {
           this.queue.push(previousTrack);
         }
         
@@ -64,6 +63,8 @@ export class GuildPlayer extends EventEmitter {
           this.play(nextTrack);
         } else {
           this.currentTrack = null;
+          // 發送 trackEnd 事件讓 UI 知道播放已完全停止
+          this.emit("trackEnd", this, previousTrack, data);
           this.emit("queueEnd", this);
         }
       }

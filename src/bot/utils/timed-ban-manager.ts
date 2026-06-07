@@ -68,5 +68,5 @@ export function startAutoUnban(client: Client) {
     } catch (err) {
       console.error("Error in startAutoUnban interval:", err);
     }
-  }, 60 * 1000); // check every 60 seconds
+  }, 60 * 1000); // 每 60 秒檢查一次
 }
