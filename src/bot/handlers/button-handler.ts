@@ -1,4 +1,5 @@
-import { EmbedBuilder, MessageFlags, ButtonInteraction } from "discord.js";
+import { MessageFlags, ButtonInteraction } from "discord.js";
+import { ContainerFactory } from "../../player/ui/container-factory.js";
 import { shouldOptimisticallyUpdate, optimisticallyUpdateController } from "../../player/ui/controller-sync.js";
 import { CONTROLLER_DENIED_MESSAGE } from "../../player/utils/voice-guard.js";
 import { EMOJIS } from "../../shared/emojis.js";
@@ -7,8 +8,8 @@ import { controllerStore } from "../store/controller-store.js";
 const replyError = (interaction: ButtonInteraction, description: string) =>
   interaction
     .followUp({
-      embeds: [new EmbedBuilder().setDescription(description).setColor(0xe9152d)],
-      flags: [MessageFlags.Ephemeral],
+      components: [ContainerFactory.buildReply("error", description, interaction.user as any).toJSON() as any],
+      flags: [MessageFlags.Ephemeral, MessageFlags.IsComponentsV2 as any],
     })
     .catch(() => null);
 

@@ -33,8 +33,8 @@ const shoukaku = new Shoukaku(new Connectors.DiscordJS(client), [{
   url: `${config.lavalinkHost}:${config.lavalinkPort}`,
   auth: config.lavalinkPassword,
 }], {
-  reconnectTries: 20,
-  reconnectInterval: 3000,
+  reconnectTries: 100,
+  reconnectInterval: 5000,
 });
 
 shoukaku.on("error", (_, error) => console.error("[Shoukaku] Error:", error));

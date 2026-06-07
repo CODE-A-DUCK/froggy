@@ -1,5 +1,6 @@
 import { MessageFlags, ModalSubmitInteraction } from "discord.js";
 import { ContainerFactory } from "../../player/ui/container-factory.js";
+import { CONTROLLER_DENIED_MESSAGE } from "../../player/utils/voice-guard.js";
 import { EMOJIS } from "../../shared/emojis.js";
 
 export const handleModalInteraction = async (interaction: ModalSubmitInteraction, context: any) => {
@@ -32,7 +33,7 @@ export const handleModalInteraction = async (interaction: ModalSubmitInteraction
       const owners = controllerStore.getOwners(interaction.guildId);
       if (owners.size > 0 && !owners.has(interaction.user.id)) {
         return interaction.reply({
-          components: [ContainerFactory.buildReply("error", ":lock: | 你不能搶別人的遙控器", interaction.user as any)],
+          components: [ContainerFactory.buildReply("error", CONTROLLER_DENIED_MESSAGE, interaction.user as any).toJSON() as any],
           flags: [MessageFlags.Ephemeral, MessageFlags.IsComponentsV2 as any],
         }).catch(() => null);
       }
