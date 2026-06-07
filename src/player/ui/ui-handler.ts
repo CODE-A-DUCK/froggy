@@ -1,4 +1,4 @@
-import { Client, MessageFlags, TextBasedChannel, Guild } from "discord.js";
+import { Client, MessageFlags, TextBasedChannel, Guild, ChannelType } from "discord.js";
 
 import { ControllerStore } from "../../bot/store/controller-store.js";
 import { EMOJIS } from "../../shared/emojis.js";
@@ -87,13 +87,15 @@ export class UIHandler {
       if (ch?.isTextBased()) return ch as TextBasedChannel;
     }
     const priority = ["music", "bot", "general", "chat"];
-    const channels = guild.channels.cache.size > 0 ? guild.channels.cache : await guild.channels.fetch() as any;
+    const channels = guild.channels.cache.size > 0 ? guild.channels.cache : await guild.channels.fetch();
 
     return Array.from(channels.values())
-      .filter((c: any) => c && (c.type === 0 || c.type === 5) && c.permissionsFor(this.client.user!)?.has("SendMessages"))
-      .sort((a: any, b: any) => {
-        const ai = priority.findIndex((n) => a.name?.toLowerCase().includes(n));
-        const bi = priority.findIndex((n) => b.name?.toLowerCase().includes(n));
+      .filter((c): c is any => !!c && (c.type === ChannelType.GuildText || c.type === ChannelType.GuildAnnouncement) && c.permissionsFor(this.client.user!)?.has("SendMessages") === true)
+      .sort((a, b) => {
+        const nameA = (a.name || "").toLowerCase();
+        const nameB = (b.name || "").toLowerCase();
+        const ai = priority.findIndex((n) => nameA.includes(n));
+        const bi = priority.findIndex((n) => nameB.includes(n));
         if (ai !== -1 && bi !== -1) return ai - bi;
         return ai !== -1 ? -1 : bi !== -1 ? 1 : 0;
       })[0] as TextBasedChannel ?? null;
