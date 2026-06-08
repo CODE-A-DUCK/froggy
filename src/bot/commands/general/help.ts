@@ -126,7 +126,6 @@ export const helpCommand = {
 
     const categoryValue = interaction.values[0];
 
-    // 精準比對前 100 個字元 (因為選單的 value 最多只能存 100 字)
     const commands = Array.from(interaction.client.commands.values()).filter(
       (cmd: any) => cmd.category && cmd.category.substring(0, 100) === categoryValue,
     );

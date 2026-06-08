@@ -66,7 +66,6 @@ export const queueCommand = {
         }).catch(() => null);
       }
     } catch (err) {
-      console.error("[Command] Queue error:", err);
       await interaction.reply({
         components: [
           ContainerFactory.buildReply(

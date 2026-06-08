@@ -43,11 +43,11 @@ export const searchCommand = {
 
       const res = await node.rest.resolve(`ytsearch:${query}`);
       if (!res || res.loadType === "empty" || res.loadType === "error") {
-         throw new Error("No tracks found");
+        throw new Error("No tracks found");
       }
-      
+
       if (res.loadType === "search" || res.loadType === "playlist") {
-        // 限制最多 10 筆結果
+        // max 10
         results = res.data.length ? res.data.slice(0, 10) : res.data.tracks.slice(0, 10);
       } else if (res.loadType === "track") {
         results = [res.data];
@@ -133,7 +133,7 @@ export const searchCommand = {
           count++;
         }
       }
-      
+
       if (!player.currentTrack && !player.paused && count > 0) {
         await player.play();
       }

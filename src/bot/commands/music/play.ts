@@ -133,7 +133,6 @@ export async function resolveAndQueue(
       });
     }
   } catch (err: any) {
-    console.error("[Command:Play] resolveAndQueue error:", err);
     cs.clearOwner(guild.id);
 
     const payload = {

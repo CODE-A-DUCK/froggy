@@ -63,7 +63,6 @@ export class UIHandler {
         return data.id;
       }
     } catch (err) {
-      console.error("[UIHandler] Error updating interaction:", err);
     }
     return false;
   }
@@ -87,7 +86,6 @@ export class UIHandler {
       const msg = await (targetCh as any).messages.fetch(msgId).catch(() => null);
       await msg?.delete().catch(() => null);
     } catch (err) {
-      console.error("[UIHandler] Error deleting previous controller:", err);
     }
   }
 

@@ -20,7 +20,7 @@ export class VoiceGatewayManager extends EventEmitter {
 
   public async connectToChannel(guildId: string, channelId: string): Promise<GuildPlayer> {
     let guildPlayer = this.players.get(guildId);
-    
+
     if (!guildPlayer) {
       const node = this.shoukaku.options.nodeResolver(this.shoukaku.nodes);
       if (!node) throw new Error("No available Lavalink nodes");
@@ -34,8 +34,7 @@ export class VoiceGatewayManager extends EventEmitter {
       });
 
       guildPlayer = new GuildPlayer(guildId, player);
-      
-      // 向上傳遞事件
+
       guildPlayer.on("trackStart", (p, t) => this.emit("trackStart", p, t));
       guildPlayer.on("trackEnd", (p, t, d) => this.emit("trackEnd", p, t, d));
       guildPlayer.on("queueEnd", (p) => this.emit("queueEnd", p));
@@ -46,10 +45,6 @@ export class VoiceGatewayManager extends EventEmitter {
       });
 
       this.players.set(guildId, guildPlayer);
-    } else {
-      // 如果已經連接，或許需要更新頻道？對 Shoukaku 來說不是必須的，但我們還是處理一下
-      // 實際上如果再次呼叫 joinVoiceChannel，Shoukaku 會自動處理，或者我們可以忽略它
-      // 目前直接回傳即可
     }
 
     return guildPlayer;

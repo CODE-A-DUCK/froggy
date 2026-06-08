@@ -19,7 +19,6 @@ export class GuildPlayer extends EventEmitter {
     this.guildId = guildId;
     this.shoukakuPlayer = player;
 
-    // 91 其实也不错我喜欢 91 视频
     this.shoukakuPlayer.setGlobalVolume(95);
 
     this.shoukakuPlayer.on("start", (data) => {
@@ -31,12 +30,9 @@ export class GuildPlayer extends EventEmitter {
 
       const previousTrack = this.currentTrack;
 
-      // 如果歌曲正常結束且開啟了單曲循環，則重複播放。
-      // 如果 data.reason === "stopped"，表示使用者手動跳過，則中斷循環並播放下一首。
       if (this.repeatMode === "track" && previousTrack && data.reason !== "stopped") {
         this.play(previousTrack);
       } else {
-        // 只有在不是手動停止/跳過的情況下才推入隊列
         if (this.repeatMode === "queue" && previousTrack && data.reason !== "stopped") {
           this.queue.push(previousTrack);
         }
@@ -46,7 +42,6 @@ export class GuildPlayer extends EventEmitter {
           this.play(nextTrack);
         } else {
           this.currentTrack = null;
-          // 發送 trackEnd 事件讓 UI 知道播放已完全停止
           this.emit("trackEnd", this, previousTrack, data);
           this.emit("queueEnd", this);
         }

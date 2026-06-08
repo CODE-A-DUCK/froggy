@@ -89,7 +89,6 @@ export const handleButtonInteraction = async (interaction: ButtonInteraction, co
         const modes: ("off" | "track" | "queue")[] = ["off", "track", "queue"];
         const currentIndex = modes.indexOf(player.repeatMode);
         player.repeatMode = modes[(currentIndex + 1) % modes.length];
-        // 單純依賴 optimisticallyUpdateController (interaction.editReply)
       } else if (control.action === "refresh_controller") {
         context.voiceGateway.emit("trackStart", player, player.currentTrack);
       }
@@ -98,7 +97,6 @@ export const handleButtonInteraction = async (interaction: ButtonInteraction, co
     await optimisticUpdate;
     return true;
   } catch (error) {
-    console.error("[Button] Critical error:", error);
     return true;
   }
 };
