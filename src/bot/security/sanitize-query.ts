@@ -33,6 +33,7 @@ export function validatePlayUrl(input: any): { ok: true; url: string } | { ok: f
 }
 
 
+
 export function validateSearchQuery(input: any): { ok: true; query: string } | { ok: false; reason: string } {
   if (typeof input !== "string")
     return { ok: false, reason: "Query must be a string" };

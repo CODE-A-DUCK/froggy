@@ -32,14 +32,14 @@ export class ContainerFactory {
     const titleText = event.title ?? "未知標題";
 
     const textContent = [
-      `### ${EMOJIS.music2line}：${titleText}`,
-      `**發佈者**：${event.uploader ?? "未知"}`,
-      `**時長**：${event.duration ? formatDuration(event.duration) : "LIVE"}`,
-      ...(event.upload_date ? [`**發佈日期**：${event.upload_date}`] : []),
-      ...(event.views ? [`**觀看次數**：${event.views}`] : []),
-      ...(event.likes ? [`**喜歡次數**：${event.likes}`] : []),
-      `**狀態**：${event.is_paused ? "暫停中" : "播放中"}`,
-      `**循環**：${LOOP_CONFIG[event.loop_state]?.label ?? "關閉"}`,
+      `### ${titleText}`,
+      `**${EMOJIS.userline} | 發佈者**：${event.uploader ?? "未知"}`,
+      `**${EMOJIS.timeline} | 時長**：${event.duration ? formatDuration(event.duration) : "LIVE"}`,
+      ...(event.upload_date ? [`**${EMOJIS.calendarline} | 發佈日期**：${event.upload_date}`] : []),
+      ...(event.views ? [`**${EMOJIS.eyeline} | 觀看次數**：${event.views}`] : []),
+      ...(event.likes ? [`**${EMOJIS.thumbupline} | 喜歡次數**：${event.likes}`] : []),
+      `**${EMOJIS.suncloudyline} | 狀態**：${event.is_paused ? "暫停中" : "播放中"}`,
+      `**${EMOJIS.circleline} | 循環**：${LOOP_CONFIG[event.loop_state]?.label ?? "關閉"}`,
     ].join("\n");
 
     const container = new ContainerBuilder();
@@ -167,7 +167,7 @@ export class ContainerFactory {
 
     const container = new ContainerBuilder()
       .addTextDisplayComponents(
-        new TextDisplayBuilder().setContent(`### 🔍 搜尋結果\n請從下方選單選擇要加入隊列的歌曲：`)
+        new TextDisplayBuilder().setContent(`### ${EMOJIS.search2line} 搜尋結果\n請從下方選單選擇要加入隊列的歌曲：`)
       )
       .addActionRowComponents(actionRow);
 
@@ -206,4 +206,5 @@ export class ContainerFactory {
 
     return container;
   }
+
 }

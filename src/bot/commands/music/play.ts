@@ -1,4 +1,4 @@
-import { SlashCommandBuilder, MessageFlags, ChatInputCommandInteraction } from "discord.js";
+import { SlashCommandBuilder, MessageFlags, ChatInputCommandInteraction, ButtonInteraction, GuildMember } from "discord.js";
 
 import { ContainerFactory } from "../../../player/ui/container-factory.js";
 import { checkCooldown, getRemainingCooldown } from "../../../player/utils/cooldown.js";
@@ -23,7 +23,7 @@ export const playCommand = {
     if (!checkCooldown(interaction.user.id, "play", PLAY_COOLDOWN_MS)) {
       const ms = getRemainingCooldown(interaction.user.id, "play");
       return interaction.editReply({
-        components: [ContainerFactory.buildReply("warning", `${EMOJIS.hourglassline} | 請等待 ${(ms / 1000).toFixed(1)} 秒後再使用。`, interaction.user as any)],
+        components: [ContainerFactory.buildReply("warning", `${EMOJIS.hourglassline} | 請等待 ${(ms / 1000).toFixed(1)} 秒後再使用。`, interaction.user as any).toJSON() as any],
         flags: [MessageFlags.IsComponentsV2 as any],
       });
     }
@@ -32,7 +32,7 @@ export const playCommand = {
     const urlValidation = validatePlayUrl(query);
     if (!urlValidation.ok) {
       return interaction.editReply({
-        components: [ContainerFactory.buildReply("warning", `${EMOJIS.errorwarningline} | 請提供有效的 YouTube 連結。搜尋歌曲請使用 \`/search\` 指令。`, interaction.user as any)],
+        components: [ContainerFactory.buildReply("warning", `${EMOJIS.errorwarningline} | 請提供有效的 YouTube 連結。搜尋歌曲請使用 \`/search\` 指令。`, interaction.user as any).toJSON() as any],
         flags: [MessageFlags.IsComponentsV2 as any],
       });
     }
@@ -43,66 +43,114 @@ export const playCommand = {
     });
     if (!validation) return;
 
-    const { guild, userVoiceChannel, botVoiceChannel } = validation;
-    const { controllerStore: cs, shoukaku, voiceGateway } = context;
+    const { guild, botVoiceChannel } = validation;
+    const { controllerStore: cs } = context;
 
     if (!botVoiceChannel) cs.clearOwner(guild.id);
     if (!cs.getOwner(guild.id)) cs.setOwner(guild.id, interaction.user.id);
 
+    let finalUrl = urlValidation.url;
     try {
-      let currentPlayer = voiceGateway.getPlayer(guild.id);
-      if (!currentPlayer) {
-        currentPlayer = await voiceGateway.connectToChannel(guild.id, userVoiceChannel.id);
-      }
+      const parsedUrl = new URL(finalUrl);
+      parsedUrl.searchParams.delete("list");
+      parsedUrl.searchParams.delete("index");
+      parsedUrl.searchParams.delete("start_radio");
+      finalUrl = parsedUrl.href;
+    } catch { }
 
-      currentPlayer.textChannelId = interaction.channelId;
-      currentPlayer.interactionToken = interaction.token;
-      currentPlayer.controllerUserId = interaction.user.id;
-
-      const node = shoukaku.options.nodeResolver(shoukaku.nodes);
-      if (!node) throw new Error("No available Lavalink nodes");
-
-      const result = await node.rest.resolve(urlValidation.url);
-      if (!result || result.loadType === "empty" || result.loadType === "error") {
-        throw new Error("No tracks found or error occurred");
-      }
-
-      if (result.loadType === "playlist") {
-        for (const track of result.data.tracks) {
-          track.pluginInfo = track.pluginInfo || {};
-          track.pluginInfo.requesterId = interaction.user.id;
-          currentPlayer.queue.push(track);
-        }
-        if (!currentPlayer.currentTrack && !currentPlayer.paused) {
-          await currentPlayer.play();
-        }
-        await interaction.editReply({
-          flags: [MessageFlags.IsComponentsV2 as any],
-          components: [ContainerFactory.buildReply("success", `${EMOJIS.playlistaddline} | 已將播放清單加入隊列！`, interaction.user as any).toJSON() as any],
-        });
-      } else if (result.loadType === "track" || result.loadType === "search") {
-        const track = result.loadType === "search" ? result.data[0] : result.data;
-        track.pluginInfo = track.pluginInfo || {};
-        track.pluginInfo.requesterId = interaction.user.id;
-        currentPlayer.queue.push(track);
-        if (!currentPlayer.currentTrack && !currentPlayer.paused) {
-          await currentPlayer.play();
-        }
-        
-        const trackInfo = track.info || track;
-        await interaction.editReply({
-          flags: [MessageFlags.IsComponentsV2 as any],
-          components: [ContainerFactory.buildReply("success", `${EMOJIS.playlistaddline} | 已將 **${trackInfo.title || "歌曲"}** 加入隊列！`, interaction.user as any).toJSON() as any],
-        });
-      }
-    } catch (err: any) {
-      console.error("[Command] Play error:", err);
-      cs.clearOwner(guild.id);
-
-      await interaction.editReply({
-        components: [ContainerFactory.buildSimpleMessage("播放錯誤", `${EMOJIS.errorwarningline} | ${formatUserFacingError(err?.message)}`, interaction.user as any)],
-        flags: [MessageFlags.IsComponentsV2 as any],
-      });
-    }
+    await resolveAndQueue(interaction, finalUrl, interaction.user.id, context, false);
   },
 };
+
+export async function resolveAndQueue(
+  interaction: ChatInputCommandInteraction | ButtonInteraction,
+  url: string,
+  userId: string,
+  context: any,
+  isPlaylist: boolean
+) {
+  const { controllerStore: cs, shoukaku, voiceGateway } = context;
+  const guild = interaction.guild!;
+  const member = interaction.member as GuildMember;
+  const userVoiceChannel = member.voice.channel!;
+
+  try {
+    let currentPlayer = voiceGateway.getPlayer(guild.id);
+    if (!currentPlayer) {
+      currentPlayer = await voiceGateway.connectToChannel(guild.id, userVoiceChannel.id);
+    }
+
+    currentPlayer.textChannelId = interaction.channelId;
+    currentPlayer.interactionToken = interaction.token;
+    currentPlayer.controllerUserId = userId;
+
+    const node = shoukaku.options.nodeResolver(shoukaku.nodes);
+    if (!node) throw new Error("No available Lavalink nodes");
+
+    const result = await node.rest.resolve(url);
+    if (!result || result.loadType === "empty" || result.loadType === "error") {
+      throw new Error("No tracks found or error occurred");
+    }
+
+    if (result.loadType === "playlist") {
+      for (const track of result.data.tracks) {
+        track.pluginInfo = track.pluginInfo || {};
+        track.pluginInfo.requesterId = userId;
+        currentPlayer.queue.push(track);
+      }
+      if (!currentPlayer.currentTrack && !currentPlayer.paused) {
+        await currentPlayer.play();
+      }
+      await interaction.editReply({
+        flags: [MessageFlags.IsComponentsV2 as any],
+        components: [
+          ContainerFactory.buildReply(
+            "success",
+            `${EMOJIS.playlistaddline} | 已將播放清單加入隊列！`,
+            interaction.user as any
+          ).toJSON() as any
+        ],
+      });
+    } else if (result.loadType === "track" || result.loadType === "search") {
+      const track = result.loadType === "search" ? result.data[0] : result.data;
+      track.pluginInfo = track.pluginInfo || {};
+      track.pluginInfo.requesterId = userId;
+      currentPlayer.queue.push(track);
+      if (!currentPlayer.currentTrack && !currentPlayer.paused) {
+        await currentPlayer.play();
+      }
+
+      const trackInfo = track.info || track;
+      await interaction.editReply({
+        flags: [MessageFlags.IsComponentsV2 as any],
+        components: [
+          ContainerFactory.buildReply(
+            "success",
+            `${EMOJIS.playlistaddline} | 已將 **${trackInfo.title || "歌曲"}** 加入隊列！`,
+            interaction.user as any
+          ).toJSON() as any
+        ],
+      });
+    }
+  } catch (err: any) {
+    console.error("[Command:Play] resolveAndQueue error:", err);
+    cs.clearOwner(guild.id);
+
+    const payload = {
+      components: [
+        ContainerFactory.buildSimpleMessage(
+          "播放錯誤",
+          `${EMOJIS.errorwarningline} | ${formatUserFacingError(err?.message)}`,
+          interaction.user as any
+        ).toJSON() as any
+      ],
+      flags: [MessageFlags.IsComponentsV2 as any]
+    };
+
+    if (interaction.deferred || interaction.replied) {
+      await interaction.editReply(payload);
+    } else {
+      await interaction.reply(payload);
+    }
+  }
+}

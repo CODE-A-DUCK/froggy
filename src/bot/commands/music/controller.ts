@@ -33,6 +33,7 @@ export const controllerCommand = {
       const player = context.voiceGateway.getPlayer(interaction.guildId);
       if (player) {
         player.textChannelId = interaction.channelId;
+        player.interactionToken = null; // 清除 token，強制 UI 處理器發送新訊息而非編輯舊的
         context.voiceGateway.emit("trackStart", player, player.currentTrack);
       }
       await interaction.editReply({

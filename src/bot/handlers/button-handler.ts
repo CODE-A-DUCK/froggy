@@ -1,7 +1,7 @@
 import { MessageFlags, ButtonInteraction } from "discord.js";
 import { ContainerFactory } from "../../player/ui/container-factory.js";
 import { shouldOptimisticallyUpdate, optimisticallyUpdateController } from "../../player/ui/controller-sync.js";
-import { CONTROLLER_DENIED_MESSAGE } from "../../player/utils/voice-guard.js";
+import { CONTROLLER_DENIED_MESSAGE, validateVoiceState } from "../../player/utils/voice-guard.js";
 import { EMOJIS } from "../../shared/emojis.js";
 import { controllerStore } from "../store/controller-store.js";
 

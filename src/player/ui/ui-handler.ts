@@ -72,9 +72,19 @@ export class UIHandler {
     const msgId = this.controllerStore.getMessageId(guildId);
     if (!msgId) return;
     this.controllerStore.clearMessageId(guildId);
-    if (!channel) return;
+
+    const oldEvent = this.controllerStore.getCurrentTrack(guildId);
+    let targetCh = channel;
+    if (oldEvent && oldEvent.text_channel_id && (!channel || channel.id !== oldEvent.text_channel_id)) {
+      const guild = this.client.guilds.cache.get(guildId);
+      if (guild) {
+        targetCh = guild.channels.cache.get(oldEvent.text_channel_id) as TextBasedChannel || channel;
+      }
+    }
+
+    if (!targetCh) return;
     try {
-      const msg = await (channel as any).messages.fetch(msgId).catch(() => null);
+      const msg = await (targetCh as any).messages.fetch(msgId).catch(() => null);
       await msg?.delete().catch(() => null);
     } catch (err) {
       console.error("[UIHandler] Error deleting previous controller:", err);
