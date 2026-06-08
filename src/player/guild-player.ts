@@ -55,6 +55,21 @@ export class GuildPlayer extends EventEmitter {
     this.shoukakuPlayer.on("closed", (data) => {
       this.emit("playerDisconnect", this);
     });
+
+    let lastUpdate = 0;
+    this.shoukakuPlayer.on("update", (data) => {
+      const duration = this.currentTrack?.info?.length || 0;
+      
+      // 如果 duration <= 0 (代表是 LIVE 直播)，我們完全不需要更新進度條
+      if (duration <= 0) return;
+
+      const interval = Math.max(Math.floor(duration / 10 / 2), 15000);
+
+      if (Date.now() - lastUpdate > interval) {
+        lastUpdate = Date.now();
+        this.emit("trackUpdate", this, this.currentTrack, data.state.position);
+      }
+    });
   }
 
   public get paused() {

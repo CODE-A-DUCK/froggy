@@ -12,7 +12,7 @@ export const controllerCommand = {
     .setName("controller")
     .setDescription("把遙控器找回來"),
   async execute(interaction: ChatInputCommandInteraction, context: any) {
-    const validation = await validateVoiceState(interaction, { requireController: true });
+    const validation = await validateVoiceState(interaction, { requireController: false });
     if (!validation) return;
 
     const currentTrack = context.controllerStore.getCurrentTrack(interaction.guildId);

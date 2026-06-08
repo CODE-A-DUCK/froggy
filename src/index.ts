@@ -87,6 +87,17 @@ voiceGateway.on("trackStart", async (player, track) => {
   uiHandler.onTrackPlaying(event);
 });
 
+voiceGateway.on("trackUpdate", (player, track, position) => {
+  if (!track) return;
+  const guildId = player.guildId;
+  const event = controllerStore.getCurrentTrack(guildId);
+  if (event && !player.paused) {
+    event.position = Math.floor(position / 1000);
+    event.is_update = true;
+    uiHandler.onTrackPlaying(event);
+  }
+});
+
 voiceGateway.on("trackEnd", (player, track, payload) => {
   const guildId = player.guildId;
   const event = {

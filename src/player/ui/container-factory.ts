@@ -31,15 +31,22 @@ export class ContainerFactory {
   static buildNowPlaying(event: any, requester: any): ContainerBuilder {
     const titleText = event.title ?? "未知標題";
 
+    const durationText = event.duration ? formatDuration(event.duration) : "LIVE";
+    let progressStr = durationText;
+    if (event.duration > 0) {
+      const p = Math.round(Math.min(Math.max((event.position || 0) / event.duration, 0), 1) * 10);
+      progressStr = `[ ${"<:prog0:1513487953039458544>".repeat(p)}${"<:prog1:1513495241217282228>".repeat(10 - p)} ] \`${formatDuration(event.position || 0)} / ${durationText}\``;
+    }
+
     const textContent = [
       `### ${titleText}`,
       `**${EMOJIS.userline} | 發佈者**：${event.uploader ?? "未知"}`,
-      `**${EMOJIS.timeline} | 時長**：${event.duration ? formatDuration(event.duration) : "LIVE"}`,
       ...(event.upload_date ? [`**${EMOJIS.calendarline} | 發佈日期**：${event.upload_date}`] : []),
       ...(event.views ? [`**${EMOJIS.eyeline} | 觀看次數**：${event.views}`] : []),
       ...(event.likes ? [`**${EMOJIS.thumbupline} | 喜歡次數**：${event.likes}`] : []),
-      `**${EMOJIS.suncloudyline} | 狀態**：${event.is_paused ? "暫停中" : "播放中"}`,
-      `**${EMOJIS.circleline} | 循環**：${LOOP_CONFIG[event.loop_state]?.label ?? "關閉"}`,
+      `**${EMOJIS.informationline} | 狀態**：${event.is_paused ? "暫停中" : "播放中"}`,
+      `**${EMOJIS.refreshline} | 循環**：${LOOP_CONFIG[event.loop_state]?.label ?? "關閉"}`,
+      `**${EMOJIS.timeline} | 時長**：${progressStr}`
     ].join("\n");
 
     const container = new ContainerBuilder();

@@ -43,6 +43,7 @@ export class VoiceGatewayManager extends EventEmitter {
         guildPlayer = new GuildPlayer(guildId, player);
 
         guildPlayer.on("trackStart", (p, t) => this.emit("trackStart", p, t));
+        guildPlayer.on("trackUpdate", (p, t, pos) => this.emit("trackUpdate", p, t, pos));
         guildPlayer.on("trackEnd", (p, t, d) => this.emit("trackEnd", p, t, d));
         guildPlayer.on("queueEnd", (p) => this.emit("queueEnd", p));
         guildPlayer.on("trackError", (p, t, d) => this.emit("trackError", p, t, d));
