@@ -146,6 +146,12 @@ setupGoResponse(client);
 startAutoUnban(client);
 
 
+process.on("unhandledRejection", (error) => {
+  console.error("Unhandled promise rejection:", error);
+});
 
+client.on("error", (error) => {
+  console.error("Discord client error:", error);
+});
 
 await client.login(config.token);

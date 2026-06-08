@@ -46,11 +46,16 @@ export const queueCommand = {
         }).catch(() => null);
       }
 
-      const owners = context.controllerStore.getOwners(interaction.guildId);
-      const isOwner = owners.size === 0 || owners.has(interaction.user.id);
+      const isAdmin = interaction.memberPermissions?.has("Administrator");
 
-      if (isOwner) {
-        const modal = ContainerFactory.buildRemoveQueueModal(queue);
+      const removableTracks = player?.queue
+        ? player.queue
+          .map((track: any, index: number) => ({ track, index }))
+          .filter(({ track }: any) => isAdmin || track.pluginInfo?.requesterId === interaction.user.id)
+        : [];
+
+      if (removableTracks.length > 0) {
+        const modal = ContainerFactory.buildRemoveQueueModal(removableTracks);
         await interaction.showModal(modal).catch(() => null);
       } else {
         const songList = queue.slice(0, 10).map((t: any, i: number) => `${i + 1}. ${t.title}`).join("\n");

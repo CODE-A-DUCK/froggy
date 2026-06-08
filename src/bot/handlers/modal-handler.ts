@@ -29,26 +29,22 @@ export const handleModalInteraction = async (interaction: ModalSubmitInteraction
     }
 
     try {
-      const { controllerStore } = context;
-      const owners = controllerStore.getOwners(interaction.guildId);
-      if (owners.size > 0 && !owners.has(interaction.user.id)) {
-        return interaction.reply({
-          components: [ContainerFactory.buildReply("error", CONTROLLER_DENIED_MESSAGE, interaction.user as any).toJSON() as any],
-          flags: [MessageFlags.Ephemeral, MessageFlags.IsComponentsV2 as any],
-        }).catch(() => null);
-      }
-
       await interaction.deferReply().catch(() => null);
 
       const player = context.voiceGateway.getPlayer(interaction.guildId);
       const removed: any[] = [];
-      
+
       if (player) {
-        // Remove from highest index first to avoid shifting issues
+        const isAdmin = interaction.memberPermissions?.has("Administrator");
         const sortedIndices = [...selectedIndices].sort((a, b) => b - a);
         for (const index of sortedIndices) {
           if (index >= 0 && index < player.queue.length) {
-            removed.push(player.queue.splice(index, 1)[0].info);
+            const track = player.queue[index];
+            const isTrackOwner = track.pluginInfo?.requesterId === interaction.user.id;
+
+            if (isAdmin || isTrackOwner) {
+              removed.push(player.queue.splice(index, 1)[0].info);
+            }
           }
         }
       }

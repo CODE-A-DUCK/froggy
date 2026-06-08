@@ -14,40 +14,52 @@ export class VoiceGatewayManager extends EventEmitter {
     this.shoukaku = shoukaku;
   }
 
+  private connecting: Map<string, Promise<GuildPlayer>> = new Map();
+
   public getPlayer(guildId: string): GuildPlayer | undefined {
     return this.players.get(guildId);
   }
 
   public async connectToChannel(guildId: string, channelId: string): Promise<GuildPlayer> {
     let guildPlayer = this.players.get(guildId);
+    if (guildPlayer) return guildPlayer;
 
-    if (!guildPlayer) {
-      const node = this.shoukaku.options.nodeResolver(this.shoukaku.nodes);
-      if (!node) throw new Error("No available Lavalink nodes");
+    const existingConnection = this.connecting.get(guildId);
+    if (existingConnection) return existingConnection;
 
-      const player = await this.shoukaku.joinVoiceChannel({
-        guildId,
-        channelId,
-        shardId: 0,
-        deaf: true,
-        mute: false
-      });
+    const connectPromise = (async () => {
+      try {
+        const node = this.shoukaku.options.nodeResolver(this.shoukaku.nodes);
+        if (!node) throw new Error("No available Lavalink nodes");
 
-      guildPlayer = new GuildPlayer(guildId, player);
+        const player = await this.shoukaku.joinVoiceChannel({
+          guildId,
+          channelId,
+          shardId: 0,
+          deaf: true,
+          mute: false
+        });
 
-      guildPlayer.on("trackStart", (p, t) => this.emit("trackStart", p, t));
-      guildPlayer.on("trackEnd", (p, t, d) => this.emit("trackEnd", p, t, d));
-      guildPlayer.on("queueEnd", (p) => this.emit("queueEnd", p));
-      guildPlayer.on("trackError", (p, t, d) => this.emit("trackError", p, t, d));
-      guildPlayer.on("playerDisconnect", (p) => {
-        this.emit("playerDisconnect", p);
-        this.players.delete(guildId);
-      });
+        guildPlayer = new GuildPlayer(guildId, player);
 
-      this.players.set(guildId, guildPlayer);
-    }
+        guildPlayer.on("trackStart", (p, t) => this.emit("trackStart", p, t));
+        guildPlayer.on("trackEnd", (p, t, d) => this.emit("trackEnd", p, t, d));
+        guildPlayer.on("queueEnd", (p) => this.emit("queueEnd", p));
+        guildPlayer.on("trackError", (p, t, d) => this.emit("trackError", p, t, d));
+        guildPlayer.on("playerDisconnect", (p) => {
+          this.emit("playerDisconnect", p);
+          this.players.delete(guildId);
+        });
 
-    return guildPlayer;
+        this.players.set(guildId, guildPlayer);
+        return guildPlayer;
+      } finally {
+        this.connecting.delete(guildId);
+      }
+    })();
+
+    this.connecting.set(guildId, connectPromise);
+    return connectPromise;
   }
 
   public async disconnectFromChannel(guildId: string): Promise<void> {

@@ -112,8 +112,8 @@ export class ContainerFactory {
     return container;
   }
 
-  static buildRemoveQueueModal(queue: any[]): ModalBuilder {
-    const options = queue.slice(0, 10).map((track, index) => {
+  static buildRemoveQueueModal(removableTracks: { track: any, index: number }[]): ModalBuilder {
+    const options = removableTracks.slice(0, 10).map(({ track, index }) => {
       const info = track.info || track;
       return new CheckboxGroupOptionBuilder()
         .setLabel(info.title.slice(0, 100))
