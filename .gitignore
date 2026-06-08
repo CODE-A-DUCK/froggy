@@ -2,7 +2,10 @@
 node_modules/
 
 # Lavalink
-lavalink/
+lavalink/logs
+lavalink/plugins/
+Lavalink.jar
+
 
 # Environment
 .env
