@@ -55,6 +55,8 @@ export async function handleInteraction(interaction: any, context: any) {
     commandName = interaction.customId.split(":")[0];
   }
 
+  if (commandName === "search") commandName = "music";
+
   const command = commandsByName.get(commandName);
   if (!command) return;
 

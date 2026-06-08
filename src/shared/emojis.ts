@@ -29,6 +29,8 @@ export const EMOJIS = {
   game2line: "<:game2line:1510524992155025478>",
   gameline: "<:gameline:1511690529081921658>",
   headphoneline: "<:headphoneline:1510533870645153792>",
+  heartaddfill: "<:heartaddfill:1513539415845244999>",
+  heartaddline: "<:heartaddline:1513539417846055022>",
   hoi_anime: "<:hoi_anime:1510586144067424366>",
   homeline: "<:homeline:1511690531049177158>",
   hourglassline: "<:hourglassline:1510533872285253662>",

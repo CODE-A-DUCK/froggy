@@ -1,7 +1,9 @@
+import { TrackEvent } from "../../shared/types.js";
+
 class ControllerStore {
   #owners = new Map<string, Set<string>>();
   #messages = new Map<string, string>();
-  #tracks = new Map<string, any>();
+  #tracks = new Map<string, TrackEvent>();
 
   getOwner(guildId: string): string | null {
     const owners = this.#owners.get(guildId);
@@ -53,11 +55,11 @@ class ControllerStore {
     this.#messages.delete(guildId);
   }
 
-  getCurrentTrack(guildId: string): any | null {
+  getCurrentTrack(guildId: string): TrackEvent | null {
     return this.#tracks.get(guildId) ?? null;
   }
 
-  setCurrentTrack(guildId: string, track: any): void {
+  setCurrentTrack(guildId: string, track: TrackEvent): void {
     this.#tracks.set(guildId, track);
   }
 

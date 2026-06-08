@@ -1,7 +1,7 @@
-import { MessageFlags, CommandInteraction, MessageComponentInteraction, ModalSubmitInteraction, GuildMember, VoiceBasedChannel, Guild } from "discord.js";
+import { CommandInteraction, MessageComponentInteraction, ModalSubmitInteraction, GuildMember, VoiceBasedChannel, Guild } from "discord.js";
 import { controllerStore } from "../../bot/store/controller-store.js";
 import { EMOJIS } from "../../shared/emojis.js";
-import { ContainerFactory } from "../ui/container-factory.js";
+import { replyWithState } from "../../bot/utils/reply.js";
 
 const CONTROLLER_DENIED_MESSAGE = ":lock: | 你不能搶別人的遙控器";
 
@@ -33,21 +33,7 @@ export async function validateVoiceState(
   } = options;
 
   const guild = interaction.guild;
-  const reply = async (content: string) => {
-    const payload = {
-      components: [
-        ContainerFactory.buildReply("error", content, interaction.user as any).toJSON() as any,
-      ],
-      flags: [MessageFlags.Ephemeral, MessageFlags.IsComponentsV2] as any,
-    };
-    if (interaction.deferred || interaction.replied)
-      return interaction
-        .editReply(payload)
-        .catch(() => null);
-    return interaction
-      .reply(payload)
-      .catch(() => null);
-  };
+  const reply = async (content: string) => replyWithState(interaction as any, "error", content, { ephemeral: true });
 
   if (!guild) {
     await reply(

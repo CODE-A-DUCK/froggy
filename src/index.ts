@@ -11,6 +11,9 @@ import { config } from "./config.js";
 import { UIHandler } from "./player/ui/ui-handler.js";
 import { VoiceGatewayManager } from "./bot/voice-gateway.js";
 import { nodeStateStore } from "./bot/store/node-state-store.js";
+import { initDatabase } from "./db/index.js";
+
+import { TrackEvent } from "./shared/types.js";
 
 declare module "discord.js" {
   interface Client {
@@ -66,7 +69,7 @@ voiceGateway.on("trackStart", async (player, track) => {
     controllerStore.setOwner(guildId, requesterId);
   }
 
-  const event = {
+  const event: TrackEvent = {
     guild_id: guildId,
     title: info.title,
     source_url: info.uri,
@@ -165,4 +168,5 @@ client.on("error", (error) => {
   console.error("Discord client error:", error);
 });
 
+await initDatabase();
 await client.login(config.token);

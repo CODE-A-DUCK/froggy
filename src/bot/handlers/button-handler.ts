@@ -1,102 +1,159 @@
 import { MessageFlags, ButtonInteraction } from "discord.js";
 import { ContainerFactory } from "../../player/ui/container-factory.js";
 import { shouldOptimisticallyUpdate, optimisticallyUpdateController } from "../../player/ui/controller-sync.js";
-import { CONTROLLER_DENIED_MESSAGE, validateVoiceState } from "../../player/utils/voice-guard.js";
+import { CONTROLLER_DENIED_MESSAGE } from "../../player/utils/voice-guard.js";
 import { EMOJIS } from "../../shared/emojis.js";
 import { controllerStore } from "../store/controller-store.js";
+import { db } from "../../db/index.js";
 
-const replyError = (interaction: ButtonInteraction, description: string) =>
+const replyWithState = (interaction: ButtonInteraction, state: "error" | "success" | "info" | "warning", description: string) =>
   interaction
     .followUp({
-      components: [ContainerFactory.buildReply("error", description, interaction.user as any).toJSON() as any],
+      components: [ContainerFactory.buildReply(state, description, interaction.user as any).toJSON() as any],
       flags: [MessageFlags.Ephemeral, MessageFlags.IsComponentsV2 as any],
     })
     .catch(() => null);
 
-function parseMusicControl(customId: string) {
+const replyError = (interaction: ButtonInteraction, description: string) => replyWithState(interaction, "error", description);
+
+function parseMusicControl(customId: string): string | null {
   if (customId.startsWith("MusicButtonControl")) {
     const action = customId.replace("MusicButtonControl", "").toLowerCase();
-    return { action: action.startsWith("loop") ? "loop" : action };
+    return action.startsWith("loop") ? "loop" : action;
+  }
+  if (customId.startsWith("MusicButtonLibrary")) {
+    return `library${customId.replace("MusicButtonLibrary", "").toLowerCase()}`;
   }
   if (customId.startsWith("music:")) {
-    const [, action] = customId.split(":");
-    return { action };
+    return customId.split(":")[1];
   }
   if (customId.startsWith("music_")) {
-    return { action: customId.replace("music_", "") };
+    return customId.replace("music_", "");
   }
   return null;
 }
 
-export const handleButtonInteraction = async (interaction: ButtonInteraction, context: any) => {
+async function handleLibraryToggle(interaction: ButtonInteraction, guildId: string): Promise<boolean> {
+  const currentTrack = controllerStore.getCurrentTrack(guildId);
+  if (!currentTrack?.source_url) {
+    await replyError(interaction, `${EMOJIS.errorwarningline} | 目前沒有播放任何可收藏的歌曲。`);
+    return true;
+  }
+
+  try {
+    const existing = await db.selectFrom("music_library")
+      .select("id")
+      .where("user_id", "=", interaction.user.id)
+      .where("url", "=", currentTrack.source_url)
+      .executeTakeFirst();
+
+    const title = currentTrack.title ?? "未知歌曲";
+
+    if (existing) {
+      await db.deleteFrom("music_library").where("id", "=", existing.id).execute();
+      await interaction.followUp({
+        content: `${EMOJIS.heartaddline} | 已將 **${title}** 從你的音樂庫移除。`,
+        flags: [MessageFlags.Ephemeral]
+      }).catch(() => null);
+    } else {
+      const { count } = await db.selectFrom("music_library")
+        .select(db.fn.count("id").as("count"))
+        .where("user_id", "=", interaction.user.id)
+        .executeTakeFirst() ?? { count: 0 };
+
+      if (Number(count) >= 1000) {
+        await replyError(interaction, `${EMOJIS.errorwarningline} | 你的音樂庫已達上限 (1000 首)，請先移除一些歌曲！`);
+        return true;
+      }
+
+      await db.insertInto("music_library").values({
+        user_id: interaction.user.id,
+        url: currentTrack.source_url,
+        title,
+      }).execute();
+
+      await interaction.followUp({
+        content: `${EMOJIS.heartaddfill} | 已將 **${title}** 收藏至你的專屬音樂庫！`,
+        flags: [MessageFlags.Ephemeral]
+      }).catch(() => null);
+    }
+  } catch (err) {
+    console.error("Library toggle error:", err);
+    await replyError(interaction, `${EMOJIS.errorwarningline} | 收藏歌曲時發生錯誤。`);
+  }
+  return true;
+}
+
+export const handleButtonInteraction = async (interaction: ButtonInteraction, context: any): Promise<boolean> => {
   try {
     if (!interaction.inCachedGuild()) return false;
 
-    const { guildId, member, channelId } = interaction;
+    const action = parseMusicControl(interaction.customId);
+    if (!action) return false;
 
-    const control = parseMusicControl(interaction.customId);
-    if (!control?.action) return false;
+    const VALID_ACTIONS = new Set(["stop", "skip", "pause", "resume", "loop", "refresh_controller", "librarytoggle"]);
+    if (!VALID_ACTIONS.has(action)) return false;
 
     await interaction.deferUpdate().catch(() => null);
 
-    const VALID_BUTTON_ACTIONS = new Set([
-      "stop",
-      "skip",
-      "pause",
-      "resume",
-      "loop",
-      "refresh_controller",
-    ]);
-    if (!VALID_BUTTON_ACTIONS.has(control.action)) return false;
+    const { guildId, member } = interaction;
+
+    if (action === "librarytoggle") {
+      return await handleLibraryToggle(interaction, guildId);
+    }
 
     const botMember = interaction.guild.members.me || await interaction.guild.members.fetch(interaction.client.user.id).catch(() => null);
-    const botVoiceChannel = botMember?.voice.channel;
+    const botVoiceChannelId = botMember?.voice?.channelId;
 
-    if (!botVoiceChannel) {
-      replyError(interaction, `${EMOJIS.errorwarningline} | 我目前不在語音頻道中，無法執行此操作。`);
+    if (!botVoiceChannelId) {
+      await replyError(interaction, `${EMOJIS.errorwarningline} | 我目前不在語音頻道中，無法執行此操作。`);
       return true;
     }
 
-    if (!member.voice.channel || member.voice.channel.id !== botVoiceChannel.id) {
-      replyError(
-        interaction,
-        `${EMOJIS.errorwarningline} | 你必須跟我進入同一個頻道 <#${botVoiceChannel.id}> 才能控制我！`,
-      );
+    if (member.voice.channelId !== botVoiceChannelId) {
+      await replyError(interaction, `${EMOJIS.errorwarningline} | 你必須跟我進入同一個頻道 <#${botVoiceChannelId}> 才能控制我！`);
       return true;
     }
 
-    const hasOwners = controllerStore.getOwners(guildId).size > 0;
-    if (hasOwners && !controllerStore.isOwner(guildId, interaction.user.id)) {
-      replyError(interaction, CONTROLLER_DENIED_MESSAGE);
+    if (controllerStore.getOwners(guildId).size > 0 && !controllerStore.isOwner(guildId, interaction.user.id)) {
+      await replyError(interaction, CONTROLLER_DENIED_MESSAGE);
       return true;
     }
 
-    const optimisticUpdate = shouldOptimisticallyUpdate(control.action)
-      ? optimisticallyUpdateController(interaction, control.action)
+    const optimisticUpdate = shouldOptimisticallyUpdate(action)
+      ? optimisticallyUpdateController(interaction, action)
       : Promise.resolve();
 
     const player = context.voiceGateway.getPlayer(guildId);
     if (player) {
-      if (control.action === "stop") {
-        await player.stopPlaying(true);
-      } else if (control.action === "skip") {
-        await player.skip();
-      } else if (control.action === "pause") {
-        await player.shoukakuPlayer.setPaused(true);
-      } else if (control.action === "resume") {
-        await player.shoukakuPlayer.setPaused(false);
-      } else if (control.action === "loop") {
-        const modes: ("off" | "track" | "queue")[] = ["off", "track", "queue"];
-        const currentIndex = modes.indexOf(player.repeatMode);
-        player.repeatMode = modes[(currentIndex + 1) % modes.length];
-      } else if (control.action === "refresh_controller") {
-        context.voiceGateway.emit("trackStart", player, player.currentTrack);
+      switch (action) {
+        case "stop":
+          await player.stopPlaying(true);
+          break;
+        case "skip":
+          await player.skip();
+          break;
+        case "pause":
+          await player.shoukakuPlayer.setPaused(true);
+          break;
+        case "resume":
+          await player.shoukakuPlayer.setPaused(false);
+          break;
+        case "loop": {
+          const modes: ("off" | "track" | "queue")[] = ["off", "track", "queue"];
+          player.repeatMode = modes[(modes.indexOf(player.repeatMode) + 1) % modes.length];
+          break;
+        }
+        case "refresh_controller":
+          context.voiceGateway.emit("trackStart", player, player.currentTrack);
+          break;
       }
     }
 
     await optimisticUpdate;
     return true;
   } catch (error) {
+    console.error("[ButtonHandler] Error:", error);
     return true;
   }
 };

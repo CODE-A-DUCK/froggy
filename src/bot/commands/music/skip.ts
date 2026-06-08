@@ -1,63 +1,28 @@
-import { SlashCommandBuilder, MessageFlags, ChatInputCommandInteraction } from "discord.js";
+import { ChatInputCommandInteraction } from "discord.js";
 
-import { ContainerFactory } from "../../../player/ui/container-factory.js";
 import { validateVoiceState } from "../../../player/utils/voice-guard.js";
 import { EMOJIS } from "../../../shared/emojis.js";
+import { replyWithState } from "../../utils/reply.js";
 
-export const skipCommand = {
-  name: "skip",
-  category: `${EMOJIS.music2line} | 音樂`,
-  data: new SlashCommandBuilder()
-    .setName("skip")
-    .setDescription("跳過當前歌曲"),
-  async execute(interaction: ChatInputCommandInteraction, context: any) {
-    const validation = await validateVoiceState(interaction, { requireController: true });
-    if (!validation) return;
+export async function executeSkip(interaction: ChatInputCommandInteraction, context: any) {
+  const validation = await validateVoiceState(interaction, { requireController: true });
+  if (!validation) return;
 
-    const currentTrack = context.controllerStore.getCurrentTrack(interaction.guildId!);
-    if (!currentTrack) {
-      return interaction.editReply({
-        components: [
-          ContainerFactory.buildReply(
-            "info",
-            `${EMOJIS.playlistline} | 列隊裏沒有任何歌曲。`,
-            interaction.user as any,
-          ),
-        ],
-        flags: [MessageFlags.IsComponentsV2 as any],
-      });
+  const player = context.voiceGateway.getPlayer(interaction.guildId!);
+  if (!player || (!player.currentTrack && player.queue.length === 0)) {
+    return replyWithState(interaction, "info", `${EMOJIS.playlistline} | 隊列裏沒有任何歌曲。`);
+  }
+
+  try {
+    if (player) {
+      player.textChannelId = interaction.channelId;
+      player.controllerUserId = interaction.user.id;
+      player.interactionToken = interaction.token;
+      await player.stopTrack();
     }
-
-    try {
-      const player = context.voiceGateway.getPlayer(interaction.guildId!);
-      if (player) {
-        player.textChannelId = interaction.channelId;
-        player.controllerUserId = interaction.user.id;
-        player.interactionToken = interaction.token;
-        await player.skip();
-      }
-      await interaction.editReply({
-        components: [
-          ContainerFactory.buildReply(
-            "success",
-            `${EMOJIS.skipforwardline} | 已跳過當前歌曲。`,
-            interaction.user as any,
-          ),
-        ],
-        flags: [MessageFlags.IsComponentsV2 as any],
-      });
-    } catch (err) {
-      console.error("[Command] Skip error:", err);
-      await interaction.editReply({
-        components: [
-          ContainerFactory.buildReply(
-            "error",
-            `${EMOJIS.errorwarningline} | 執行時發生錯誤，請稍後再試。`,
-            interaction.user as any,
-          ),
-        ],
-        flags: [MessageFlags.IsComponentsV2 as any],
-      });
-    }
-  },
-};
+    await replyWithState(interaction, "success", `${EMOJIS.skipforwardline} | 已跳過歌曲。`);
+  } catch (err) {
+    console.error("[Command] Skip error:", err);
+    await replyWithState(interaction, "error", `${EMOJIS.errorwarningline} | 執行時發生錯誤，請稍後再試。`);
+  }
+}
