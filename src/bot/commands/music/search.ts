@@ -1,4 +1,5 @@
 import { randomUUID } from "node:crypto";
+
 import { MessageFlags, ChatInputCommandInteraction, StringSelectMenuInteraction } from "discord.js";
 
 import { ContainerFactory } from "../../../player/ui/container-factory.js";
@@ -97,7 +98,7 @@ export async function handleSearchSelectMenu(interaction: StringSelectMenuIntera
     player.interactionToken = "";
 
     let count = 0;
-    let addedTitles: string[] = [];
+    const addedTitles: string[] = [];
     const searchId = interaction.customId.split(":")[2];
     const results = searchCache.get(searchId) || [];
 

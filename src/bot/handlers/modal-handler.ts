@@ -1,6 +1,6 @@
 import { MessageFlags, ModalSubmitInteraction } from "discord.js";
+
 import { ContainerFactory } from "../../player/ui/container-factory.js";
-import { CONTROLLER_DENIED_MESSAGE } from "../../player/utils/voice-guard.js";
 import { EMOJIS } from "../../shared/emojis.js";
 
 export const handleModalInteraction = async (interaction: ModalSubmitInteraction, context: any) => {

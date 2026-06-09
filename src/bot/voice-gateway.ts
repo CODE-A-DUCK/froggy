@@ -1,7 +1,9 @@
+import { EventEmitter } from "node:events";
+
 import { Client } from "discord.js";
 import { Shoukaku } from "shoukaku";
+
 import { GuildPlayer } from "../player/guild-player.js";
-import { EventEmitter } from "node:events";
 
 export class VoiceGatewayManager extends EventEmitter {
   private client: Client;

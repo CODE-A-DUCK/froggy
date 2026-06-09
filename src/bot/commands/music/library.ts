@@ -1,11 +1,13 @@
 import { ChatInputCommandInteraction, MessageFlags } from "discord.js";
+
 import { db } from "../../../db/index.js";
-import { EMOJIS } from "../../../shared/emojis.js";
-import { resolveAndQueue } from "./play.js";
+import { ContainerFactory } from "../../../player/ui/container-factory.js";
 import { validateVoiceState } from "../../../player/utils/voice-guard.js";
+import { EMOJIS } from "../../../shared/emojis.js";
 import { validatePlayUrl } from "../../security/sanitize.js";
 import { replyWithState } from "../../utils/reply.js";
-import { ContainerFactory } from "../../../player/ui/container-factory.js";
+
+import { resolveAndQueue } from "./play.js";
 
 // ── Shared helpers ──────────────────────────────────────────────────────────
 
@@ -144,7 +146,7 @@ export async function executeLibraryPlay(interaction: ChatInputCommandInteractio
       if (!track) {
         return replyWithState(interaction, "error", `${EMOJIS.errorwarningline} | 找不到編號為 ${index} 的歌曲！`);
       }
-      return resolveAndQueue(interaction, track.url, interaction.user.id, context, false);
+      return resolveAndQueue(interaction, track.url, interaction.user.id, context);
     }
 
     // 播放整個音樂庫（後台非同步載入），不然一直刷信息很烦人

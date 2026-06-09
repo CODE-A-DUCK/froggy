@@ -1,7 +1,8 @@
-import { readFile, writeFile, access } from "node:fs/promises";
 import { constants } from "node:fs";
+import { readFile, writeFile, access } from "node:fs/promises";
 import { join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
+
 import { Client } from "discord.js";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));

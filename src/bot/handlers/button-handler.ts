@@ -1,10 +1,11 @@
 import { MessageFlags, ButtonInteraction } from "discord.js";
+
+import { db } from "../../db/index.js";
 import { ContainerFactory } from "../../player/ui/container-factory.js";
 import { shouldOptimisticallyUpdate, optimisticallyUpdateController } from "../../player/ui/controller-sync.js";
 import { CONTROLLER_DENIED_MESSAGE } from "../../player/utils/voice-guard.js";
 import { EMOJIS } from "../../shared/emojis.js";
 import { controllerStore } from "../store/controller-store.js";
-import { db } from "../../db/index.js";
 
 const replyWithState = (interaction: ButtonInteraction, state: "error" | "success" | "info" | "warning", description: string) =>
   interaction
@@ -174,26 +175,26 @@ export const handleButtonInteraction = async (interaction: ButtonInteraction, co
     const player = context.voiceGateway.getPlayer(guildId);
     if (player) {
       switch (action) {
-        case "stop":
-          await player.stopPlaying(true);
-          break;
-        case "skip":
-          await player.skip();
-          break;
-        case "pause":
-          await player.shoukakuPlayer.setPaused(true);
-          break;
-        case "resume":
-          await player.shoukakuPlayer.setPaused(false);
-          break;
-        case "loop": {
-          const modes: ("off" | "track" | "queue")[] = ["off", "track", "queue"];
-          player.repeatMode = modes[(modes.indexOf(player.repeatMode) + 1) % modes.length];
-          break;
-        }
-        case "refresh_controller":
-          context.voiceGateway.emit("trackStart", player, player.currentTrack);
-          break;
+      case "stop":
+        await player.stopPlaying(true);
+        break;
+      case "skip":
+        await player.skip();
+        break;
+      case "pause":
+        await player.shoukakuPlayer.setPaused(true);
+        break;
+      case "resume":
+        await player.shoukakuPlayer.setPaused(false);
+        break;
+      case "loop": {
+        const modes: ("off" | "track" | "queue")[] = ["off", "track", "queue"];
+        player.repeatMode = modes[(modes.indexOf(player.repeatMode) + 1) % modes.length];
+        break;
+      }
+      case "refresh_controller":
+        context.voiceGateway.emit("trackStart", player, player.currentTrack);
+        break;
       }
     }
 

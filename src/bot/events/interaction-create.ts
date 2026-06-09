@@ -1,4 +1,5 @@
 import { Events, Interaction } from "discord.js";
+
 import { handleInteraction } from "../commands/index.js";
 import { handleButtonInteraction } from "../handlers/button-handler.js";
 import { handleModalInteraction } from "../handlers/modal-handler.js";

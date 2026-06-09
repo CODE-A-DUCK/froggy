@@ -1,8 +1,10 @@
-import { Kysely, PostgresDialect, sql } from 'kysely';
-import pkg from 'pg';
+import { Kysely, PostgresDialect, sql } from "kysely";
+import pkg from "pg";
+
 const { Pool } = pkg;
-import { config } from '../config.js';
-import { Database } from './schema.js';
+import { config } from "../config.js";
+
+import { Database } from "./schema.js";
 
 const dialect = new PostgresDialect({
   pool: new Pool({

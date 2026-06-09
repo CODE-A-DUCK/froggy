@@ -1,7 +1,8 @@
 import { CommandInteraction, MessageComponentInteraction, ModalSubmitInteraction, GuildMember, VoiceBasedChannel, Guild } from "discord.js";
+
 import { controllerStore } from "../../bot/store/controller-store.js";
-import { EMOJIS } from "../../shared/emojis.js";
 import { replyWithState } from "../../bot/utils/reply.js";
+import { EMOJIS } from "../../shared/emojis.js";
 
 const CONTROLLER_DENIED_MESSAGE = ":lock: | 你不能搶別人的遙控器";
 

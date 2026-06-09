@@ -1,9 +1,10 @@
-import { Client, MessageFlags, GuildTextBasedChannel, Guild, ChannelType, User, Message } from "discord.js";
+import { Client, MessageFlags, GuildTextBasedChannel, Guild, ChannelType, User } from "discord.js";
 
 import { ControllerStore } from "../../bot/store/controller-store.js";
 import { EMOJIS } from "../../shared/emojis.js";
-import { formatUserFacingError } from "../utils/error-formatter.js";
 import { TrackEvent } from "../../shared/types.js";
+import { formatUserFacingError } from "../utils/error-formatter.js";
+
 import { ContainerFactory } from "./container-factory.js";
 
 interface UIHandlerConfig {

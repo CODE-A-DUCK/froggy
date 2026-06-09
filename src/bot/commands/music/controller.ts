@@ -21,7 +21,7 @@ export async function executeController(interaction: ChatInputCommandInteraction
       context.voiceGateway.emit("trackStart", player, player.currentTrack);
     }
     await replyWithState(interaction, "success", `${EMOJIS.remotecontrol2line} | 已重新發送遙控器。`);
-  } catch (err) {
+  } catch {
     await replyWithState(interaction, "error", `${EMOJIS.errorwarningline} | 執行時發生錯誤，請稍後再試。`);
   }
 }

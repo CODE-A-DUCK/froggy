@@ -1,16 +1,17 @@
 import { SlashCommandBuilder, ChatInputCommandInteraction, MessageFlags } from "discord.js";
-import { EMOJIS } from "../../shared/emojis.js";
-import { ContainerFactory } from "../../player/ui/container-factory.js";
 
-import { executePlay } from "./music/play.js";
-import { executeSearch, handleSearchSelectMenu } from "./music/search.js";
-import { executeQueue } from "./music/queue.js";
-import { executeSkip } from "./music/skip.js";
-import { executeStop } from "./music/stop.js";
+import { ContainerFactory } from "../../player/ui/container-factory.js";
+import { EMOJIS } from "../../shared/emojis.js";
+
+import { executeController } from "./music/controller.js";
 import { executeJoin } from "./music/join.js";
 import { executeLeave } from "./music/leave.js";
-import { executeController } from "./music/controller.js";
 import { executeLibraryList, executeLibraryAdd, executeLibraryPlay, executeLibraryRemove } from "./music/library.js";
+import { executePlay } from "./music/play.js";
+import { executeQueue } from "./music/queue.js";
+import { executeSearch, handleSearchSelectMenu } from "./music/search.js";
+import { executeSkip } from "./music/skip.js";
+import { executeStop } from "./music/stop.js";
 
 export const musicCommand = {
   name: "music",

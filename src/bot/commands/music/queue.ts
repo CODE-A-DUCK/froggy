@@ -1,9 +1,9 @@
 import { MessageFlags, ChatInputCommandInteraction } from "discord.js";
 
+import { ContainerFactory } from "../../../player/ui/container-factory.js";
 import { validateVoiceState } from "../../../player/utils/voice-guard.js";
 import { EMOJIS } from "../../../shared/emojis.js";
 import { replyWithState } from "../../utils/reply.js";
-import { ContainerFactory } from "../../../player/ui/container-factory.js";
 
 export async function executeQueue(interaction: ChatInputCommandInteraction, context: any) {
   const validation = await validateVoiceState(interaction, { requireController: false });
@@ -46,7 +46,7 @@ export async function executeQueue(interaction: ChatInputCommandInteraction, con
         flags: [MessageFlags.Ephemeral, MessageFlags.IsComponentsV2 as any],
       }).catch(() => null);
     }
-  } catch (err) {
+  } catch {
     await replyWithState(interaction, "error", `${EMOJIS.errorwarningline} | 執行時發生錯誤，請稍後再試。`, { ephemeral: true, reply: true });
   }
 }

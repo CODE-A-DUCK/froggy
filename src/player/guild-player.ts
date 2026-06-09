@@ -1,5 +1,7 @@
 import { EventEmitter } from "node:events";
-import { Player, Track } from "shoukaku";
+
+import type { Track } from "shoukaku";
+import { Player } from "shoukaku";
 
 export type RepeatMode = "off" | "track" | "queue";
 
@@ -21,7 +23,7 @@ export class GuildPlayer extends EventEmitter {
 
     this.shoukakuPlayer.setGlobalVolume(95);
 
-    this.shoukakuPlayer.on("start", (data) => {
+    this.shoukakuPlayer.on("start", (_data) => {
       this.emit("trackStart", this, this.currentTrack);
     });
 
@@ -52,7 +54,7 @@ export class GuildPlayer extends EventEmitter {
       this.emit("trackError", this, this.currentTrack, data);
     });
 
-    this.shoukakuPlayer.on("closed", (data) => {
+    this.shoukakuPlayer.on("closed", (_data) => {
       this.emit("playerDisconnect", this);
     });
 

@@ -40,17 +40,18 @@ export async function executePlay(interaction: ChatInputCommandInteraction, cont
     parsedUrl.searchParams.delete("index");
     parsedUrl.searchParams.delete("start_radio");
     finalUrl = parsedUrl.href;
-  } catch { }
+  } catch {
+    // 忽略解析錯誤，使用原本的 url
+  }
 
-  await resolveAndQueue(interaction, finalUrl, interaction.user.id, context, false);
+  await resolveAndQueue(interaction, finalUrl, interaction.user.id, context);
 }
 
 export async function resolveAndQueue(
   interaction: ChatInputCommandInteraction | ButtonInteraction,
   url: string,
   userId: string,
-  context: any,
-  isPlaylist: boolean
+  context: any
 ) {
   const { controllerStore: cs, shoukaku, voiceGateway } = context;
   const guild = interaction.guild!;

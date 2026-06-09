@@ -40,12 +40,12 @@ export async function getYouTubeStats(identifier: string): Promise<YouTubeStats>
       videoDetails?.viewCount?.videoViewCountRenderer?.shortViewCount?.simpleText;
 
     if (viewsStr) {
-      viewsStr = viewsStr.replace(/觀看次數：?/g, '').replace(/次/g, '').replace(/views?/ig, '').trim();
+      viewsStr = viewsStr.replace(/觀看次數：?/g, "").replace(/次/g, "").replace(/views?/ig, "").trim();
     }
 
     let dateStr = videoDetails?.dateText?.simpleText;
     if (dateStr) {
-      dateStr = dateStr.replace(/Premiered\s*/i, '').trim();
+      dateStr = dateStr.replace(/Premiered\s*/i, "").trim();
     }
 
     const actions = videoDetails?.videoActions?.menuRenderer?.topLevelButtons;
@@ -56,7 +56,7 @@ export async function getYouTubeStats(identifier: string): Promise<YouTubeStats>
       if (likeButton) {
         likesStr = likeButton.segmentedLikeDislikeButtonViewModel?.likeButtonViewModel?.likeButtonViewModel?.toggleButtonViewModel?.toggleButtonViewModel?.defaultButtonViewModel?.buttonViewModel?.title;
       } else {
-        const standardLike = actions.find((a: any) => a.toggleButtonRenderer?.defaultIcon?.iconType === 'LIKE');
+        const standardLike = actions.find((a: any) => a.toggleButtonRenderer?.defaultIcon?.iconType === "LIKE");
         if (standardLike) {
           likesStr = standardLike.toggleButtonRenderer?.defaultText?.accessibility?.accessibilityData?.label;
         }
@@ -64,7 +64,7 @@ export async function getYouTubeStats(identifier: string): Promise<YouTubeStats>
     }
 
     if (likesStr) {
-      likesStr = likesStr.replace(/喜歡次數：?/g, '').replace(/likes?/ig, '').replace(/和\s*[^個]+/g, '').trim();
+      likesStr = likesStr.replace(/喜歡次數：?/g, "").replace(/likes?/ig, "").replace(/和\s*[^個]+/g, "").trim();
     }
 
     const result: YouTubeStats = {

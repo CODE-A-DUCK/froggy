@@ -16,6 +16,7 @@ import {
 } from "discord.js";
 
 import { EMOJIS } from "../../shared/emojis.js";
+import { TrackEvent } from "../../shared/types.js";
 import { formatDuration } from "../utils/format-duration.js";
 
 // 固定值
@@ -29,8 +30,6 @@ const LOOP_CONFIG = [
 const MUSIC_CENTER_TITLE = `${EMOJIS.LingLong} 音樂中心`;
 
 // 介面
-
-import { TrackEvent } from "../../shared/types.js";
 
 interface Requester {
   tag?: string;
@@ -258,7 +257,7 @@ export class ContainerFactory {
           .setStyle(ButtonStyle.Secondary)
           .setDisabled(page === 0),
         new ButtonBuilder()
-          .setCustomId(`MusicLibraryPage_Current`)
+          .setCustomId("MusicLibraryPage_Current")
           .setLabel(`第 ${page + 1} / ${chunks.length} 頁`)
           .setStyle(ButtonStyle.Secondary)
           .setDisabled(true),

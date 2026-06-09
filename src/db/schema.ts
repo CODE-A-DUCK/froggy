@@ -1,4 +1,4 @@
-import { Generated, Insertable, Selectable, Updateable } from 'kysely';
+import type { Generated, Insertable, Selectable, Updateable } from "kysely";
 
 export interface Database {
   music_library: MusicLibraryTable;

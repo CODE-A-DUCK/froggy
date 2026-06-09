@@ -6,13 +6,12 @@ import { setupGoResponse } from "./bot/events/go-response.js";
 import { registerEvents } from "./bot/events/index.js";
 import presence from "./bot/features/presence.js";
 import { controllerStore } from "./bot/store/controller-store.js";
-import { startAutoUnban } from "./bot/utils/timed-ban-manager.js";
-import { config } from "./config.js";
-import { UIHandler } from "./player/ui/ui-handler.js";
-import { VoiceGatewayManager } from "./bot/voice-gateway.js";
 import { nodeStateStore } from "./bot/store/node-state-store.js";
+import { startAutoUnban } from "./bot/utils/timed-ban-manager.js";
+import { VoiceGatewayManager } from "./bot/voice-gateway.js";
+import { config } from "./config.js";
 import { initDatabase } from "./db/index.js";
-
+import { UIHandler } from "./player/ui/ui-handler.js";
 import { TrackEvent } from "./shared/types.js";
 
 declare module "discord.js" {
