@@ -35,7 +35,7 @@ function buildTonightEmbed(
       inline: true,
     },
     {
-      name: `${EMOJIS.moonline} | 月球數據`,
+      name: `${EMOJIS.moonline} | 月球`,
       value: [
         `> 月相:\n **${astro.moonPhaseName}** (${astro.moonPhasePercent.toFixed(1)}%)`,
         `> 亮度:\n **${astro.moonIllumination.toFixed(1)}%**`,
