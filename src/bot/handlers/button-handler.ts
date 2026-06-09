@@ -24,6 +24,9 @@ function parseMusicControl(customId: string): string | null {
   if (customId.startsWith("MusicButtonLibrary")) {
     return `library${customId.replace("MusicButtonLibrary", "").toLowerCase()}`;
   }
+  if (customId.startsWith("MusicLibraryPage_")) {
+    return "librarypage";
+  }
   if (customId.startsWith("music:")) {
     return customId.split(":")[1];
   }
@@ -73,13 +76,54 @@ async function handleLibraryToggle(interaction: ButtonInteraction, guildId: stri
       }).execute();
 
       await interaction.followUp({
-        content: `${EMOJIS.heartaddfill} | 已將 **${title}** 收藏至你的專屬音樂庫！`,
+        content: `${EMOJIS.heartaddfill} | 已將 **${title}** 收藏至你的音樂庫！`,
         flags: [MessageFlags.Ephemeral]
       }).catch(() => null);
     }
   } catch (err) {
     console.error("Library toggle error:", err);
     await replyError(interaction, `${EMOJIS.errorwarningline} | 收藏歌曲時發生錯誤。`);
+  }
+  return true;
+}
+
+async function handleLibraryPage(interaction: ButtonInteraction): Promise<boolean> {
+  const customId = interaction.customId;
+  const parts = customId.split("_");
+  if (parts.length < 2) return true;
+
+  const page = parseInt(parts[1], 10);
+  if (isNaN(page)) return true;
+
+  try {
+    const library = await db.selectFrom("music_library")
+      .selectAll()
+      .where("user_id", "=", interaction.user.id)
+      .orderBy("id", "asc")
+      .execute();
+
+    if (library.length === 0) {
+      await interaction.editReply({
+        components: [ContainerFactory.buildReply("info", `${EMOJIS.foldermusicline} | 你的音樂庫是空的！`, interaction.user as any).toJSON() as any],
+        flags: [MessageFlags.IsComponentsV2 as any]
+      });
+      return true;
+    }
+
+    const lines = library.map((row, index) => `${index + 1}. **${row.title}**`);
+    const chunks = [];
+    for (let i = 0; i < lines.length; i += 10) {
+      chunks.push(lines.slice(i, i + 10).join("\n"));
+    }
+
+    const safePage = Math.max(0, Math.min(page, chunks.length - 1));
+
+    await interaction.editReply({
+      components: [ContainerFactory.buildLibraryPage(`${EMOJIS.foldermusicline} | 你的音樂庫`, chunks, safePage, interaction.user as any).toJSON() as any],
+      flags: [MessageFlags.IsComponentsV2 as any]
+    });
+  } catch (err) {
+    console.error("Library page error:", err);
   }
   return true;
 }
@@ -91,7 +135,7 @@ export const handleButtonInteraction = async (interaction: ButtonInteraction, co
     const action = parseMusicControl(interaction.customId);
     if (!action) return false;
 
-    const VALID_ACTIONS = new Set(["stop", "skip", "pause", "resume", "loop", "refresh_controller", "librarytoggle"]);
+    const VALID_ACTIONS = new Set(["stop", "skip", "pause", "resume", "loop", "refresh_controller", "librarytoggle", "librarypage"]);
     if (!VALID_ACTIONS.has(action)) return false;
 
     await interaction.deferUpdate().catch(() => null);
@@ -100,6 +144,9 @@ export const handleButtonInteraction = async (interaction: ButtonInteraction, co
 
     if (action === "librarytoggle") {
       return await handleLibraryToggle(interaction, guildId);
+    }
+    if (action === "librarypage") {
+      return await handleLibraryPage(interaction);
     }
 
     const botMember = interaction.guild.members.me || await interaction.guild.members.fetch(interaction.client.user.id).catch(() => null);

@@ -37,7 +37,7 @@ export const musicCommand = {
     .addSubcommand(sub => sub.setName("controller").setDescription("把遙控器找回來"))
     .addSubcommandGroup(group => group
       .setName("library")
-      .setDescription("你的專屬音樂庫")
+      .setDescription("音樂庫")
       .addSubcommand(sub =>
         sub.setName("add")
           .setDescription("將目前播放的歌曲或指定網址加入音樂庫")

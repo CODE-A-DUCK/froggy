@@ -239,6 +239,41 @@ export class ContainerFactory {
       );
   }
 
+  static buildLibraryPage(
+    title: string,
+    chunks: string[],
+    page: number,
+    requester?: Requester | null,
+  ): ContainerBuilder {
+    const description = chunks[page] ?? "沒有內容。";
+    const container = new ContainerBuilder().addTextDisplayComponents(
+      new TextDisplayBuilder().setContent(`### ${title}\n${description}`)
+    );
+    
+    if (chunks.length > 1) {
+      const row = new ActionRowBuilder<ButtonBuilder>().addComponents(
+        new ButtonBuilder()
+          .setCustomId(`MusicLibraryPage_${page - 1}`)
+          .setLabel("上一頁")
+          .setStyle(ButtonStyle.Secondary)
+          .setDisabled(page === 0),
+        new ButtonBuilder()
+          .setCustomId(`MusicLibraryPage_Current`)
+          .setLabel(`第 ${page + 1} / ${chunks.length} 頁`)
+          .setStyle(ButtonStyle.Secondary)
+          .setDisabled(true),
+        new ButtonBuilder()
+          .setCustomId(`MusicLibraryPage_${page + 1}`)
+          .setLabel("下一頁")
+          .setStyle(ButtonStyle.Secondary)
+          .setDisabled(page === chunks.length - 1)
+      );
+      container.addActionRowComponents(row);
+    }
+    
+    return this.appendFooter(container, requester);
+  }
+
   static buildReply(
     _type: string,
     description: string,
