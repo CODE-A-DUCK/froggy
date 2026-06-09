@@ -29,7 +29,24 @@ export async function executeSearch(interaction: ChatInputCommandInteraction, co
     const node = context.shoukaku.options.nodeResolver(context.shoukaku.nodes);
     if (!node) throw new Error("No available Lavalink nodes");
 
-    const res = await node.rest.resolve(`ytsearch:${query}`);
+    let res: any = null;
+    let retries = 3;
+
+    while (retries > 0) {
+      try {
+        res = await node.rest.resolve(`ytsearch:${query}`);
+        if (res && res.loadType !== "empty" && res.loadType !== "error") {
+          break; // 成功解析
+        }
+      } catch (e) {
+        console.error(`[Search] Network error while resolving ytsearch:${query}:`, e);
+      }
+      
+      retries--;
+      if (retries > 0) {
+        await new Promise(r => setTimeout(r, 2000));
+      }
+    }
     if (!res || res.loadType === "empty" || res.loadType === "error") {
       throw new Error("No tracks found");
     }

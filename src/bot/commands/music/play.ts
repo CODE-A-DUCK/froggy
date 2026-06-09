@@ -71,9 +71,27 @@ export async function resolveAndQueue(
     const node = shoukaku.options.nodeResolver(shoukaku.nodes);
     if (!node) throw new Error("No available Lavalink nodes");
 
-    const result = await node.rest.resolve(url);
+    let result: any = null;
+    let retries = 3;
+
+    while (retries > 0) {
+      try {
+        result = await node.rest.resolve(url);
+        if (result && result.loadType !== "empty" && result.loadType !== "error") {
+          break; // 成功解析
+        }
+      } catch (e) {
+        console.error(`[Play] Network error while resolving ${url}:`, e);
+      }
+      
+      retries--;
+      if (retries > 0) {
+        await new Promise(r => setTimeout(r, 2000));
+      }
+    }
+
     if (!result || result.loadType === "empty" || result.loadType === "error") {
-      throw new Error("No tracks found or error occurred");
+      throw new Error("找不到歌曲，或發生網路錯誤 (已自動重試 3 次失敗)");
     }
 
     if (result.loadType === "playlist") {

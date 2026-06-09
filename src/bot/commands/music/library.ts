@@ -1,3 +1,5 @@
+import { setTimeout as delay } from "node:timers/promises";
+
 import { ChatInputCommandInteraction, MessageFlags } from "discord.js";
 
 import { db } from "../../../db/index.js";
@@ -8,8 +10,6 @@ import { validatePlayUrl } from "../../security/sanitize.js";
 import { replyWithState } from "../../utils/reply.js";
 
 import { resolveAndQueue } from "./play.js";
-
-// ── Shared helpers ──────────────────────────────────────────────────────────
 
 function chunk<T>(arr: T[], size: number): T[][] {
   const result: T[][] = [];
@@ -41,25 +41,37 @@ async function backgroundResolveLibrary(
   requesterId: string,
 ): Promise<void> {
   for (const track of library) {
-    try {
-      const result = await node.rest.resolve(track.url);
-      if (!result) continue;
+    let retries = 3;
+    let success = false;
 
-      if (result.loadType === "track" || result.loadType === "search") {
-        const resolved = result.loadType === "search" ? result.data[0] : result.data;
-        player.queue.push(attachRequester(resolved, requesterId));
-        if (!player.currentTrack && !player.paused) await player.play();
-      } else if (result.loadType === "playlist") {
-        for (const t of result.data.tracks) player.queue.push(attachRequester(t, requesterId));
-        if (!player.currentTrack && !player.paused) await player.play();
+    while (retries > 0 && !success) {
+      try {
+        const result = await node.rest.resolve(track.url);
+        if (result) {
+          if (result.loadType === "track" || result.loadType === "search") {
+            const resolved = result.loadType === "search" ? result.data[0] : result.data;
+            player.queue.push(attachRequester(resolved, requesterId));
+            if (!player.currentTrack && !player.paused) await player.play();
+          } else if (result.loadType === "playlist") {
+            for (const t of result.data.tracks) player.queue.push(attachRequester(t, requesterId));
+            if (!player.currentTrack && !player.paused) await player.play();
+          }
+        }
+        success = true;
+      } catch (e) {
+        retries--;
+        if (retries === 0) {
+          console.error(`[LibraryPlay] Failed to background resolve ${track.url} after 3 retries:`, e);
+        } else {
+          await delay(2000);
+        }
       }
-    } catch (e) {
-      console.error(`[LibraryPlay] Failed to background resolve ${track.url}:`, e);
     }
+
+    // 延遲 500ms 避免 Lavalink 瞬間處理大量請求導致 Java GC 卡頓
+    await delay(500);
   }
 }
-
-// ── Commands ────────────────────────────────────────────────────────────────
 
 export async function executeLibraryAdd(interaction: ChatInputCommandInteraction, context: any) {
   await interaction.deferReply({ flags: [MessageFlags.Ephemeral] });
