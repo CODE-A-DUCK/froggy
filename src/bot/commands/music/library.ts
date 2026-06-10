@@ -141,7 +141,7 @@ export async function executeLibraryList(interaction: ChatInputCommandInteractio
 export async function executeLibraryPlay(interaction: ChatInputCommandInteraction, context: any) {
   await interaction.deferReply();
 
-  const index = interaction.options.getInteger("index");
+  const indexStr = interaction.options.getString("index");
   const validation = await validateVoiceState(interaction, { requireBotInVC: false, requireController: false });
   if (!validation) return;
 
@@ -152,20 +152,38 @@ export async function executeLibraryPlay(interaction: ChatInputCommandInteractio
       return replyWithState(interaction, "info", `${EMOJIS.foldermusicline} | 你的音樂庫是空的！`);
     }
 
-    // 播放指定編號
-    if (index !== null) {
-      const track = resolveTrackByIndex(library, index);
-      if (!track) {
-        return replyWithState(interaction, "error", `${EMOJIS.errorwarningline} | 找不到編號為 ${index} 的歌曲！`);
+    let tracksToPlay: { url: string, title: string }[] = [];
+    let isEntireLibrary = false;
+
+    if (indexStr) {
+      const indices = indexStr.split(",").map(s => parseInt(s.trim(), 10)).filter(n => !isNaN(n));
+      if (indices.length === 0) {
+        return replyWithState(interaction, "error", `${EMOJIS.errorwarningline} | 無效的編號格式！`);
       }
-      return resolveAndQueue(interaction, track.url, interaction.user.id, context);
+
+      if (indices.length === 1) {
+        const track = resolveTrackByIndex(library, indices[0]);
+        if (!track) {
+          return replyWithState(interaction, "error", `${EMOJIS.errorwarningline} | 找不到編號為 ${indices[0]} 的歌曲！`);
+        }
+        return resolveAndQueue(interaction, track.url, interaction.user.id, context);
+      }
+
+      tracksToPlay = indices.map(idx => resolveTrackByIndex(library, idx)).filter(t => t !== null) as { url: string, title: string }[];
+      if (tracksToPlay.length === 0) {
+        return replyWithState(interaction, "error", `${EMOJIS.errorwarningline} | 找不到任何指定的歌曲！`);
+      }
+    } else {
+      tracksToPlay = library;
+      isEntireLibrary = true;
     }
 
-    // 播放整個音樂庫（後台非同步載入），不然一直刷信息很烦人
-    const top10 = library.slice(0, 10).map((t, i) => `${i + 1}. **${t.title}**`).join("\n");
-    await replyWithState(interaction, "success",
-      `${EMOJIS.playlistaddline} | 已將你的音樂庫 (${library.length} 首歌曲) 排入後台載入序列！\n\n**前 10 首**：\n${top10}`
-    );
+    const top10 = tracksToPlay.slice(0, 10).map((t, i) => `${i + 1}. **${t.title}**`).join("\n");
+    const msg = isEntireLibrary
+      ? `${EMOJIS.playlistaddline} | 已將你的音樂庫 (${tracksToPlay.length} 首歌曲) 排入後台載入序列！\n\n**前 10 首**：\n${top10}`
+      : `${EMOJIS.playlistaddline} | 已將 ${tracksToPlay.length} 首歌曲排入後台載入序列！\n\n**前 10 首**：\n${top10}`;
+
+    await replyWithState(interaction, "success", msg);
 
     const { voiceGateway, shoukaku } = context;
     const userVoiceChannel = (interaction.member as any).voice.channel!;
@@ -179,7 +197,7 @@ export async function executeLibraryPlay(interaction: ChatInputCommandInteractio
     player.controllerUserId = interaction.user.id;
 
     const node = shoukaku.options.nodeResolver(shoukaku.nodes);
-    if (node) backgroundResolveLibrary(library, player, node, interaction.user.id);
+    if (node) backgroundResolveLibrary(tracksToPlay, player, node, interaction.user.id);
 
   } catch (err) {
     console.error("Library Play Error:", err);

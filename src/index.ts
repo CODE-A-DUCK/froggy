@@ -95,6 +95,8 @@ voiceGateway.on("trackUpdate", (player, track, position) => {
   const event = controllerStore.getCurrentTrack(guildId);
   if (event && !player.paused) {
     event.position = Math.floor(position / 1000);
+    event.is_paused = player.paused;
+    event.loop_state = player.repeatMode === "off" ? 0 : player.repeatMode === "track" ? 1 : 2;
     event.is_update = true;
     uiHandler.onTrackPlaying(event);
   }

@@ -5,7 +5,7 @@ const emptyChannelTimeouts = new Map<string, NodeJS.Timeout>();
 export const voiceStateUpdateEvent = {
   name: Events.VoiceStateUpdate,
   async execute(oldState: VoiceState, newState: VoiceState, context: any) {
-    const { lavalink, voiceGateway, nodeStateStore } = context;
+    const { voiceGateway, nodeStateStore } = context;
     const guildId = newState.guild.id || oldState.guild.id;
 
     if (!nodeStateStore.isConnected(guildId)) return;
@@ -32,12 +32,7 @@ export const voiceStateUpdateEvent = {
               const latestChannel = await newState.guild.channels.fetch(botChannelId).catch(() => null);
               if (latestChannel && latestChannel.isVoiceBased() && latestChannel.members.filter(m => !m.user.bot).size === 0) {
                 console.log(`[AutoLeave] No one in channel for 3 minutes, automatically leaving (Guild: ${guildId})`);
-                const player = lavalink.getPlayer(guildId);
-                if (player) {
-                  await player.stopPlaying(true).catch(() => null);
-                  await player.destroy("Disconnected").catch(() => null);
-                }
-                voiceGateway.disconnectFromChannel(guildId);
+                await voiceGateway.disconnectFromChannel(guildId).catch(() => null);
                 context.controllerStore?.clearOwner(guildId);
               }
             }, 3 * 60 * 1000);

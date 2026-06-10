@@ -51,7 +51,7 @@ export const musicCommand = {
       .addSubcommand(sub =>
         sub.setName("play")
           .setDescription("從音樂庫播放指定編號的歌曲 (留空則播放整個音樂庫)")
-          .addIntegerOption(o => o.setName("index").setDescription("歌曲編號").setRequired(false))
+          .addStringOption(o => o.setName("index").setDescription("歌曲編號 (多首可用逗號分隔，例如: 1,3,5)").setRequired(false))
       )
       .addSubcommand(sub =>
         sub.setName("remove")
