@@ -61,14 +61,14 @@ function applyOptimisticState(components: any[], action: string): any[] {
 
 function updateContent(content: string, action: string): string {
   if (action === "pause")
-    return content.replace("**狀態**：播放中", "**狀態**：暫停中");
+    return content.replace("狀態**：播放中", "狀態**：暫停中");
   if (action === "resume")
-    return content.replace("**狀態**：暫停中", "**狀態**：播放中");
+    return content.replace("狀態**：暫停中", "狀態**：播放中");
   if (action === "loop")
-    return content.replace(/\*\*循環\*\*：[^\n]+/, (m) => {
+    return content.replace(/循環\*\*：[^\n]+/, (m) => {
       const current = m.split("：").pop()?.trim() as keyof typeof LOOP_SEQUENCE;
       const nextLoop = LOOP_SEQUENCE[current] ?? "關閉";
-      return `**循環**：${nextLoop}`;
+      return `循環**：${nextLoop}`;
     });
   return content;
 }
