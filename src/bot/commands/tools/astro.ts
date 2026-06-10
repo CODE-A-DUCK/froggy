@@ -1,14 +1,27 @@
 import {
-  SlashCommandBuilder, ChatInputCommandInteraction, EmbedBuilder,
-  AttachmentBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, ComponentType
+  SlashCommandBuilder,
+  ChatInputCommandInteraction,
+  EmbedBuilder,
+  AttachmentBuilder,
+  ActionRowBuilder,
+  ButtonBuilder,
+  ButtonStyle,
+  ComponentType,
 } from "discord.js";
+
+import { EMOJIS } from "../../../shared/emojis.js";
 import {
-  geocode, getWeather, get7Timer, getAstronomyData,
-  type LocationInfo, type WeatherData, type SevenTimerData,
+  geocode,
+  getWeather,
+  get7Timer,
+  getAstronomyData,
+  type LocationInfo,
+  type WeatherData,
+  type SevenTimerData,
   type AstronomyData,
 } from "../../services/astro-service.js";
+
 import { renderWeatherImage, type WeatherView } from "./astro/renderer.js";
-import { EMOJIS } from "../../../shared/emojis.js";
 
 const formatTime = (d: Date | null): string =>
   d ? `<t:${Math.floor(d.getTime() / 1000)}:t>` : "未知";
@@ -31,7 +44,7 @@ function buildTonightEmbed(
       name: `${EMOJIS.eyeline} | 大氣條件`,
       value: timer7
         ? `> 視寧度:\n **${timer7.seeing}**\n> 透明度:\n **${timer7.transparency}**`
-        : `> \n **無法獲取數據**`,
+        : "> \n **無法獲取數據**",
       inline: true,
     },
     {
@@ -39,7 +52,7 @@ function buildTonightEmbed(
       value: [
         `> 月相:\n **${astro.moonPhaseName}** (${astro.moonPhasePercent.toFixed(1)}%)`,
         `> 亮度:\n **${astro.moonIllumination.toFixed(1)}%**`,
-        `> 距離:\n **${(astro.moonDistanceKm).toLocaleString(undefined, { maximumFractionDigits: 0 })} km**`,
+        `> 距離:\n **${astro.moonDistanceKm.toLocaleString(undefined, { maximumFractionDigits: 0 })} km**`,
         `> 月升月落:\n ${formatTime(astro.moonrise)} | ${formatTime(astro.moonset)}`,
         `> 下次新月:\n ${formatTime(astro.nextNewMoon)}`,
         `> 下次滿月:\n ${formatTime(astro.nextFullMoon)}`,
@@ -58,9 +71,10 @@ function buildTonightEmbed(
     },
     {
       name: `${EMOJIS.planetline} | 今晚可見行星`,
-      value: astro.visiblePlanetsNames.length > 0
-        ? `> ${astro.visiblePlanetsNames.join(", ")}`
-        : "> *今晚無明顯可見行星*",
+      value:
+        astro.visiblePlanetsNames.length > 0
+          ? `> ${astro.visiblePlanetsNames.join(", ")}`
+          : "> *今晚無明顯可見行星*",
       inline: false,
     },
   );
@@ -68,13 +82,16 @@ function buildTonightEmbed(
   return embed;
 }
 
-
-async function handleTonight(interaction: ChatInputCommandInteraction): Promise<void> {
+async function handleTonight(
+  interaction: ChatInputCommandInteraction,
+): Promise<void> {
   const locationQuery = interaction.options.getString("location", true);
 
   const loc = await geocode(locationQuery);
   if (!loc) {
-    await interaction.editReply(`${EMOJIS.errorwarningline} | 找不到地點 \`${locationQuery}\`，請嘗試輸入其他名稱。`);
+    await interaction.editReply(
+      `${EMOJIS.errorwarningline} | 找不到地點 \`${locationQuery}\`，請嘗試輸入其他名稱。`,
+    );
     return;
   }
 
@@ -85,16 +102,38 @@ async function handleTonight(interaction: ChatInputCommandInteraction): Promise<
   ]);
 
   if (!weather) {
-    await interaction.editReply(`${EMOJIS.errorwarningline} | 無法獲取天氣數據。`);
+    await interaction.editReply(
+      `${EMOJIS.errorwarningline} | 無法獲取天氣數據。`,
+    );
     return;
   }
 
   const buildComponents = (activeView: WeatherView) => {
     return new ActionRowBuilder<ButtonBuilder>().addComponents(
-      new ButtonBuilder().setCustomId("view_temperature").setLabel("溫度").setEmoji(EMOJIS.temphotfill).setStyle(activeView === "temperature" ? ButtonStyle.Success : ButtonStyle.Secondary),
-      new ButtonBuilder().setCustomId("view_precipitation").setLabel("降水").setEmoji(EMOJIS.waterpercentline).setStyle(activeView === "precipitation" ? ButtonStyle.Success : ButtonStyle.Secondary),
-      new ButtonBuilder().setCustomId("view_wind").setLabel("風速").setEmoji(EMOJIS.windyline).setStyle(activeView === "wind" ? ButtonStyle.Success : ButtonStyle.Secondary),
-      new ButtonBuilder().setCustomId("view_forecast").setLabel("7天預報").setEmoji(EMOJIS.calendarline).setStyle(activeView === "forecast" ? ButtonStyle.Success : ButtonStyle.Secondary)
+      new ButtonBuilder()
+        .setCustomId("view_temperature")
+        .setLabel("溫度")
+        .setEmoji(EMOJIS.temphotfill)
+        .setStyle(ButtonStyle.Secondary)
+        .setDisabled(activeView === "temperature"),
+      new ButtonBuilder()
+        .setCustomId("view_precipitation")
+        .setLabel("降水")
+        .setEmoji(EMOJIS.waterpercentline)
+        .setStyle(ButtonStyle.Secondary)
+        .setDisabled(activeView === "precipitation"),
+      new ButtonBuilder()
+        .setCustomId("view_wind")
+        .setLabel("風速")
+        .setEmoji(EMOJIS.windyline)
+        .setStyle(ButtonStyle.Secondary)
+        .setDisabled(activeView === "wind"),
+      new ButtonBuilder()
+        .setCustomId("view_forecast")
+        .setLabel("7天預報")
+        .setEmoji(EMOJIS.calendarline)
+        .setStyle(ButtonStyle.Secondary)
+        .setDisabled(activeView === "forecast"),
     );
   };
 
@@ -116,7 +155,10 @@ async function handleTonight(interaction: ChatInputCommandInteraction): Promise<
 
   collector.on("collect", async (i) => {
     if (i.user.id !== interaction.user.id) {
-      await i.reply({ content: `${EMOJIS.errorwarningline} | 只有指令發起者可以操作此按鈕。`, ephemeral: true });
+      await i.reply({
+        content: `${EMOJIS.errorwarningline} | 只有指令發起者可以操作此按鈕。`,
+        ephemeral: true,
+      });
       return;
     }
 
@@ -140,13 +182,14 @@ async function handleTonight(interaction: ChatInputCommandInteraction): Promise<
       await interaction.editReply({
         components: [],
       });
-    } catch (error) {
-    }
+    } catch (error) {}
   });
 }
 
-
-const subcommandHandlers: Record<string, (i: ChatInputCommandInteraction) => Promise<void>> = {
+const subcommandHandlers: Record<
+  string,
+  (i: ChatInputCommandInteraction) => Promise<void>
+> = {
   tonight: handleTonight,
 };
 
@@ -162,10 +205,15 @@ export const astroCommand = {
         .setName("tonight")
         .setDescription("查看特定地點的今晚觀測條件與天文數據")
         .addStringOption((opt) =>
-          opt.setName("location").setDescription("地點名稱 (例如: 台北, Tokyo, New York)").setRequired(true)
-        )
+          opt
+            .setName("location")
+            .setDescription("地點名稱 (例如: 台北, Tokyo, New York)")
+            .setRequired(true),
+        ),
     ),
   async execute(interaction: ChatInputCommandInteraction) {
-    await subcommandHandlers[interaction.options.getSubcommand()]?.(interaction);
+    await subcommandHandlers[interaction.options.getSubcommand()]?.(
+      interaction,
+    );
   },
 };

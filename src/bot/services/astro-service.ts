@@ -4,6 +4,7 @@ import {
   Equator, Horizon, Constellation, GeoVector,
   Body, AstroTime,
 } from "astronomy-engine";
+
 import { getOrFetch } from "./astro-cache.js";
 
 // === Types ===
@@ -86,8 +87,8 @@ export interface AstronomyData {
 // === Constants ===
 
 const SEEING_LABELS: Record<number, string> = {
-  1: `< 0.5" | 極佳`, 2: `0.5" - 0.75" | 優秀`, 3: `0.75" - 1" | 良好`, 4: `1" - 1.5" | 普通`,
-  5: `1.5" - 2" | 較差`, 6: `2" - 2.5" | 差`, 7: `2.5" - 3" | 極差`, 8: `> 3" | 無法觀測`,
+  1: "< 0.5\" | 極佳", 2: "0.5\" - 0.75\" | 優秀", 3: "0.75\" - 1\" | 良好", 4: "1\" - 1.5\" | 普通",
+  5: "1.5\" - 2\" | 較差", 6: "2\" - 2.5\" | 差", 7: "2.5\" - 3\" | 極差", 8: "> 3\" | 無法觀測",
 };
 
 const TRANSPARENCY_LABELS: Record<number, string> = {

@@ -1,5 +1,7 @@
 import sharp from "sharp";
+
 import { type WeatherData, type LocationInfo } from "../../../services/astro-service.js";
+
 import { getWeatherIconPath } from "./icon-mapper.js";
 
 export type WeatherView = "temperature" | "precipitation" | "wind" | "forecast";
@@ -376,7 +378,7 @@ export async function renderWeatherImage(
     <text x="${width - 20}" y="${580 - 15}" class="text-muted medium text-xs" text-anchor="end">更新於 ${dateStr}</text>
   `;
 
-  svg += `</svg>`;
+  svg += "</svg>";
 
   return sharp(Buffer.from(svg)).png().toBuffer();
 }
