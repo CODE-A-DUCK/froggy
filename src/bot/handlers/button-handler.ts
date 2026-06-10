@@ -5,17 +5,10 @@ import { ContainerFactory } from "../../player/ui/container-factory.js";
 import { shouldOptimisticallyUpdate, optimisticallyUpdateController } from "../../player/ui/controller-sync.js";
 import { CONTROLLER_DENIED_MESSAGE } from "../../player/utils/voice-guard.js";
 import { EMOJIS } from "../../shared/emojis.js";
+import { replyWithState } from "../utils/reply.js";
 import { controllerStore } from "../store/controller-store.js";
 
-const replyWithState = (interaction: ButtonInteraction, state: "error" | "success" | "info" | "warning", description: string) =>
-  interaction
-    .followUp({
-      components: [ContainerFactory.buildReply(state, description, interaction.user as any).toJSON() as any],
-      flags: [MessageFlags.Ephemeral, MessageFlags.IsComponentsV2 as any],
-    })
-    .catch(() => null);
-
-const replyError = (interaction: ButtonInteraction, description: string) => replyWithState(interaction, "error", description);
+const replyError = (interaction: ButtonInteraction, description: string) => replyWithState(interaction, "error", description, { followUp: true });
 
 function parseMusicControl(customId: string): string | null {
   if (customId.startsWith("MusicButtonControl")) {
@@ -104,10 +97,7 @@ async function handleLibraryPage(interaction: ButtonInteraction): Promise<boolea
       .execute();
 
     if (library.length === 0) {
-      await interaction.editReply({
-        components: [ContainerFactory.buildReply("info", `${EMOJIS.foldermusicline} | 你的音樂庫是空的！`, interaction.user as any).toJSON() as any],
-        flags: [MessageFlags.IsComponentsV2 as any]
-      });
+      await replyWithState(interaction, "info", `${EMOJIS.foldermusicline} | 你的音樂庫是空的！`);
       return true;
     }
 

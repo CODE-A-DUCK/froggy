@@ -14,6 +14,7 @@ export async function replyWithState(
   options?: {
     ephemeral?: boolean;
     reply?: boolean; // 如果是 true，就強制用 reply()，而不是 editReply()
+    followUp?: boolean; // 如果是 true，強制用 followUp()
   }
 ) {
   const isErrorOrWarning = state === "error" || state === "warning";
@@ -28,7 +29,9 @@ export async function replyWithState(
   };
 
   try {
-    if (interaction.deferred || interaction.replied) {
+    if (options?.followUp) {
+      return await interaction.followUp(payload);
+    } else if (interaction.deferred || interaction.replied) {
       return await interaction.editReply(payload);
     } else if (options?.reply) {
       return await interaction.reply(payload);

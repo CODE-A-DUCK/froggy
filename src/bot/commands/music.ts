@@ -1,7 +1,7 @@
 import { SlashCommandBuilder, ChatInputCommandInteraction, MessageFlags } from "discord.js";
 
-import { ContainerFactory } from "../../player/ui/container-factory.js";
 import { EMOJIS } from "../../shared/emojis.js";
+import { replyWithState } from "../utils/reply.js";
 
 import { executeController } from "./music/controller.js";
 import { executeJoin } from "./music/join.js";
@@ -99,17 +99,11 @@ export const musicCommand = {
       }
     } catch (err: any) {
       console.error(`[Music Command Error] ${group ? group + " " : ""}${command}:`, err);
-      if (interaction.deferred || interaction.replied) {
-        await interaction.editReply({
-          components: [ContainerFactory.buildReply("error", `${EMOJIS.errorwarningline} | 發生未知的錯誤。`, interaction.user as any).toJSON() as any],
-          flags: [MessageFlags.IsComponentsV2 as any]
-        }).catch(() => null);
-      } else {
-        await interaction.reply({
-          components: [ContainerFactory.buildReply("error", `${EMOJIS.errorwarningline} | 發生未知的錯誤。`, interaction.user as any).toJSON() as any],
-          flags: [MessageFlags.Ephemeral, MessageFlags.IsComponentsV2 as any]
-        }).catch(() => null);
-      }
+      await replyWithState(
+        interaction,
+        "error",
+        `${EMOJIS.errorwarningline} | 發生未知的錯誤。`
+      );
     }
   },
 

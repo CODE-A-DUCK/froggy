@@ -1,6 +1,6 @@
 import { MessageFlags, ModalSubmitInteraction } from "discord.js";
 
-import { ContainerFactory } from "../../player/ui/container-factory.js";
+import { replyWithState } from "../utils/reply.js";
 import { EMOJIS } from "../../shared/emojis.js";
 
 export const handleModalInteraction = async (interaction: ModalSubmitInteraction, context: any) => {
@@ -16,16 +16,12 @@ export const handleModalInteraction = async (interaction: ModalSubmitInteraction
     ];
 
     if (selectedIndices.length === 0) {
-      return interaction.reply({
-        components: [
-          ContainerFactory.buildReply(
-            "warning",
-            `${EMOJIS.errorwarningline} | 你沒有選擇任何歌曲。`,
-            interaction.user as any,
-          ),
-        ],
-        flags: [MessageFlags.IsComponentsV2],
-      });
+      return replyWithState(
+        interaction,
+        "warning",
+        `${EMOJIS.errorwarningline} | 你沒有選擇任何歌曲。`,
+        { reply: true }
+      );
     }
 
     try {
@@ -50,49 +46,28 @@ export const handleModalInteraction = async (interaction: ModalSubmitInteraction
       }
 
       if (removed.length === 0) {
-        return interaction
-          .editReply({
-            components: [
-              ContainerFactory.buildReply(
-                "warning",
-                `${EMOJIS.errorwarningline} | 找不到要移除的歌曲，請確認隊列編號是否仍然有效。`,
-                interaction.user as any,
-              ),
-            ],
-            flags: [MessageFlags.IsComponentsV2],
-          })
-          .catch(() => null);
+        return replyWithState(
+          interaction,
+          "warning",
+          `${EMOJIS.errorwarningline} | 找不到要移除的歌曲，請確認隊列編號是否仍然有效。`
+        );
       }
 
-      await interaction
-        .editReply({
-          components: [
-            ContainerFactory.buildReply(
-              "success",
-              [
-                `${EMOJIS.checkdoubleline} | 已成功從隊列中移除 ${removed.length} 首歌曲：`,
-                removed.map((track: any) => `- ${track.title}`).join("\n"),
-              ].join("\n"),
-              interaction.user as any,
-            ),
-          ],
-          flags: [MessageFlags.IsComponentsV2],
-        })
-        .catch(() => null);
+      await replyWithState(
+        interaction,
+        "success",
+        [
+          `${EMOJIS.checkdoubleline} | 已成功從隊列中移除 ${removed.length} 首歌曲：`,
+          removed.map((track: any) => `- ${track.title}`).join("\n"),
+        ].join("\n")
+      );
     } catch (err) {
       console.error("[Modal] Remove error:", err);
-      await interaction
-        .editReply({
-          components: [
-            ContainerFactory.buildReply(
-              "error",
-              `${EMOJIS.errorwarningline} | 移除歌曲時發生錯誤。`,
-              interaction.user as any,
-            ),
-          ],
-          flags: [MessageFlags.IsComponentsV2],
-        })
-        .catch(() => null);
+      await replyWithState(
+        interaction,
+        "error",
+        `${EMOJIS.errorwarningline} | 移除歌曲時發生錯誤。`
+      );
     }
   }
 };
