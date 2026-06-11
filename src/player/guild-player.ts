@@ -79,7 +79,10 @@ export class GuildPlayer extends EventEmitter {
   }
 
   public async play(track?: Track, isReplay: boolean = false) {
-    if (!isReplay) this.loopOnceCount = 0;
+    if (!isReplay) {
+      this.loopOnceCount = 0;
+      this.repeatMode = "off";
+    }
 
     if (track) {
       this.currentTrack = track;

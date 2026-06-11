@@ -10,6 +10,13 @@ export const voiceStateUpdateEvent = {
 
     if (!nodeStateStore.isConnected(guildId)) return;
 
+    if (oldState.id === newState.client.user.id && oldState.channelId && !newState.channelId) {
+      console.log(`[Voice] Bot was disconnected from voice channel in guild ${guildId}`);
+      await voiceGateway.disconnectFromChannel(guildId).catch(() => null);
+      context.controllerStore?.clearOwner(guildId);
+      return;
+    }
+
     const botMember =
       newState.guild.members.me ||
       (await newState.guild.members
