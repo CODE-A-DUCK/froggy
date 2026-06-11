@@ -34,8 +34,8 @@ export class UIHandler {
     this.enqueue(event.guild_id, () => this.handleTrackPlaying(event));
   }
 
-  public onTrackEnded(event: TrackEvent, stopped: boolean): void {
-    this.enqueue(event.guild_id, () => this.handleTrackEnded(event, stopped));
+  public onTrackEnded(event: TrackEvent, stopped: boolean, suppressMessage: boolean = false): void {
+    this.enqueue(event.guild_id, () => this.handleTrackEnded(event, stopped, suppressMessage));
   }
 
   public onTrackError(event: TrackEvent): void {
@@ -194,7 +194,7 @@ export class UIHandler {
     if (messageId) this.controllerStore.setMessageId(event.guild_id, messageId);
   }
 
-  private async handleTrackEnded(event: TrackEvent, stopped: boolean): Promise<void> {
+  private async handleTrackEnded(event: TrackEvent, stopped: boolean, suppressMessage: boolean = false): Promise<void> {
     const guild = this.guild(event.guild_id);
     if (!guild) return;
 
@@ -203,14 +203,20 @@ export class UIHandler {
       this.resolveTextChannel(guild, event.text_channel_id),
     ]);
 
-    await this.clearGuildState(event.guild_id, channel);
+    if (!suppressMessage) {
+      await this.clearGuildState(event.guild_id, channel);
 
-    const description = stopped
-      ? `${EMOJIS.fileshredline} | 已停止播放並清空隊列！`
-      : `${EMOJIS.checkdoubleline} | 隊列內的歌曲均已播放完畢！`;
+      const description = stopped
+        ? `${EMOJIS.fileshredline} | 已停止播放並清空隊列！`
+        : `${EMOJIS.checkdoubleline} | 隊列內的歌曲均已播放完畢！`;
 
-    const container = ContainerFactory.buildSimpleMessage(`${EMOJIS.LingLong} 音樂中心`, description, requester);
-    await this.sendContainer(channel, event.interaction_token, container);
+      const container = ContainerFactory.buildSimpleMessage(`${EMOJIS.LingLong} 音樂中心`, description, requester);
+      await this.sendContainer(channel, event.interaction_token, container);
+    } else {
+      this.controllerStore.clearOwner(event.guild_id);
+      this.controllerStore.clearCurrentTrack(event.guild_id);
+      this.controllerStore.clearMessageId(event.guild_id);
+    }
   }
 
   private async handleBotDisconnect(event: TrackEvent): Promise<void> {

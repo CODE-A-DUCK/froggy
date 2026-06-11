@@ -82,5 +82,7 @@ export async function handleInteraction(interaction: any, context: any) {
     await command.handleSelectMenu(interaction, context);
   } else if (interaction.isButton() && typeof command.handleButton === "function") {
     await command.handleButton(interaction, context);
+  } else if (interaction.isModalSubmit() && typeof command.handleModal === "function") {
+    await command.handleModal(interaction, context);
   }
 }

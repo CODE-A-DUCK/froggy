@@ -12,6 +12,7 @@ import { VoiceGatewayManager } from "./bot/voice-gateway.js";
 import { config } from "./config.js";
 import { initDatabase } from "./db/index.js";
 import { UIHandler } from "./player/ui/ui-handler.js";
+import { startTurnstileServer } from "./server/turnstile.js";
 import { TrackEvent } from "./shared/types.js";
 
 declare module "discord.js" {
@@ -116,6 +117,8 @@ voiceGateway.on("trackEnd", (player, track, payload) => {
   }
 });
 
+const guildErrorTime = new Map<string, number>();
+
 voiceGateway.on("queueEnd", (player) => {
   const guildId = player.guildId;
   const event = {
@@ -125,14 +128,21 @@ voiceGateway.on("queueEnd", (player) => {
     text_channel_id: player.textChannelId,
   };
   nodeStateStore.set(guildId, "IDLE");
-  uiHandler.onTrackEnded(event, false);
+
+  const lastError = guildErrorTime.get(guildId) || 0;
+  const suppressMessage = Date.now() - lastError < 1000;
+
+  uiHandler.onTrackEnded(event, false, suppressMessage);
 });
 
 voiceGateway.on("trackError", (player, track, payload) => {
   const guildId = player.guildId;
+  guildErrorTime.set(guildId, Date.now());
+  const errorMsg = [payload.exception?.message, payload.exception?.cause].filter(Boolean).join(" | ");
+  
   const event = {
     guild_id: guildId,
-    error: payload.exception?.message || "Unknown error",
+    error: errorMsg || "Unknown error",
     controller_user_id: player.controllerUserId,
     interaction_token: player.interactionToken,
     text_channel_id: player.textChannelId,
@@ -159,6 +169,7 @@ registerEvents(client, context);
 presence(client);
 setupGoResponse(client);
 startAutoUnban(client);
+startTurnstileServer(client);
 
 
 process.on("unhandledRejection", (error) => {

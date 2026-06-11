@@ -277,8 +277,13 @@ export class ContainerFactory {
     _type: string,
     description: string,
     user?: Requester | null,
+    title?: string
   ): ContainerBuilder {
-    return this.buildSimpleMessage(MUSIC_CENTER_TITLE, description, user);
+    const content = title ? `### ${title}\n${description}` : description;
+    const container = new ContainerBuilder().addTextDisplayComponents(
+      new TextDisplayBuilder().setContent(content),
+    );
+    return this.appendFooter(container, user);
   }
 
   static buildSimpleMessage(

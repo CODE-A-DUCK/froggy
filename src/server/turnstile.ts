@@ -3,7 +3,7 @@ import http from "node:http";
 
 import NodeCache from "node-cache";
 
-import { grantRole } from "../bot/utils/interaction-helpers.js";
+import { grantRole, handleVerificationFailure } from "../bot/utils/interaction-helpers.js";
 
 interface VerifySession {
   guildId: string;
@@ -146,7 +146,16 @@ export function startTurnstileServer(client: any) {
             verifyCache.del(token);
             sendHtml(res, 200, "<h1>你是愛因斯坦嗎？ 驗證成功！您現在可以關閉此網頁並返回 Discord。</h1>");
           } else {
-            sendHtml(res, 400, "<h1>生個叉燒包都好過你。你驗證失敗了，請重新嘗試。</h1>");
+            let kickedText = "";
+            const guild = await client.guilds.fetch(session.guildId).catch(() => null);
+            if (guild) {
+              const member = await guild.members.fetch(session.userId).catch(() => null);
+              if (member) {
+                const kicked = await handleVerificationFailure(member);
+                if (kicked) kickedText = " 您將在 5 秒後被踢出伺服器。";
+              }
+            }
+            sendHtml(res, 400, `<h1>生個叉燒包都好過你。你驗證失敗了，請重新嘗試。${kickedText}</h1>`);
           }
         } catch (err: any) {
           console.error("[Turnstile] Verification error:", err);

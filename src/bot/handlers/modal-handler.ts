@@ -1,9 +1,9 @@
-import { MessageFlags, ModalSubmitInteraction } from "discord.js";
+import { ModalSubmitInteraction } from "discord.js";
 
-import { replyWithState } from "../utils/reply.js";
 import { EMOJIS } from "../../shared/emojis.js";
+import { replyWithState } from "../utils/reply.js";
 
-export const handleModalInteraction = async (interaction: ModalSubmitInteraction, context: any) => {
+export const handleModalInteraction = async (interaction: ModalSubmitInteraction, context: any): Promise<boolean> => {
 
   if (interaction.customId === "MusicQueueRemoveModal") {
     const selectedValues = interaction.fields.getCheckboxGroup("MusicQueueRemoveCheckboxes");
@@ -16,12 +16,13 @@ export const handleModalInteraction = async (interaction: ModalSubmitInteraction
     ];
 
     if (selectedIndices.length === 0) {
-      return replyWithState(
+      await replyWithState(
         interaction,
         "warning",
         `${EMOJIS.errorwarningline} | 你沒有選擇任何歌曲。`,
         { reply: true }
       );
+      return true;
     }
 
     try {
@@ -46,11 +47,12 @@ export const handleModalInteraction = async (interaction: ModalSubmitInteraction
       }
 
       if (removed.length === 0) {
-        return replyWithState(
+        await replyWithState(
           interaction,
           "warning",
           `${EMOJIS.errorwarningline} | 找不到要移除的歌曲，請確認隊列編號是否仍然有效。`
         );
+        return true;
       }
 
       await replyWithState(
@@ -61,6 +63,7 @@ export const handleModalInteraction = async (interaction: ModalSubmitInteraction
           removed.map((track: any) => `- ${track.title}`).join("\n"),
         ].join("\n")
       );
+      return true;
     } catch (err) {
       console.error("[Modal] Remove error:", err);
       await replyWithState(
@@ -68,6 +71,9 @@ export const handleModalInteraction = async (interaction: ModalSubmitInteraction
         "error",
         `${EMOJIS.errorwarningline} | 移除歌曲時發生錯誤。`
       );
+      return true;
     }
   }
+
+  return false;
 };

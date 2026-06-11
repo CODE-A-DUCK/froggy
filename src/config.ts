@@ -14,4 +14,5 @@ export const config = {
   steamApiKey: process.env.STEAM_API_KEY || "",
   youtubeApiKey: process.env.YOUTUBE_API_KEY || "",
   databaseUrl: process.env.DATABASE_URL || "postgresql://postgres:postgres@localhost:5432/froggy",
+  domain: process.env.DOMAIN,
 };

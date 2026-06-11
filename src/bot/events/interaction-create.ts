@@ -21,7 +21,8 @@ export const interactionCreateEvent = {
       ) {
         await handleInteraction(interaction, context);
       } else if (interaction.isModalSubmit()) {
-        await handleModalInteraction(interaction, context);
+        const handled = await handleModalInteraction(interaction, context);
+        if (!handled) await handleInteraction(interaction, context);
       }
     } catch (error) {
       console.error("[Interaction] Unhandled error:", error);

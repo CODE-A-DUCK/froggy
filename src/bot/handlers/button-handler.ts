@@ -5,8 +5,8 @@ import { ContainerFactory } from "../../player/ui/container-factory.js";
 import { shouldOptimisticallyUpdate, optimisticallyUpdateController } from "../../player/ui/controller-sync.js";
 import { CONTROLLER_DENIED_MESSAGE } from "../../player/utils/voice-guard.js";
 import { EMOJIS } from "../../shared/emojis.js";
-import { replyWithState } from "../utils/reply.js";
 import { controllerStore } from "../store/controller-store.js";
+import { replyWithState } from "../utils/reply.js";
 
 const replyError = (interaction: ButtonInteraction, description: string) => replyWithState(interaction, "error", description, { followUp: true });
 

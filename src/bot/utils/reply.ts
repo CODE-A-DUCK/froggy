@@ -15,6 +15,7 @@ export async function replyWithState(
     ephemeral?: boolean;
     reply?: boolean; // 如果是 true，就強制用 reply()，而不是 editReply()
     followUp?: boolean; // 如果是 true，強制用 followUp()
+    title?: string;
   }
 ) {
   const isErrorOrWarning = state === "error" || state === "warning";
@@ -24,7 +25,7 @@ export async function replyWithState(
   if (ephemeral) flags.push(MessageFlags.Ephemeral as any);
 
   const payload = {
-    components: [ContainerFactory.buildReply(state, message, interaction.user as any).toJSON() as any],
+    components: [ContainerFactory.buildReply(state, message, interaction.user as any, options?.title).toJSON() as any],
     flags
   };
 
