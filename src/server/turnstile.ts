@@ -37,7 +37,8 @@ export function startTurnstileServer(client: any) {
         'form': ['id', 'action', 'method'],
         'input': ['type', 'name', 'value'],
         'div': ['class', 'data-sitekey', 'data-theme', 'data-callback']
-      }
+      },
+      allowVulnerableTags: true
     });
 
     res.writeHead(status, { 
