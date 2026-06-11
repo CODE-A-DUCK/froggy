@@ -27,6 +27,11 @@ export async function initDatabase() {
         url VARCHAR(2000) NOT NULL,
         added_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       );
+      CREATE TABLE IF NOT EXISTS guild_config (
+        guild_id VARCHAR(255) PRIMARY KEY,
+        verify_role_id VARCHAR(255)
+      );
+      ALTER TABLE guild_config ADD COLUMN IF NOT EXISTS kick_on_fail BOOLEAN DEFAULT FALSE;
     `.execute(db);
     console.log("[DB] music_library table initialized successfully.");
   } catch (err) {
