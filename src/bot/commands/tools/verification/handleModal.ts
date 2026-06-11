@@ -4,6 +4,7 @@ import { ModalSubmitInteraction, MessageFlags } from "discord.js";
 
 import { grantRole, validateVerificationPreconditions, handleVerificationFailure } from "../../../utils/interaction-helpers.js";
 import { replyWithState } from "../../../utils/reply.js";
+import { securityCache } from "../../../utils/security.js";
 
 export async function handleVerificationModal(interaction: ModalSubmitInteraction) {
   const parts = interaction.customId.split(":");
@@ -11,7 +12,11 @@ export async function handleVerificationModal(interaction: ModalSubmitInteractio
 
   await interaction.deferReply({ flags: [MessageFlags.Ephemeral] });
 
-  const expectedAnswer = parts[2];
+  const expectedAnswer = securityCache.get<string>(interaction.user.id);
+  if (!expectedAnswer) {
+    return replyWithState(interaction, "error", "驗證碼已過期或無效，請重新獲取。");
+  }
+  securityCache.del(interaction.user.id);
   const userAnswer = interaction.fields.getTextInputValue("captcha_input");
 
   if (userAnswer.trim().toUpperCase() !== expectedAnswer.toUpperCase()) {

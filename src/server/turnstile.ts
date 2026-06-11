@@ -1,5 +1,6 @@
 import crypto from "node:crypto";
 import http from "node:http";
+import sanitizeHtml from "sanitize-html";
 
 import NodeCache from "node-cache";
 
@@ -30,7 +31,20 @@ export function startTurnstileServer(client: any) {
   }
 
   function sendHtml(res: http.ServerResponse, status: number, body: string): void {
-    res.writeHead(status, { "Content-Type": "text/html; charset=utf-8" });
+    const safeBody = sanitizeHtml(body, {
+      allowedTags: ['h1', 'h2', 'p', 'form', 'input', 'div', 'script'],
+      allowedAttributes: {
+        'form': ['id', 'action', 'method'],
+        'input': ['type', 'name', 'value'],
+        'div': ['class', 'data-sitekey', 'data-theme', 'data-callback']
+      }
+    });
+
+    res.writeHead(status, { 
+      "Content-Type": "text/html; charset=utf-8",
+      "X-Frame-Options": "DENY",
+      "Content-Security-Policy": "frame-ancestors 'none'"
+    });
     res.end(`
       <!DOCTYPE html>
       <html lang="zh-TW">
@@ -77,7 +91,7 @@ export function startTurnstileServer(client: any) {
       </head>
       <body>
         <div class="container">
-          ${body}
+          ${safeBody}
         </div>
       </body>
       </html>

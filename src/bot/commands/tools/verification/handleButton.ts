@@ -17,6 +17,7 @@ import { generateVerifyToken } from "../../../../server/turnstile.js";
 import { generateStaticCaptcha, generateAnimatedCaptcha } from "../../../utils/captcha.js";
 import { grantRole, validateVerificationPreconditions, handleVerificationFailure } from "../../../utils/interaction-helpers.js";
 import { replyWithState } from "../../../utils/reply.js";
+import { checkRateLimit, securityCache } from "../../../utils/security.js";
 
 export async function handleVerificationButton(interaction: ButtonInteraction) {
   const parts = interaction.customId.split(":");
@@ -25,9 +26,8 @@ export async function handleVerificationButton(interaction: ButtonInteraction) {
   if (!guildId) return;
 
   if (action === "entercaptcha") {
-    const answer = parts[2];
     const modal = new ModalBuilder()
-      .setCustomId(`verify:modal:${answer}`)
+      .setCustomId(`verify:modal`)
       .setTitle("靜態驗證碼");
     const input = new TextInputBuilder()
       .setCustomId("captcha_input")
@@ -36,6 +36,12 @@ export async function handleVerificationButton(interaction: ButtonInteraction) {
       .setRequired(true);
     modal.addComponents(new ActionRowBuilder<TextInputBuilder>().addComponents(input));
     return await interaction.showModal(modal);
+  }
+
+  if (["captcha", "animated", "turnstile"].includes(action)) {
+    if (!checkRateLimit(interaction.user.id, "verify_gen")) {
+      return interaction.reply({ content: "請求過於頻繁，請稍等 15 秒後再試。", flags: [MessageFlags.Ephemeral] });
+    }
   }
 
   await interaction.deferReply({ flags: [MessageFlags.Ephemeral] });
@@ -50,8 +56,13 @@ export async function handleVerificationButton(interaction: ButtonInteraction) {
       return replyWithState(interaction, "success", "快速驗證成功！已發放身份組。");
 
     case "animated_ans": {
-      const expectedAnswer = parts[2];
-      const userAnswer = parts[3];
+      const userAnswer = parts[2];
+      const expectedAnswer = securityCache.get<string>(interaction.user.id);
+
+      if (!expectedAnswer) {
+        return replyWithState(interaction, "error", "驗證碼已過期或無效，請重新獲取。");
+      }
+      securityCache.del(interaction.user.id);
 
       if (userAnswer !== expectedAnswer) {
         const kicked = await handleVerificationFailure(member);
@@ -64,10 +75,11 @@ export async function handleVerificationButton(interaction: ButtonInteraction) {
 
     case "captcha": {
       const captcha = await generateStaticCaptcha();
+      securityCache.set(interaction.user.id, captcha.text);
       const attachment = new AttachmentBuilder(captcha.buffer, { name: "captcha.png" });
 
       const btn = new ButtonBuilder()
-        .setCustomId(`verify:entercaptcha:${captcha.text}`)
+        .setCustomId(`verify:entercaptcha`)
         .setLabel("輸入驗證碼")
         .setStyle(ButtonStyle.Primary);
 
@@ -89,11 +101,12 @@ export async function handleVerificationButton(interaction: ButtonInteraction) {
 
     case "animated": {
       const captcha = await generateAnimatedCaptcha();
+      securityCache.set(interaction.user.id, captcha.duplicateGroup);
       const attachment = new AttachmentBuilder(captcha.buffer, { name: "captcha.webp" });
 
       const buttons = captcha.options.map(opt =>
         new ButtonBuilder()
-          .setCustomId(`verify:animated_ans:${captcha.duplicateGroup}:${opt}`)
+          .setCustomId(`verify:animated_ans:${opt}`)
           .setLabel(opt)
           .setStyle(ButtonStyle.Secondary)
       );

@@ -12,8 +12,10 @@ const execAsync = promisify(exec);
 const WIDTH = 128;
 const HEIGHT = 48;
 
+import crypto from "node:crypto";
+
 function randomInt(min: number, max: number) {
-  return Math.floor(Math.random() * (max - min + 1)) + min;
+  return crypto.randomInt(min, max + 1);
 }
 
 export async function generateStaticCaptcha(): Promise<{ text: string, buffer: Buffer }> {
@@ -63,12 +65,15 @@ export async function generateAnimatedCaptcha(): Promise<{ duplicateGroup: strin
   groups.push(duplicateGroup);
 
   for (let i = groups.length - 1; i > 1; i--) {
-    const j = Math.floor(Math.random() * i) + 1;
+    const j = randomInt(1, i);
     [groups[i], groups[j]] = [groups[j], groups[i]];
   }
 
   const options = Array.from(new Set(groups.slice(1)));
-  options.sort(() => Math.random() - 0.5);
+  for (let i = options.length - 1; i > 0; i--) {
+    const j = randomInt(0, i);
+    [options[i], options[j]] = [options[j], options[i]];
+  }
 
   const tmpDir = await fs.mkdtemp(path.join(os.tmpdir(), "captcha-"));
 
