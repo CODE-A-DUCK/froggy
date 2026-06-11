@@ -3,7 +3,7 @@ import { EventEmitter } from "node:events";
 import type { Track } from "shoukaku";
 import { Player } from "shoukaku";
 
-export type RepeatMode = "off" | "track" | "queue";
+export type RepeatMode = "off" | "loop_once" | "track";
 
 export class GuildPlayer extends EventEmitter {
   public shoukakuPlayer: Player;
@@ -11,6 +11,7 @@ export class GuildPlayer extends EventEmitter {
   public queue: Track[] = [];
   public currentTrack: Track | null = null;
   public repeatMode: RepeatMode = "off";
+  public loopOnceCount: number = 0;
 
   public textChannelId: string | null = null;
   public interactionToken: string | null = null;
@@ -33,12 +34,11 @@ export class GuildPlayer extends EventEmitter {
       const previousTrack = this.currentTrack;
 
       if (this.repeatMode === "track" && previousTrack && data.reason !== "stopped") {
-        this.play(previousTrack);
+        this.play(previousTrack, true);
+      } else if (this.repeatMode === "loop_once" && previousTrack && data.reason !== "stopped" && this.loopOnceCount === 0) {
+        this.loopOnceCount = 1;
+        this.play(previousTrack, true);
       } else {
-        if (this.repeatMode === "queue" && previousTrack && data.reason !== "stopped") {
-          this.queue.push(previousTrack);
-        }
-
         if (this.queue.length > 0) {
           const nextTrack = this.queue.shift()!;
           this.play(nextTrack);
@@ -78,7 +78,9 @@ export class GuildPlayer extends EventEmitter {
     return this.shoukakuPlayer.paused;
   }
 
-  public async play(track?: Track) {
+  public async play(track?: Track, isReplay: boolean = false) {
+    if (!isReplay) this.loopOnceCount = 0;
+
     if (track) {
       this.currentTrack = track;
       await this.shoukakuPlayer.playTrack({ track: { encoded: track.encoded } });

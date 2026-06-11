@@ -80,7 +80,7 @@ voiceGateway.on("trackStart", async (player, track) => {
     likes: extraStats.likes,
     upload_date: extraStats.date,
     is_paused: player.paused,
-    loop_state: player.repeatMode === "off" ? 0 : player.repeatMode === "track" ? 1 : 2,
+    loop_state: player.repeatMode === "off" ? 0 : player.repeatMode === "loop_once" ? 1 : 2,
     controller_user_id: requesterId,
     interaction_token: player.interactionToken,
     text_channel_id: player.textChannelId,
@@ -97,7 +97,7 @@ voiceGateway.on("trackUpdate", (player, track, position) => {
   if (event && !player.paused) {
     event.position = Math.floor(position / 1000);
     event.is_paused = player.paused;
-    event.loop_state = player.repeatMode === "off" ? 0 : player.repeatMode === "track" ? 1 : 2;
+    event.loop_state = player.repeatMode === "off" ? 0 : player.repeatMode === "loop_once" ? 1 : 2;
     event.is_update = true;
     uiHandler.onTrackPlaying(event);
   }

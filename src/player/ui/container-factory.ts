@@ -248,7 +248,6 @@ export class ContainerFactory {
     const container = new ContainerBuilder().addTextDisplayComponents(
       new TextDisplayBuilder().setContent(`### ${title}\n${description}`)
     );
-    
     if (chunks.length > 1) {
       const row = new ActionRowBuilder<ButtonBuilder>().addComponents(
         new ButtonBuilder()
@@ -269,7 +268,6 @@ export class ContainerFactory {
       );
       container.addActionRowComponents(row);
     }
-    
     return this.appendFooter(container, requester);
   }
 

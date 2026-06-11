@@ -178,7 +178,7 @@ export const handleButtonInteraction = async (interaction: ButtonInteraction, co
         await player.shoukakuPlayer.setPaused(false);
         break;
       case "loop": {
-        const modes: ("off" | "track" | "queue")[] = ["off", "track", "queue"];
+        const modes: ("off" | "loop_once" | "track")[] = ["off", "loop_once", "track"];
         player.repeatMode = modes[(modes.indexOf(player.repeatMode) + 1) % modes.length];
         break;
       }
